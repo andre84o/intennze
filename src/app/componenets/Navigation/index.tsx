@@ -12,7 +12,7 @@ const items = [
 export default function Navigation() {
   const pathname = usePathname();
   return (
-    <nav className="hidden md:flex flex-row space-x-4 font-bold mr-10">
+    <nav className="hidden md:flex flex-row space-x-7 font-bold mr-10">
       {items.map((item) => {
         const active =
           item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);

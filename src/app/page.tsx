@@ -1,8 +1,11 @@
+// Fil: app/page.tsx
 import Image from "next/image";
+import ThreeBox from "./componenets/ThreeBox";
 
 export default function Home() {
   return (
     <>
+      {/* Svensk kommentar: Fullskärmsbakgrund */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <Image
           src="/bg-intennze-rosa.png"
@@ -15,8 +18,10 @@ export default function Home() {
         />
       </div>
 
-      <main className="min-h-screen flex items-center justify-center px-6">
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 mt-35">
+        {/* Svensk kommentar: Hero-sektion med text + bild. Texten centrerad på desktop. */}
         <div className="max-w-5xl w-full grid md:grid-cols-2 gap-10 items-center">
+          {/* MOBIL: Bild med rubrik ovanpå (oförändrat) */}
           <div className="relative w-full aspect-square overflow-hidden rounded md:hidden">
             <Image
               src="/home-pic.jpg"
@@ -50,7 +55,7 @@ export default function Home() {
               </span>
             </h1>
           </div>
-          <h1 className="hidden md:block text-5xl md:text-6xl font-medium leading-tight">
+          <h1 className="hidden md:block text-5xl md:text-6xl font-medium leading-tight text-center">
             <span
               className="inline-block animate-slide-in-left will-change-transform"
               style={{ animationDuration: "900ms" }}
@@ -84,6 +89,9 @@ export default function Home() {
             />
           </div>
         </div>
+        <section className="w-full max-w-5xl mt-20">
+          <ThreeBox />
+        </section>
       </main>
     </>
   );
