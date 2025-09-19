@@ -10,3 +10,15 @@ body {
   color: black;
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes slide-in-left {
+  0%   { transform: translateX(-500px); opacity: 0; }
+  100% { transform: translateX(0);     opacity: 1; }
+}
+@keyframes fade-in-up {
+  0%   { transform: translateY(500px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-in-left { animation: slide-in-left 900ms cubic-bezier(.22,.61,.36,1) both; }
+.animate-fade-in-up   { animation: fade-in-up   800ms cubic-bezier(.22,.61,.36,1) both; }
