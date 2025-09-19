@@ -1,10 +1,12 @@
-
+import Logo from "@/app/componenets/Logo";
+import Navigation from "@/app/componenets/Navigation";
 
 const Header = () => {
     return (
-        <header className="w-full p-10 bg-black text-white flex justify-center items-center">
-            <h1>Intennze</h1>
-        </header>
+      <header className="relative z-10 w-full p-4 bg-transparent text-white flex justify-between items-center">
+        <Logo />
+        <Navigation />
+      </header>
     );
 }
 

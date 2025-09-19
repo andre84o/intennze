@@ -1,0 +1,20 @@
+<!-- Svensk kommentar: Transparent version. Ändra färger via fill och font-size vid behov -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 220" role="img" aria-label="Intenzze Web Development logo">
+  <!-- Svensk kommentar: Logomärke till vänster -->
+  <g transform="translate(20,20)" fill="#0B0B0B">
+    <!-- Kvarts-cirkel uppe vänster -->
+    <path d="M90,0 A90,90 0 0 0 0,90 H90 V0 Z"></path>
+    <!-- Liten cirkel uppe höger -->
+    <circle cx="130" cy="40" r="20"></circle>
+    <!-- Liten cirkel nere vänster -->
+    <circle cx="30" cy="130" r="20"></circle>
+    <!-- Kvarts-cirkel nere höger -->
+    <path d="M90,180 A90,90 0 0 0 180,90 H90 V180 Z"></path>
+  </g>
+
+  <!-- Svensk kommentar: Textdel. Byt font-family om du vill matcha din sajt -->
+  <g fill="#0B0B0B">
+    <text x="230" y="105" font-family="Inter, system-ui, Arial, sans-serif" font-weight="800" font-size="96">Intenzze</text>
+    <text x="230" y="160" font-family="Inter, system-ui, Arial, sans-serif" font-weight="600" font-size="48">Web Development</text>
+  </g>
+</svg>
