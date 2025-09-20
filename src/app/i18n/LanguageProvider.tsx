@@ -9,7 +9,6 @@ const LanguageContext = createContext<Ctx | null>(null);
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>("sv");
 
-  // init from localStorage on mount to avoid SSR mismatch
   useEffect(() => {
     try {
       const saved = localStorage.getItem("lang");

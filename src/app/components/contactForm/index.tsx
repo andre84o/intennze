@@ -15,18 +15,17 @@ const ContactForm = () => {
     e.preventDefault();
     setStatus("sending");
     try {
-      // Svensk kommentar: Skicka FormData till vår API-route
       const form = e.currentTarget;
       const formData = new FormData(form);
 
       const res = await fetch("/api/contact", {
         method: "POST",
-        body: formData, // Svensk kommentar: Låt servern läsa FormData direkt
+        body: formData,
       });
 
       if (!res.ok) throw new Error("Request failed");
       setStatus("sent");
-      form.reset(); // Svensk kommentar: Nollställ formuläret efter lyckad sändning
+      form.reset();
     } catch {
       setStatus("error");
     }

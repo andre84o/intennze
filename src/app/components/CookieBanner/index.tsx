@@ -1,17 +1,8 @@
 "use client";
-
 import CookieConsent from "react-cookie-consent";
 import Link from "next/link";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
-
-/*
-  CookieBanner
-  - Svensk text
-  - Matchar sajtens färger (gradient accenter, rundade, glassy)
-  - Consent sparas i cookie 'intenzze-consent' i 180 dagar
-  - Knapparna ligger inne i samma ruta (box)
-*/
 
 export default function CookieBanner() {
   const { lang } = useLanguage();
