@@ -1,15 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
+import GalleryLightbox from "@/app/components/GalleryLightbox";
+
+const bilder = [
+  { src: "/images/Projekt1.png", alt: "Projekt 1" },
+  { src: "/images/prijekt2.png", alt: "Projekt 2" },
+  { src: "/images/projekt3.png", alt: "Projekt 3" },
+  { src: "/images/projekt4.png", alt: "Projekt 4" },
+];
 
 export default function AboutPage() {
   return (
     <>
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-white/85 via-white/40 to-transparent"
-          aria-hidden
-        />
-      </div>
       <main className="min-h-screen w-full">
         <section className="mx-auto max-w-7xl px-6 pt-24 md:pt-28">
           <div className="grid md:grid-cols-2 gap-10 items-center">
@@ -87,23 +89,12 @@ export default function AboutPage() {
         <section className="mx-auto max-w-7xl px-6 mt-14 md:mt-20">
           <h2 className="text-xl font-semibold">Bilder från vårt arbete</h2>
           <p className="mt-1 text-sm text-black/60">
-            Lägg gärna upp fler bilder i mappen <code>/public</code>, så kopplar
-            vi in dem här.
           </p>
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="relative aspect-[4/3] overflow-hidden rounded-lg border border-black/10 bg-white/70"
-              >
-                <div className="absolute inset-0 grid place-items-center text-black/40 text-sm">
-                  Plats för bild {i}
-                </div>
-              </div>
-            ))}
+          <div className="mt-6">
+            <GalleryLightbox images={bilder} />
           </div>
         </section>
-        <section className="mx-auto max-w-7xl px-6 mt-16 md:mt-24 mb-20">
+        <section className="mx-auto max-w-7xl px-6 mt-16 md:mt-24 pb-10">
           <div className="relative overflow-hidden rounded-2xl border border-black/10 bg-white/70 backdrop-blur">
             <div
               className="absolute inset-0 bg-gradient-to-r from-rose-100/60 via-white/0 to-fuchsia-100/60"
