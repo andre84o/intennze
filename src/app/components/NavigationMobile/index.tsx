@@ -1,4 +1,3 @@
-// Fil: app/components/NavigationMobile.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -8,8 +7,7 @@ import Hamburger from "hamburger-react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
 
-const ANIM_MS = 200; // used for timeouts only; Tailwind uses fixed duration-200 classes
-
+const ANIM_MS = 200; 
 const NavigationMobile = () => {
   const [isOpen, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -17,7 +15,6 @@ const NavigationMobile = () => {
   const closeTimer = useRef<number | null>(null);
   const { lang } = useLanguage();
 
-  // Svensk kommentar: Din befintliga öppna/stäng-logik
   const toggle = (val: boolean) => {
     if (val) {
       setMounted(true);
@@ -28,8 +25,6 @@ const NavigationMobile = () => {
       closeTimer.current = window.setTimeout(() => setMounted(false), ANIM_MS);
     }
   };
-
-  // ✅ Adapter som uppfyller Dispatch<SetStateAction<boolean>>
   const onHamburgerToggle: React.Dispatch<React.SetStateAction<boolean>> = (
     next
   ) => {
@@ -39,7 +34,6 @@ const NavigationMobile = () => {
 
   useEffect(() => {
     if (isOpen) toggle(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => {
@@ -67,7 +61,7 @@ const NavigationMobile = () => {
     <div className="md:hidden">
       <Hamburger
         toggled={isOpen}
-        toggle={onHamburgerToggle} // ✅ Rätt typ
+        toggle={onHamburgerToggle} 
         label={isOpen ? (lang === "sv" ? "Stäng meny" : "Close menu") : (lang === "sv" ? "Öppna meny" : "Open menu")}
         aria-controls="mobile-menu"
         aria-expanded={isOpen}
@@ -75,7 +69,6 @@ const NavigationMobile = () => {
 
       {mounted && (
         <>
-          {/* Backdrop overlay */}
           <button
             type="button"
             aria-label={lang === "sv" ? "Stäng meny" : "Close menu"}
@@ -84,8 +77,6 @@ const NavigationMobile = () => {
             }`}
             onClick={() => toggle(false)}
           />
-
-          {/* Slide-in drawer */}
           <div
             id="mobile-menu"
             role="dialog"
@@ -95,7 +86,6 @@ const NavigationMobile = () => {
               isOpen ? "translate-x-0" : "translate-x-full"
             }`}
           >
-            {/* Top gradient accent */}
             <div className="pointer-events-none h-1 w-full bg-gradient-to-r from-rose-500 to-fuchsia-500" aria-hidden />
 
             <nav className="flex h-full flex-col">
@@ -131,8 +121,6 @@ const NavigationMobile = () => {
                   );
                 })}
               </ul>
-
-              {/* CTA bottom */}
               <div className="px-4 pb-6 pt-2">
                 <Link
                   href="/kontakt"

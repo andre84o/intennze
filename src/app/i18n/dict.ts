@@ -6,7 +6,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_about: "Om oss",
     nav_contact: "Kontakt",
     nav_prices: "Priser",
-    // Contact page hero & copy
+    
     contact_page_hero_title: "Vi hjälper dig att hitta rätt väg",
     contact_page_hero_body:
       "och göra det enkelt att lyckas. Hör av dig så tar vi första steget tillsammans.",
@@ -18,7 +18,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     cta_body:
       "Vi hjälper dig prioritera rätt – struktur först, glitter sen. Snabbt, stabilt och snyggt.",
     cta_button: "Prata med oss",
-    // Cookie banner
+    
     cookie_title: "Vi använder cookies",
     cookie_body:
       "Vi använder nödvändiga cookies för att sidan ska fungera och valfria för att förbättra upplevelsen. Du kan ändra ditt val senare.",
@@ -28,7 +28,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     cookie_decline: "Avvisa",
     cookie_aria_accept: "Acceptera cookies",
     cookie_aria_decline: "Avvisa cookies",
-    // Contact form
+    
     contact_title: "Kontakta oss",
     contact_subtitle: "Vi återkommer så snart vi kan.",
     name_label: "Namn",
@@ -50,7 +50,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_about: "About us",
     nav_contact: "Contact",
     nav_prices: "Prices",
-    // Contact page hero & copy
+    
     contact_page_hero_title: "We help you find the right path",
     contact_page_hero_body:
       "and make it easy to succeed. Get in touch and we'll take the first step together.",
@@ -62,7 +62,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     cta_body:
       "We help you prioritize what matters — structure first, polish second. Fast, stable and beautiful.",
     cta_button: "Talk to us",
-    // Cookie banner
+    
     cookie_title: "We use cookies",
     cookie_body:
       "We use necessary cookies for core functionality and optional ones to improve your experience. You can change your choice later.",
@@ -72,7 +72,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     cookie_decline: "Decline",
     cookie_aria_accept: "Accept cookies",
     cookie_aria_decline: "Decline cookies",
-    // Contact form
+
     contact_title: "Contact us",
     contact_subtitle: "We will get back to you as soon as we can.",
     name_label: "Name",
