@@ -33,7 +33,7 @@ const NavigationMobile = () => {
 
   useEffect(() => {
     if (isOpen) toggle(false);
-  }, [pathname]);
+  }, [pathname, isOpen]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && toggle(false);

@@ -1,4 +1,3 @@
-"use client";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 

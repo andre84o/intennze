@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -52,10 +52,11 @@ export const metadata: Metadata = {
     images: ["/home-pic.jpg"],
     creator: "@intenzze",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#111827",
 };
 
