@@ -50,13 +50,13 @@ export default function Home() {
               </p>
               <div className="mt-8 flex flex-wrap gap-4 justify-center md:justify-start">
                 <a
-                  href="/contact"
+                  href="/kontakt"
                   className="inline-flex items-center rounded-full bg-rose-600 px-5 py-3 text-white text-sm font-medium shadow-sm hover:bg-rose-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
                 >
                   Boka ett möte
                 </a>
                 <a
-                  href="/about"
+                  href="/om-oss"
                   className="inline-flex items-center rounded-full border border-black/10 bg-white/70 px-5 py-3 text-sm font-medium backdrop-blur hover:bg-white/90"
                 >
                   Läs mer
@@ -176,7 +176,7 @@ export default function Home() {
               </div>
               <div className="flex justify-center md:justify-end">
                 <a
-                  href="/contact"
+                  href="/kontakt"
                   className="inline-flex items-center rounded-full bg-fuchsia-600 px-6 py-3 text-white text-sm font-medium shadow-sm hover:bg-fuchsia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-600"
                 >
                   Prata med oss
