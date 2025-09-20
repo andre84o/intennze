@@ -10,8 +10,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
+      // Prefer cookie so server and client stay in sync
+      const cookieMatch = document.cookie.match(/(?:^|; )lang=(sv|en)(?:;|$)/);
+      const fromCookie = cookieMatch?.[1];
       const saved = localStorage.getItem("lang");
-      if (saved === "sv" || saved === "en") setLang(saved);
+      const initial = (fromCookie === "sv" || fromCookie === "en") ? fromCookie : (saved === "sv" || saved === "en" ? saved : null);
+      if (initial) setLang(initial as Lang);
     } catch {}
   }, []);
 
@@ -21,6 +25,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     } catch {}
     if (typeof document !== "undefined") {
       document.documentElement.setAttribute("lang", lang);
+      // Set cookie accessible to server
+      const maxAge = 60 * 60 * 24 * 365; // 1 year
+      document.cookie = `lang=${lang}; path=/; max-age=${maxAge}`;
     }
   }, [lang]);
 

@@ -1,4 +1,22 @@
 "use client";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const c = await cookies();
+  const lang = c.get("lang")?.value === "en" ? "en" : "sv";
+  return lang === "en"
+    ? {
+        title: "Cookies",
+        description: "Information about the cookies used on intenzze.com.",
+        alternates: { canonical: "/cookies" },
+      }
+    : {
+        title: "Cookies",
+        description: "Information om cookies som används på intenzze.com.",
+        alternates: { canonical: "/cookies" },
+      };
+}
 export default function CookiesPage() {
   return (
     <main className="min-h-screen w-full">

@@ -78,6 +78,9 @@ export default function HomeContent() {
               alt="intenzze studio"
               fill
               priority
+              sizes="(min-width: 768px) 560px, 100vw"
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/..."
               className="object-cover"
               style={{
                 WebkitMaskImage:
