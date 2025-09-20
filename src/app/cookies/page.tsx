@@ -26,7 +26,7 @@ export default function CookiesPage() {
             </thead>
             <tbody>
               <tr className="border-t border-black/10">
-                <td className="px-4 py-3 font-mono">intennze-consent</td>
+                <td className="px-4 py-3 font-mono">intennze</td>
                 <td className="px-4 py-3">Sparar ditt val om cookies (acceptera/avvisa).</td>
                 <td className="px-4 py-3">180 dagar</td>
                 <td className="px-4 py-3">intennze.se</td>
@@ -38,7 +38,7 @@ export default function CookiesPage() {
         <h2 className="mt-8 text-xl font-semibold">Så hanterar du cookies</h2>
         <ul className="mt-3 list-disc pl-6 text-black/70">
           <li>Du kan radera cookies via din webbläsares inställningar.</li>
-          <li>Vill du ändra samtycke? Rensa cookien <code className="font-mono">intennze-consent</code> så visas bannern igen.</li>
+          <li>Vill du ändra samtycke? Rensa cookien <code className="font-mono">intennze</code> så visas bannern igen.</li>
           <li>Efter rensning laddar du om sidan.</li>
         </ul>
 
