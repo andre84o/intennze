@@ -35,7 +35,7 @@ body {
   #FCCBD1,
   #FFFFFF);
   background-size: 400% 400%;
-  animation: gradient 15s infinite;
+  animation: gradient 12s infinite;
 }
 @keyframes gradient {
   20%  { background-position: 0% 50%; }

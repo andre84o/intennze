@@ -3,8 +3,7 @@ import Image from "next/image";
 export default function Home() {
   return (
     <>
-      <div className="fixed inset-0 -z-10 pointer-events-none bag-shyne">
-        
+      <div className="fixed inset-0 -z-10 pointer-events-none">
         <div
           className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/30 to-transparent"
           aria-hidden
@@ -70,9 +69,9 @@ export default function Home() {
                 </a>
               </div>
             </div>
-            <div className="block hidden md:block relative mx-auto w-full max-w-[480px] aspect-square overflow-hidden rounded-lg shadow-sm">
+            <div className="block hidden md:block relative mx-auto w-full max-w-[560px] max-h-[410px] aspect-square overflow-hidden rounded-lg translate-y-1 translate-x-4">
               <Image
-                src="/home-pic.jpg"
+                src="/bg-intennze-t.jpg"
                 alt="Intennze studio"
                 fill
                 priority

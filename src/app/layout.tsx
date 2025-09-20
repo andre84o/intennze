@@ -28,7 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="sv" className="h-full">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full min-h-dvh flex flex-col`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full min-h-dvh flex flex-col bag-shyne`}
+      >
         <div className="relative z-10">
           <Header />
         </div>
