@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -55,7 +54,6 @@ export default function GalleryLightbox({ images, className, columns = 4 }: Prop
 
   return (
     <div className={className}>
-      {/* Grid */}
       <div className={colClass}>
         {images.map((b, i) => (
           <button
@@ -75,8 +73,6 @@ export default function GalleryLightbox({ images, className, columns = 4 }: Prop
           </button>
         ))}
       </div>
-
-      {/* Lightbox overlay */}
       {open && (
         <div
           role="dialog"
@@ -84,7 +80,6 @@ export default function GalleryLightbox({ images, className, columns = 4 }: Prop
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
           onClick={close}
         >
-          {/* Click stopper */}
           <div className="relative mx-auto max-w-6xl w-[92vw] h-[80vh]" onClick={(e) => e.stopPropagation()}>
             <Image
               src={images[index].src}
@@ -94,7 +89,6 @@ export default function GalleryLightbox({ images, className, columns = 4 }: Prop
               sizes="92vw"
               priority
             />
-            {/* Controls */}
             <div className="absolute inset-x-0 top-0 flex items-center justify-between p-2">
               <button
                 type="button"

@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";

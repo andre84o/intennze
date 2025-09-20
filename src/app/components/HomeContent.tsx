@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 

@@ -1,5 +1,4 @@
 "use client";
-
 import CookieConsent from "react-cookie-consent";
 import Link from "next/link";
 import { useLanguage } from "@/app/i18n/LanguageProvider";

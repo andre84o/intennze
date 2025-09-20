@@ -1,10 +1,9 @@
-// Svensk kommentar: Nodemailer kräver Node-runtime i Next.js
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
-// Svensk kommentar: Gmail SMTP-transport med App-lösenord
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -15,18 +14,16 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Svensk kommentar: Enkel e-postvalidering
+
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
 export async function POST(req: Request) {
   try {
-    // Svensk kommentar: Läs in FormData från klientens formulär
     const form = await req.formData();
     const name = String(form.get("name") || "").trim();
     const email = String(form.get("email") || "").trim();
     const message = String(form.get("message") || "").trim();
 
-    // Svensk kommentar: Fältkrav – ge specifik fel-info per fält
     if (!email || !isEmail(email)) {
       return NextResponse.json(
         { ok: false, field: "email", error: "Ogiltig e-postadress" },
@@ -46,7 +43,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Svensk kommentar: Miljövariabler måste finnas (säker fall-back)
     const to = process.env.CONTACT_TO;
     const from = process.env.FROM_EMAIL || process.env.GMAIL_USER || "";
     if (!to || !from) {
@@ -56,11 +52,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Svensk kommentar: Skicka mail till din inkorg
     const info = await transporter.sendMail({
-      from, // Viktigt: för Gmail bör detta matcha GMAIL_USER
-      to, // Din mottagaradress
-      replyTo: email, // Svar går direkt till kunden
+      from, 
+      to, 
+      replyTo: email, 
       subject: `Nytt kontaktmeddelande från ${name}`,
       text: `Namn: ${name}\nE-post: ${email}\n\nMeddelande:\n${message}`,
       html: `
@@ -73,10 +68,10 @@ export async function POST(req: Request) {
       `,
     });
 
-    // Svensk kommentar: Klientsvar vid lyckad sändning
+    
     return NextResponse.json({ ok: true, id: info.messageId });
   } catch (err) {
-    // Svensk kommentar: Logga internt, returnera generiskt fel externt
+  
     console.error(err);
     return NextResponse.json(
       { ok: false, error: "Mail send failed" },

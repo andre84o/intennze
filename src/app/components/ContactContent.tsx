@@ -1,5 +1,4 @@
 "use client";
-
 import ContactForm from "./contactForm";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
@@ -10,7 +9,6 @@ export default function ContactContent() {
 
   return (
     <main className="relative isolate flex-1">
-      {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-rose-50 to-white" aria-hidden />
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
