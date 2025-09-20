@@ -23,3 +23,27 @@ body {
 .animate-slide-in-left { animation: slide-in-left 900ms cubic-bezier(.22,.61,.36,1) both; }
 .animate-fade-in-up   { animation: fade-in-up   800ms cubic-bezier(.22,.61,.36,1) both; }
 
+
+.bag-shyne {
+  background: linear-gradient(45deg,#98ffba, #ff93ef, #dcffe8, #ffaddf, #cbffdd);
+  background-size: 300% 300%;
+  animation: gradient 6s infinite;
+}
+@keyframes gradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  70% { background-position: 0% 50%; }
+  100% { background-position: 0% 50%; }
+
+  
+}
+
+@keyframes slide-in-left {
+  0%   { transform: translateX(-500px); opacity: 0; }
+  100% { transform: translateX(0);     opacity: 1; }
+}
+@keyframes fade-in-up {
+  0%   { transform: translateY(500px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+
+}
