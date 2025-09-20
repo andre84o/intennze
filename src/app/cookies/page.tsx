@@ -42,7 +42,7 @@ export default function CookiesPage() {
           <li>Efter rensning laddar du om sidan.</li>
         </ul>
 
-        <p className="mt-8 text-xs text-black/60">Senast uppdaterad: 2025-09-20</p>
+        <p className="mt-8 pb-10 text-xs text-black/60">Senast uppdaterad: 2025-09-20</p>
       </section>
     </main>
   );
