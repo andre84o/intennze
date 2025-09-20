@@ -18,7 +18,7 @@ export default function Home() {
                   className="inline-block animate-slide-in-left will-change-transform"
                   style={{ animationDuration: "900ms" }}
                 >
-                  Intennze{" "}
+                  Intenzze{" "}
                 </span>
                 <span
                   className="block animate-fade-in-up will-change-transform font-extrabold bg-gradient-to-r from-rose-600 to-fuchsia-600 bg-clip-text text-transparent"
@@ -37,7 +37,7 @@ export default function Home() {
                   className="inline-block animate-slide-in-left will-change-transform"
                   style={{ animationDuration: "900ms" }}
                 >
-                  Intennze{" "}
+                  intenzze{" "}
                 </span>
                 <span
                   className="inline-block animate-fade-in-up will-change-transform font-extrabold bg-gradient-to-r from-rose-600 to-fuchsia-600 bg-clip-text text-transparent"
@@ -71,8 +71,8 @@ export default function Home() {
             </div>
             <div className="block hidden md:block relative mx-auto w-full max-w-[560px] max-h-[410px] aspect-square overflow-hidden rounded-lg translate-y-1 translate-x-4">
               <Image
-                src="/bg-intennze-t.jpg"
-                alt="Intennze studio"
+                src="/bg-intenzze-t.jpg"
+                alt="intenzze studio"
                 fill
                 priority
                 className="object-cover"

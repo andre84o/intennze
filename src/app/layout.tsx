@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "web development by intennze",
+  title: "web development by intenzze",
   description: "web utveckling, skreddarsytt websidor",
   icons: {
     icon: "/logoico-rosa.svg",

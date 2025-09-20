@@ -7,7 +7,7 @@ import Link from "next/link";
   CookieBanner
   - Svensk text
   - Matchar sajtens färger (gradient accenter, rundade, glassy)
-  - Consent sparas i cookie 'intennze-consent' i 180 dagar
+  - Consent sparas i cookie 'intenzze-consent' i 180 dagar
   - Knapparna ligger inne i samma ruta (box)
 */
 
@@ -15,7 +15,7 @@ export default function CookieBanner() {
   return (
     <CookieConsent
       location="bottom"
-      cookieName="intennze-consent"
+      cookieName="intenzze-consent"
       expires={180}
       disableStyles
       overlay={false}

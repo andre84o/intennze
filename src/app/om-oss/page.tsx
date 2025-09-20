@@ -20,7 +20,7 @@ export default function AboutPage() {
                 Om oss
               </h1>
               <p className="mt-5 text-lg text-black/70 max-w-prose">
-                Intennze bygger hemsidor som är snygga, snabba och lätta att
+                intenzze bygger hemsidor som är snygga, snabba och lätta att
                 använda.
               </p>
               <p className="mt-3 text-black/70 max-w-prose">
@@ -33,7 +33,7 @@ export default function AboutPage() {
             <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl shadow-sm">
               <Image
                 src="/aboutpage.jpg"
-                alt="Intennze studio"
+                alt="intenzze studio"
                 fill
                 className="object-cover"
                 priority
