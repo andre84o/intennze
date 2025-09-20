@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/app/components/Header";
 import CookieBanner from "@/app/components/CookieBanner";
-
+import { LanguageProvider } from "@/app/i18n/LanguageProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,29 +19,7 @@ export const metadata: Metadata = {
   title: "web development by intenzze",
   description: "web utveckling, skreddarsytt websidor",
   icons: {
-    icon: "/logo-favico-bild.svg",
-  },
-  openGraph: {
-    title: "web development by intenzze",
-    description: "web utveckling, skreddarsytt websidor",
-    url: "https://intenzze.se",
-    siteName: "intenzze",
-    images: [
-      {
-        url: "/logoico-rosa.png",
-        width: 1200,
-        height: 630,
-        alt: "intenzze preview",
-      },
-    ],
-    locale: "sv_SE",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "web development by intenzze",
-    description: "web utveckling, skreddarsytt websidor",
-    images: ["/logoico-rosa.png"],
+    icon: "/logoico-rosa.svg",
   },
 };
 
@@ -55,11 +33,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full min-h-dvh flex flex-col bag-shyne`}
       >
-        <div className="relative z-10">
-          <Header />
-        </div>
-        {children}
-        <CookieBanner />
+        <LanguageProvider>
+          <div className="relative z-10">
+            <Header />
+          </div>
+          {children}
+          <CookieBanner />
+        </LanguageProvider>
       </body>
     </html>
   );

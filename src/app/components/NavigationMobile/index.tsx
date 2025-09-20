@@ -5,12 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Hamburger from "hamburger-react";
-
-const items = [
-  { name: "Hem", href: "/" },
-  { name: "Om oss", href: "/om-oss" },
-  { name: "Kontakt", href: "/kontakt" },
-];
+import { useLanguage } from "@/app/i18n/LanguageProvider";
+import { dict } from "@/app/i18n/dict";
 
 const ANIM_MS = 200; // used for timeouts only; Tailwind uses fixed duration-200 classes
 
@@ -19,6 +15,7 @@ const NavigationMobile = () => {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const closeTimer = useRef<number | null>(null);
+  const { lang } = useLanguage();
 
   // Svensk kommentar: Din befintliga öppna/stäng-logik
   const toggle = (val: boolean) => {
@@ -59,12 +56,18 @@ const NavigationMobile = () => {
     };
   }, [isOpen]);
 
+  const items = [
+    { name: dict[lang].nav_home, href: "/" },
+    { name: dict[lang].nav_about, href: "/om-oss" },
+    { name: dict[lang].nav_contact, href: "/kontakt" },
+  ];
+
   return (
     <div className="md:hidden">
       <Hamburger
         toggled={isOpen}
         toggle={onHamburgerToggle} // ✅ Rätt typ
-        label={isOpen ? "Stäng meny" : "Öppna meny"}
+        label={isOpen ? (lang === "sv" ? "Stäng meny" : "Close menu") : (lang === "sv" ? "Öppna meny" : "Open menu")}
         aria-controls="mobile-menu"
         aria-expanded={isOpen}
       />
@@ -74,7 +77,7 @@ const NavigationMobile = () => {
           {/* Backdrop overlay */}
           <button
             type="button"
-            aria-label="Stäng meny"
+            aria-label={lang === "sv" ? "Stäng meny" : "Close menu"}
             className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-200 ${
               isOpen ? "opacity-100" : "opacity-0"
             }`}
@@ -86,7 +89,7 @@ const NavigationMobile = () => {
             id="mobile-menu"
             role="dialog"
             aria-modal="true"
-            aria-label="Mobilmeny"
+            aria-label={lang === "sv" ? "Mobilmeny" : "Mobile menu"}
             className={`fixed right-0 top-0 z-50 h-full w-[84%] max-w-sm border-l border-black/10 bg-white/90 backdrop-blur-xl shadow-xl transition-transform duration-200 ease-out ${
               isOpen ? "translate-x-0" : "translate-x-full"
             }`}
@@ -96,7 +99,7 @@ const NavigationMobile = () => {
 
             <nav className="flex h-full flex-col">
               <div className="px-5 py-4">
-                <p className="text-sm text-black/60">Meny</p>
+                <p className="text-sm text-black/60">{lang === "sv" ? "Meny" : "Menu"}</p>
               </div>
 
               <ul className="flex-1 space-y-1 px-2" role="menu">
@@ -134,7 +137,7 @@ const NavigationMobile = () => {
                   href="/kontakt"
                   className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-rose-600 to-fuchsia-600 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:from-rose-500 hover:to-fuchsia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-600"
                 >
-                  Boka möte
+                  {lang === "sv" ? "Boka möte" : "Book a meeting"}
                 </Link>
               </div>
             </nav>

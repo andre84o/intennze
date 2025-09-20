@@ -15,6 +15,7 @@
     "nodemailer": "^7.0.6",
     "react": "19.1.0",
     "react-cookie-consent": "^9.0.0",
+    "react-country-flag": "^3.1.0",
     "react-dom": "19.1.0",
     "resend": "^6.1.0"
   },
