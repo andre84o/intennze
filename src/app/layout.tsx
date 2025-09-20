@@ -23,15 +23,17 @@ export const metadata: Metadata = {
     default: "Web development by intenzze",
     template: "%s | intenzze",
   },
-  description: "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
+  description:
+    "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
   icons: {
-    icon: "/logoico-rosa.svg",
-    shortcut: "/logoico-rosa.svg",
+    icon: "/logoico-rosa.png",
+    shortcut: "/logoico-rosa.png",
     apple: "/logo.png",
   },
   openGraph: {
     title: "Web development by intenzze",
-    description: "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
+    description:
+      "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
     url: "https://intenzze.com",
     siteName: "intenzze",
     images: [
@@ -48,7 +50,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Web development by intenzze",
-    description: "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
+    description:
+      "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
     images: ["/home-pic.jpg"],
     creator: "@intenzze",
   },
@@ -65,7 +68,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Read language from cookie at SSR to sync <html lang>
   const cookieStore = await cookies();
   const lang = cookieStore.get("lang")?.value === "en" ? "en" : "sv";
   return (
@@ -80,7 +82,7 @@ export default async function RootLayout({
           {children}
           <CookieBanner />
         </LanguageProvider>
-        {/* Organization JSON-LD */}
+
         <Script id="ld-org" type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -90,6 +92,22 @@ export default async function RootLayout({
             logo: "https://intenzze.com/logo.png",
             sameAs: [],
           })}
+        </Script>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=G-EQ9TD4N13S`}
+          strategy="afterInteractive"
+        />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-EQ9TD4N13S"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-EQ9TD4N13S');
+          `}
         </Script>
       </body>
     </html>
