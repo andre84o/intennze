@@ -1,19 +1,10 @@
-// app/page.tsx
 import Image from "next/image";
 
 export default function Home() {
   return (
     <>
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <Image
-          src="/bg-intennze-ny.png"
-          alt=""
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-          aria-hidden
-        />
+      <div className="fixed inset-0 -z-10 pointer-events-none bag-shyne">
+        
         <div
           className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/30 to-transparent"
           aria-hidden
@@ -21,8 +12,8 @@ export default function Home() {
       </div>
       <main className="min-h-screen w-full">
         <section className="mx-auto max-w-7xl px-6 pt-24 md:pt-32">
-          <div className="grid md:grid-cols-2 gap-10 items-center -translate-y-12">
-            <div className="relative bag-shyne w-full aspect-square overflow-hidden md:hidden">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div className="relative w-full aspect-square overflow-hidden rounded-lg md:hidden shadow-sm">
               <h1 className="absolute inset-0 grid place-items-center px-6 text-center text-4xl font-semibold leading-tight">
                 <span
                   className="inline-block animate-slide-in-left will-change-transform"

@@ -25,14 +25,24 @@ body {
 
 
 .bag-shyne {
-  background: linear-gradient(45deg,#FFF8F8, #F9B1B9, #FFF8F8, #F9B1B9, #FFF8F8, #F9A9B4);
-  background-size: 300% 300%;
-  animation: gradient 6s infinite;
+  background: linear-gradient(45deg,
+  #F56476,
+  #F67585,
+  #FBBAC2,
+  #F78694,
+  #F898A4,
+  #F9A9B3,
+  #FCCBD1,
+  #FFFFFF);
+  background-size: 400% 400%;
+  animation: gradient 15s infinite;
 }
 @keyframes gradient {
+  20%  { background-position: 0% 50%; }
+  70%  { background-position: 0% 50%; }
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
-  70% { background-position: 0% 50%; }
+  70%  { background-position: 0% 50%; }
   100% { background-position: 0% 50%; }
 
   
