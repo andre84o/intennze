@@ -5,7 +5,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/app/components/Header";
 import CookieBanner from "@/app/components/CookieBanner";
-import { LanguageProvider } from "@/app/i18n/LanguageProvider"; //
+import { LanguageProvider } from "@/app/i18n/LanguageProvider";
+import GAListener from "./components/GAListener";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -94,10 +95,6 @@ export default async function RootLayout({
           })}
         </Script>
         <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=G-EQ9TD4N13S`}
-          strategy="afterInteractive"
-        />
-        <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-EQ9TD4N13S"
           strategy="afterInteractive"
         />
@@ -109,6 +106,8 @@ export default async function RootLayout({
             gtag('config', 'G-EQ9TD4N13S');
           `}
         </Script>
+        {/* Track client-side route changes */}
+        <GAListener />
       </body>
     </html>
   );
