@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: "web development by intenzze",
   description: "web utveckling, skreddarsytt websidor",
   icons: {
-    icon: "/logoico-rosa.svg",
+    icon: "/logo-favico-bild.svg",
   },
 };
 
