@@ -22,3 +22,4 @@ body {
 
 .animate-slide-in-left { animation: slide-in-left 900ms cubic-bezier(.22,.61,.36,1) both; }
 .animate-fade-in-up   { animation: fade-in-up   800ms cubic-bezier(.22,.61,.36,1) both; }
+

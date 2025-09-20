@@ -1,5 +1,5 @@
-import Logo from "@/app/componenets/Logo";
-import Navigation from "@/app/componenets/Navigation";
+import Logo from "@/app/components/Logo";
+import Navigation from "@/app/components/Navigation";
 
 const Header = () => {
     return (
