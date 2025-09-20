@@ -3,13 +3,7 @@ import Image from "next/image";
 export default function Home() {
   return (
     <>
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/30 to-transparent"
-          aria-hidden
-        />
-      </div>
-      <main className="min-h-screen w-full">
+      <main className="min-h-screen w-full flex flex-col">
         <section className="mx-auto max-w-7xl px-6 pt-24 md:pt-32">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div className="relative w-full aspect-square overflow-hidden rounded-lg md:hidden shadow-sm">
@@ -164,13 +158,13 @@ export default function Home() {
             </div>
           </div>
         </section>
-        <section className="mx-auto max-w-7xl px-6 mt-16 md:mt-24 mb-20 pb-10">
+        <section className="mx-auto max-w-7xl px-6 mt-11 md:mt-24 pb-10">
           <div className="relative overflow-hidden rounded-2xl border border-black/10 bg-white/70 backdrop-blur">
             <div
               className="absolute inset-0 bg-gradient-to-r from-rose-100/60 via-white/0 to-fuchsia-100/60"
               aria-hidden
             />
-            <div className="relative p-8 md:p-12 text-center md:text-left grid md:grid-cols-2 gap-6 items-center">
+            <div className="relative p-8 md:p-12 text-center md:text-left grid md:grid-cols-2 gap-6 items-center§">
               <div>
                 <h2 className="text-2xl md:text-3xl font-semibold">
                   Låt oss ta din webb till nästa nivå

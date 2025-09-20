@@ -4,15 +4,19 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100vh;
+}
 
 body {
   background: white;
   color: black;
   font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
 }
 
 @keyframes slide-in-left {
-  0%   { transform: translateX(-500px); opacity: 0; }
+  0%   { transform: translateX(-800px); opacity: 0; }
   100% { transform: translateX(0);     opacity: 1; }
 }
 @keyframes fade-in-up {
