@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export default function CookiesPage() {
   return (
     <main className="min-h-screen w-full">
@@ -36,6 +34,7 @@ export default function CookiesPage() {
         </div>
 
         <h2 className="mt-8 text-xl font-semibold">Så hanterar du cookies</h2>
+        <h3 className="mt-3 text-base font-semibold">Radera eller ändra samtycke</h3>
         <ul className="mt-3 list-disc pl-6 text-black/70">
           <li>Du kan radera cookies via din webbläsares inställningar.</li>
           <li>Vill du ändra samtycke? Rensa cookien <code className="font-mono">intenzze</code> så visas bannern igen.</li>

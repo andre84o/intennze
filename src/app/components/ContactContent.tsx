@@ -23,19 +23,26 @@ export default function ContactContent() {
                 {t.contact_page_hero_body}
               </p>
 
-              <ul className="mt-6 space-y-3 text-black/80">
+              <h2 className="mt-6 text-xl font-semibold text-black">{lang === "sv" ? "Vad vi gör nu" : "What we do next"}</h2>
+              <ul className="mt-3 space-y-3 text-black/80">
                 <li className="flex items-start gap-3">
                   <span className="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-rose-100 text-rose-600">✓</span>
-                  <span className="text-base">{t.contact_bullet_1}</span>
+                  <div>
+                    <h3 className="text-base font-semibold">{t.contact_bullet_1}</h3>
+                  </div>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-fuchsia-100 text-fuchsia-600">✓</span>
-                  <span className="text-base">{t.contact_bullet_2}</span>
+                  <div>
+                    <h3 className="text-base font-semibold">{t.contact_bullet_2}</h3>
+                  </div>
                 </li>
               </ul>
 
               <div className="mt-6 rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-black/70 shadow-sm backdrop-blur">
-                {t.contact_note}
+                <h2 className="text-base font-semibold text-black">{lang === "sv" ? "Offert" : "Quote"}</h2>
+                <h3 className="mt-1 text-sm font-semibold text-black/80">{lang === "sv" ? "Gratis och anpassad" : "Free and tailored"}</h3>
+                <p className="mt-2">{t.contact_note}</p>
               </div>
             </div>
 

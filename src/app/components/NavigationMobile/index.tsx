@@ -59,6 +59,7 @@ const NavigationMobile = () => {
   const items = [
     { name: dict[lang].nav_home, href: "/" },
     { name: dict[lang].nav_about, href: "/om-oss" },
+    { name: dict[lang].nav_prices, href: "/priser" },
     { name: dict[lang].nav_contact, href: "/kontakt" },
   ];
 

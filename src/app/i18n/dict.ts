@@ -5,6 +5,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_home: "Hem",
     nav_about: "Om oss",
     nav_contact: "Kontakt",
+    nav_prices: "Priser",
     // Contact page hero & copy
     contact_page_hero_title: "Vi hjälper dig att hitta rätt väg",
     contact_page_hero_body:
@@ -48,6 +49,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_home: "Home",
     nav_about: "About us",
     nav_contact: "Contact",
+    nav_prices: "Prices",
     // Contact page hero & copy
     contact_page_hero_title: "We help you find the right path",
     contact_page_hero_body:
