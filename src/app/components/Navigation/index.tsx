@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { name: "Home", href: "/" },
-  { name: "About", href: "/about" },
-  { name: "Contact", href: "/contact" },
+  { name: "Hem", href: "/" },
+  { name: "Om oss", href: "/om-oss" },
+  { name: "Kontakt", href: "/kontakt" },
 ];
 
 export default function Navigation() {
