@@ -20,8 +20,8 @@ export default function Home() {
       </div>
       <main className="min-h-screen w-full">
         <section className="mx-auto max-w-7xl px-6 pt-24 md:pt-32">
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div className="relative bag-shyne w-full aspect-square overflow-hidden rounded-lg md:hidden">
+          <div className="grid md:grid-cols-2 gap-10 items-center -translate-y-12">
+            <div className="relative bag-shyne w-full aspect-square overflow-hidden md:hidden">
               <h1 className="absolute inset-0 grid place-items-center px-6 text-center text-4xl font-semibold leading-tight">
                 <span
                   className="inline-block animate-slide-in-left will-change-transform"

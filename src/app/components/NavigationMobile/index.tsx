@@ -6,7 +6,9 @@ import Hamburger from "hamburger-react";
 const NavigationMobile = () => {
     const [isOpen, setOpen] = useState(false);
     return (
+        <div className="md:hidden">
         <Hamburger toggled={isOpen} toggle={setOpen} />
+        </div>
     )
 }
 

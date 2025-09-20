@@ -25,7 +25,7 @@ body {
 
 
 .bag-shyne {
-  background: linear-gradient(45deg,#98ffba, #ff93ef, #dcffe8, #ffaddf, #cbffdd);
+  background: linear-gradient(45deg,#FFF8F8, #F9B1B9, #FFF8F8, #F9B1B9, #FFF8F8, #F9A9B4);
   background-size: 300% 300%;
   animation: gradient 6s infinite;
 }
