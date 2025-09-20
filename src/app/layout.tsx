@@ -16,10 +16,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://intenzze.com"),
   title: "web development by intenzze",
   description: "web utveckling, skreddarsytt websidor",
   icons: {
     icon: "/logoico-rosa.png",
+  },
+  openGraph: {
+    title: "web development by intenzze",
+    description: "web utveckling, skreddarsytt websidor",
+    url: "https://intenzze.com",
+    siteName: "intenzze",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "intenzze preview",
+      },
+    ],
+    locale: "sv_SE",
+    type: "website",
   },
 };
 

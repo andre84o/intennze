@@ -7,6 +7,23 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_contact: "Kontakt",
     nav_prices: "Priser",
     
+    // Pricing
+    pricing_title: "Priser",
+    pricing_toggle_onetime: "Hemsida",
+    pricing_toggle_monthly: "Månad",
+    pricing_notice_prefix: "*Obs:",
+    pricing_notice_text:
+      "Texter och bilder ingår inte om det inte anges. Innehåll och extra funktioner köps som tillval. Domän och webbhotell ingår inte. SSL-certifikat hanteras av ditt webbhotell eller leverantör. Alla priser exkl. moms.",
+    pricing_package_label: "Komplett paket",
+    pricing_monthly_label: "Månadspris",
+    pricing_onetime_label: "Engångskostnad",
+    pricing_cta_onetime: "Beställ",
+    pricing_cta_monthly: "Välj",
+    tier_name_budget: "Hemsida Budget",
+    tier_name_small: "Hemsida Liten",
+    tier_name_medium: "Hemsida Mellan",
+    tier_name_large: "Hemsida Stor",
+    
     contact_page_hero_title: "Vi hjälper dig att hitta rätt väg",
     contact_page_hero_body:
       "och göra det enkelt att lyckas. Hör av dig så tar vi första steget tillsammans.",
@@ -50,6 +67,23 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_about: "About us",
     nav_contact: "Contact",
     nav_prices: "Prices",
+    
+    // Pricing
+    pricing_title: "Prices",
+    pricing_toggle_onetime: "One-time",
+    pricing_toggle_monthly: "Monthly",
+    pricing_notice_prefix: "*Note:",
+    pricing_notice_text:
+      "Texts and images are not included unless stated. Content and extra features are purchased as add-ons. Domain and web hosting are not included. SSL certificates are handled by your web host or provider. All prices excl. VAT.",
+    pricing_package_label: "Complete package",
+    pricing_monthly_label: "Monthly price",
+    pricing_onetime_label: "One-time cost",
+    pricing_cta_onetime: "Order",
+    pricing_cta_monthly: "Choose",
+    tier_name_budget: "Website Budget",
+    tier_name_small: "Website Small",
+    tier_name_medium: "Website Medium",
+    tier_name_large: "Website Large",
     
     contact_page_hero_title: "We help you find the right path",
     contact_page_hero_body:
