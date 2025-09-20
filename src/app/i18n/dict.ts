@@ -5,6 +5,14 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_home: "Hem",
     nav_about: "Om oss",
     nav_contact: "Kontakt",
+    // Contact page hero & copy
+    contact_page_hero_title: "Vi hjälper dig att hitta rätt väg",
+    contact_page_hero_body:
+      "och göra det enkelt att lyckas. Hör av dig så tar vi första steget tillsammans.",
+    contact_bullet_1: "Boka möte med våra experter",
+    contact_bullet_2: "Gör en nulägesanalys.",
+    contact_note:
+      "Har du särskilda önskemål som inte täcks av våra paket? Hör av dig, vi lämnar gärna en gratis offert anpassad efter dina behov.",
     cta_title: "Låt oss ta din webb till nästa nivå",
     cta_body:
       "Vi hjälper dig prioritera rätt – struktur först, glitter sen. Snabbt, stabilt och snyggt.",
@@ -40,6 +48,14 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_home: "Home",
     nav_about: "About us",
     nav_contact: "Contact",
+    // Contact page hero & copy
+    contact_page_hero_title: "We help you find the right path",
+    contact_page_hero_body:
+      "and make it easy to succeed. Get in touch and we'll take the first step together.",
+    contact_bullet_1: "Book a meeting with our experts",
+    contact_bullet_2: "Do a current state analysis.",
+    contact_note:
+      "Do you have specific needs not covered by our packages? Get in touch; we'll gladly provide a free quote tailored to your needs.",
     cta_title: "Let’s take your website to the next level",
     cta_body:
       "We help you prioritize what matters — structure first, polish second. Fast, stable and beautiful.",
