@@ -1,7 +1,12 @@
 "use client";
 import { useState } from "react";
 
-const ContactForm = () => {
+type Props = {
+  initialMessage?: string;
+  onSent?: () => void;
+};
+
+const ContactForm = ({ initialMessage, onSent }: Props) => {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
   );
@@ -20,7 +25,8 @@ const ContactForm = () => {
 
       if (!res.ok) throw new Error("Request failed");
       setStatus("sent");
-      form.reset(); 
+      form.reset();
+      if (onSent) onSent();
     } catch {
       setStatus("error");
     }
@@ -108,6 +114,7 @@ const ContactForm = () => {
             rows={5}
             className="mt-1 w-full rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-black placeholder-black/40 shadow-inner outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200"
             placeholder="Berätta kort vad du behöver hjälp med"
+            defaultValue={initialMessage}
           />
         </div>
 

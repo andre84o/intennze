@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     const form = await req.formData();
     const name = String(form.get("name") || "").trim();
     const email = String(form.get("email") || "").trim();
+    const phone = String(form.get("phone") || "").trim();
     const message = String(form.get("message") || "").trim();
 
     if (!email || !isEmail(email)) {
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
     if (!name) {
       return NextResponse.json(
         { ok: false, field: "name", error: "Fyll i ditt namn" },
+        { status: 400 }
+      );
+    }
+    if (!phone) {
+      return NextResponse.json(
+        { ok: false, field: "phone", error: "Fyll i ditt telefonnummer" },
         { status: 400 }
       );
     }
@@ -57,12 +64,14 @@ export async function POST(req: Request) {
       to, 
       replyTo: email, 
       subject: `Nytt kontaktmeddelande från ${name}`,
-      text: `Namn: ${name}\nE-post: ${email}\n\nMeddelande:\n${message}`,
+      text: `Namn: ${name}\nE-post: ${email}\nTelefon: ${phone}\n\nMeddelande:\n${message}`,
       html: `
         <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">
           <h2 style="margin:0 0 8px">Nytt kontaktmeddelande</h2>
           <p><strong>Namn:</strong> ${name}</p>
           <p><strong>E-post:</strong> ${email}</p>
+          <p><strong>Telefon:</strong> ${phone}</p>
+          <p><strong>Meddelande:</strong></p>
           <p style="white-space:pre-line">${message}</p>
         </div>
       `,

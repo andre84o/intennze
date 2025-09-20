@@ -22,6 +22,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     tier_name_small: "Hemsida Liten",
     tier_name_medium: "Hemsida Mellan",
     tier_name_large: "Hemsida Stor",
+  pricing_prefill_template: "Jag är intresserad av {product} {price}, kontakta mig",
     
     contact_page_hero_title: "Vi hjälper dig att hitta rätt väg",
     contact_page_hero_body:
@@ -82,6 +83,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     tier_name_small: "Website Small",
     tier_name_medium: "Website Medium",
     tier_name_large: "Website Large",
+  pricing_prefill_template: "I'm interested in {product} {price}, please contact me",
     
     contact_page_hero_title: "We help you find the right path",
     contact_page_hero_body:

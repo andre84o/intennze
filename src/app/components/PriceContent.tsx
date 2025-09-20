@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
+import ContactForm from "./contactForm";
 
 type Tier = {
   id: string;
@@ -13,7 +14,7 @@ type Tier = {
   cta: string;
 };
 
-function TierCard({ tier, packageLabel, priceLabel }: { tier: Tier; packageLabel: string; priceLabel: string }) {
+function TierCard({ tier, packageLabel, priceLabel, onSelect }: { tier: Tier; packageLabel: string; priceLabel: string; onSelect: (tier: Tier) => void }) {
 	const colorMap: Record<Tier["color"], string> = {
 		rose: "bg-rose-600",
 		violet: "bg-violet-600",
@@ -50,14 +51,15 @@ function TierCard({ tier, packageLabel, priceLabel }: { tier: Tier; packageLabel
 				))}
 			</ul>
 
-			<div className="px-6 pb-6">
-				<a
-					href="/kontakt"
-					className={`inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium text-white ${colorMap[tier.color]} shadow-sm hover:opacity-95`}
-				>
-					{tier.cta}
-				</a>
-			</div>
+      <div className="px-6 pb-6">
+        <button
+          type="button"
+          onClick={() => onSelect(tier)}
+          className={`inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium text-white ${colorMap[tier.color]} shadow-sm hover:opacity-95`}
+        >
+          {tier.cta}
+        </button>
+      </div>
 		</div>
 	);
 }
@@ -66,373 +68,386 @@ export default function PriceContent() {
   const { lang } = useLanguage();
   const t = (k: string) => dict[lang][k];
   const [mode, setMode] = useState<"hemsida" | "manad">("hemsida");
+  const [open, setOpen] = useState(false);
+  const [prefill, setPrefill] = useState<string>("");
+
+  const makePrefill = (product: string, price: string) => {
+    const tpl = dict[lang]["pricing_prefill_template"];
+    return tpl.replace("{product}", product).replace("{price}", price);
+  };
 
   // Build tiers per language
-  const oneTimeTiers: Tier[] = lang === "sv" ? [
-    {
-      id: "budget",
-      name: t("tier_name_budget"),
-      price: "2 000 kr",
-      color: "amber",
-      features: [
-        "Beskrivning: Kom igång billigt",
-        "Undersidor: 1 undersida (ram och layout)",
-        "Design: Enkel, ren design (en färgpalett och typsnitt)",
-        "Innehållstexter: Platshållartexter",
-        "Bilder: Platshållarbilder",
-        "Sociala medier",
-        "Revisionsrundor: 1 samlad Online",
-        "Förhandsvisning: Online",
-        "Ändringar efter önskemål",
-        "Publicering och genomgång",
-      ],
-      cta: t("pricing_cta_onetime"),
-    },
-    {
-      id: "liten",
-      name: t("tier_name_small"),
-      price: "5 000 kr",
-      color: "rose",
-      features: [
-        "Undersidor: 1–3",
-        "Anpassad design",
-        "Modern webbutveckling",
-        "Responsiv design",
-        "Inläggning av dina texter",
-        "Bildhjälp upp till 6 royaltyfria bilder",
-        "1 kontaktformulär",
-        "Google Maps",
-        "Grundläggande SEO",
-        "Koppling till sociala medier: 2 kanaler",
-        "Revisionsrundor: 2 rundor",
-        "Ändringar efter önskemål",
-        "Publicering och genomgång: 30 min",
-        "Personlig kontakt",
-      ],
-      cta: t("pricing_cta_onetime"),
-    },
-    {
-      id: "mellan",
-      name: t("tier_name_medium"),
-      price: "7 000 kr",
-      color: "indigo",
-      features: [
-        "Undersidor: 4–7",
-        "Anpassad design",
-        "Modern webbutveckling",
-        "Responsiv design",
-        "Inläggning av dina texter",
-        "Bildhjälp upp till 10 bilder",
-        "Upp till 2 kontaktformulär",
-        "Google Maps",
-        "SEO genomgång för alla sidor",
-        "Koppling till sociala medier",
-        "Blogg, inlägg, nyheter",
-        "Revisionsrundor: 3 rundor",
-        "Ändringar efter önskemål",
-        "Publicering och genomgång: 45 min",
-        "Personlig kontakt",
-      ],
-      cta: t("pricing_cta_onetime"),
-    },
-    {
-      id: "stor",
-      name: t("tier_name_large"),
-      price: "10 000 kr",
-      color: "emerald",
-      features: [
-        "Undersidor: 8–15",
-        "Anpassad design",
-        "Modern webbutveckling",
-        "Responsiv design",
-        "Inläggning av dina texter",
-        "Bildhjälp upp till 15 bilder",
-        "Upp till 3 kontaktformulär",
-        "Google Maps",
-        "Blogg, inlägg, nyheter",
-        "Utökad SEO (struktur, internlänkar, delningsbilder)",
-        "Koppling till sociala medier",
-        "Revisionsrundor: 4 rundor",
-        "Ändringar efter önskemål",
-        "Publicering och genomgång: 60 min",
-        "Personlig kontakt",
-      ],
-      cta: t("pricing_cta_onetime"),
-    },
-  ] : [
-    {
-      id: "budget",
-      name: t("tier_name_budget"),
-      price: "2 000 kr",
-      color: "amber",
-      features: [
-        "Description: Get started affordably",
-        "Subpages: 1 subpage (frame and layout)",
-        "Design: Simple, clean design (one color palette and font)",
-        "Content: Placeholder texts",
-        "Images: Placeholder images",
-        "Social media",
-        "Revision rounds: 1 consolidated online",
-        "Preview: Online",
-        "Changes on request",
-        "Publishing and walkthrough",
-      ],
-      cta: t("pricing_cta_onetime"),
-    },
-    {
-      id: "liten",
-      name: t("tier_name_small"),
-      price: "5 000 kr",
-      color: "rose",
-      features: [
-        "Subpages: 1–3",
-        "Custom design",
-        "Modern web development",
-        "Responsive design",
-        "Input of your texts",
-        "Image assistance up to 6 royalty-free images",
-        "1 contact form",
-        "Google Maps",
-        "Basic SEO",
-        "Social media linking: 2 channels",
-        "Revision rounds: 2 rounds",
-        "Changes on request",
-        "Publishing and walkthrough: 30 min",
-        "Personal contact",
-      ],
-      cta: t("pricing_cta_onetime"),
-    },
-    {
-      id: "mellan",
-      name: t("tier_name_medium"),
-      price: "7 000 kr",
-      color: "indigo",
-      features: [
-        "Subpages: 4–7",
-        "Custom design",
-        "Modern web development",
-        "Responsive design",
-        "Input of your texts",
-        "Image assistance up to 10 images",
-        "Up to 2 contact forms",
-        "Google Maps",
-        "SEO review for all pages",
-        "Social media linking",
-        "Blog, posts, news",
-        "Revision rounds: 3 rounds",
-        "Changes on request",
-        "Publishing and walkthrough: 45 min",
-        "Personal contact",
-      ],
-      cta: t("pricing_cta_onetime"),
-    },
-    {
-      id: "stor",
-      name: t("tier_name_large"),
-      price: "10 000 kr",
-      color: "emerald",
-      features: [
-        "Subpages: 8–15",
-        "Custom design",
-        "Modern web development",
-        "Responsive design",
-        "Input of your texts",
-        "Image assistance up to 15 images",
-        "Up to 3 contact forms",
-        "Google Maps",
-        "Blog, posts, news",
-        "Extended SEO (structure, internal links, share images)",
-        "Social media linking",
-        "Revision rounds: 4 rounds",
-        "Changes on request",
-        "Publishing and walkthrough: 60 min",
-        "Personal contact",
-      ],
-      cta: t("pricing_cta_onetime"),
-    },
-  ];
+  const oneTimeTiers: Tier[] =
+    lang === "sv"
+      ? [
+          {
+            id: "budget",
+            name: t("tier_name_budget"),
+            price: "2 000 kr",
+            color: "amber",
+            features: [
+              "Beskrivning: Kom igång billigt",
+              "Undersidor: 1 undersida (ram och layout)",
+              "Design: Enkel, ren design (en färgpalett och typsnitt)",
+              "Innehållstexter: Platshållartexter",
+              "Bilder: Platshållarbilder",
+              "Sociala medier",
+              "Revisionsrundor: 1 samlad Online",
+              "Förhandsvisning: Online",
+              "Ändringar efter önskemål",
+              "Publicering och genomgång",
+            ],
+            cta: t("pricing_cta_onetime"),
+          },
+          {
+            id: "liten",
+            name: t("tier_name_small"),
+            price: "5 000 kr",
+            color: "rose",
+            features: [
+              "Undersidor: 1–3",
+              "Anpassad design",
+              "Modern webbutveckling",
+              "Responsiv design",
+              "Inläggning av dina texter",
+              "Bildhjälp upp till 6 royaltyfria bilder",
+              "1 kontaktformulär",
+              "Google Maps",
+              "SEO Grundläggande",
+              "Koppling till sociala medier: 2 kanaler",
+              "Revisionsrundor: 2 rundor",
+              "Ändringar efter önskemål",
+              "Publicering och genomgång: 30 min",
+              "Personlig kontakt",
+            ],
+            cta: t("pricing_cta_onetime"),
+          },
+          {
+            id: "mellan",
+            name: t("tier_name_medium"),
+            price: "7 000 kr",
+            color: "indigo",
+            features: [
+              "Undersidor: 4–7",
+              "Anpassad design",
+              "Modern webbutveckling",
+              "Responsiv design",
+              "Inläggning av dina texter",
+              "Bildhjälp upp till 10 bilder",
+              "Upp till 2 kontaktformulär",
+              "Google Maps",
+              "Blogg, inlägg, nyheter",
+              "SEO genomgång för alla sidor",
+              "Koppling till sociala medier",
+              "Revisionsrundor: 3 rundor",
+              "Ändringar efter önskemål",
+              "Publicering och genomgång: 45 min",
+              "Personlig kontakt",
+            ],
+            cta: t("pricing_cta_onetime"),
+          },
+          {
+            id: "stor",
+            name: t("tier_name_large"),
+            price: "10 000 kr",
+            color: "emerald",
+            features: [
+              "Undersidor: 8–15",
+              "Anpassad design",
+              "Modern webbutveckling",
+              "Responsiv design",
+              "Inläggning av dina texter",
+              "Bildhjälp upp till 15 bilder",
+              "Upp till 3 kontaktformulär",
+              "Google Maps",
+              "Blogg, inlägg, nyheter",
+              "SEO Utökad (struktur, internlänkar, delningsbilder)",
+              "Koppling till sociala medier",
+              "Revisionsrundor: 4 rundor",
+              "Ändringar efter önskemål",
+              "Publicering och genomgång: 60 min",
+              "Personlig kontakt",
+            ],
+            cta: t("pricing_cta_onetime"),
+          },
+        ]
+      : [
+          {
+            id: "budget",
+            name: t("tier_name_budget"),
+            price: "2 000 kr",
+            color: "amber",
+            features: [
+              "Description: Get started affordably",
+              "Subpages: 1 subpage (frame and layout)",
+              "Design: Simple, clean design (one color palette and font)",
+              "Content: Placeholder texts",
+              "Images: Placeholder images",
+              "Social media",
+              "Revision rounds: 1 consolidated online",
+              "Preview: Online",
+              "Changes on request",
+              "Publishing and walkthrough",
+            ],
+            cta: t("pricing_cta_onetime"),
+          },
+          {
+            id: "liten",
+            name: t("tier_name_small"),
+            price: "5 000 kr",
+            color: "rose",
+            features: [
+              "Subpages: 1–3",
+              "Custom design",
+              "Modern web development",
+              "Responsive design",
+              "Input of your texts",
+              "Image assistance up to 6 royalty-free images",
+              "1 contact form",
+              "Google Maps",
+              "SEO Basic",
+              "Social media linking: 2 channels",
+              "Revision rounds: 2 rounds",
+              "Changes on request",
+              "Publishing and walkthrough: 30 min",
+              "Personal contact",
+            ],
+            cta: t("pricing_cta_onetime"),
+          },
+          {
+            id: "mellan",
+            name: t("tier_name_medium"),
+            price: "7 000 kr",
+            color: "indigo",
+            features: [
+              "Subpages: 4–7",
+              "Custom design",
+              "Modern web development",
+              "Responsive design",
+              "Input of your texts",
+              "Image assistance up to 10 images",
+              "Up to 2 contact forms",
+              "Google Maps",
+              "SEO review for all pages",
+              "Social media linking",
+              "Blog, posts, news",
+              "Revision rounds: 3 rounds",
+              "Changes on request",
+              "Publishing and walkthrough: 45 min",
+              "Personal contact",
+            ],
+            cta: t("pricing_cta_onetime"),
+          },
+          {
+            id: "stor",
+            name: t("tier_name_large"),
+            price: "10 000 kr",
+            color: "emerald",
+            features: [
+              "Subpages: 8–15",
+              "Custom design",
+              "Modern web development",
+              "Responsive design",
+              "Input of your texts",
+              "Image assistance up to 15 images",
+              "Up to 3 contact forms",
+              "Google Maps",
+              "Blog, posts, news",
+              "SEO Extended (structure, internal links, share images)",
+              "Social media linking",
+              "Revision rounds: 4 rounds",
+              "Changes on request",
+              "Publishing and walkthrough: 60 min",
+              "Personal contact",
+            ],
+            cta: t("pricing_cta_onetime"),
+          },
+        ];
 
-  const monthlyTiers: Tier[] = lang === "sv" ? [
-    {
-      id: "liten-m",
-      name: t("tier_name_small"),
-      price: "795 kr",
-      period: "/mån",
-      color: "rose",
-      features: [
-        "Bindningstid: 12 månader",
-        "Startkostnad: Ingen",
-        "Webbhotell",
-        // Mirror one-time 'liten'
-        "Undersidor: 1–3",
-        "Anpassad design",
-        "Modern webbutveckling",
-        "Responsiv design",
-        "Inläggning av dina texter",
-        "Bildhjälp upp till 6 royaltyfria bilder",
-        "1 kontaktformulär",
-        "Google Maps",
-        "Grundläggande SEO",
-        "Koppling till sociala medier: 2 kanaler",
-        "Revisionsrundor: 2 rundor",
-        "Ändringar efter önskemål",
-        "Publicering och genomgång: 30 min",
-        "Personlig kontakt",
-        "Serviceavtal",
-      ],
-      cta: t("pricing_cta_monthly"),
-    },
-    {
-      id: "mellan-m",
-      name: t("tier_name_medium"),
-      price: "995 kr",
-      period: "/mån",
-      color: "indigo",
-      features: [
-        "Bindningstid: 12 månader",
-        "Startkostnad: Ingen",
-        "Webbhotell",
-        // Mirror one-time 'mellan'
-        "Undersidor: 4–7",
-        "Anpassad design",
-        "Modern webbutveckling",
-        "Responsiv design",
-        "Inläggning av dina texter",
-        "Bildhjälp upp till 10 bilder",
-        "Upp till 2 kontaktformulär",
-        "Google Maps",
-        "SEO genomgång för alla sidor",
-        "Koppling till sociala medier",
-        "Blogg, inlägg, nyheter",
-        "Revisionsrundor: 3 rundor",
-        "Ändringar efter önskemål",
-        "Publicering och genomgång: 45 min",
-        "Personlig kontakt",
-        "Serviceavtal",
-      ],
-      cta: t("pricing_cta_monthly"),
-    },
-    {
-      id: "stor-m",
-      name: t("tier_name_large"),
-      price: "1295 kr",
-      period: "/mån",
-      color: "emerald",
-      features: [
-        "Bindningstid: 12 månader",
-        "Startkostnad: Ingen",
-        "Webbhotell",
-        // Mirror one-time 'stor'
-        "Undersidor: 8–15",
-        "Anpassad design",
-        "Modern webbutveckling",
-        "Responsiv design",
-        "Inläggning av dina texter",
-        "Bildhjälp upp till 15 bilder",
-        "Upp till 3 kontaktformulär",
-        "Google Maps",
-        "Blogg, inlägg, nyheter",
-        "Utökad SEO (struktur, internlänkar, delningsbilder)",
-        "Koppling till sociala medier",
-        "Revisionsrundor: 4 rundor",
-        "Ändringar efter önskemål",
-        "Publicering och genomgång: 60 min",
-        "Personlig kontakt",
-        "Serviceavtal",
-      ],
-      cta: t("pricing_cta_monthly"),
-    },
-  ] : [
-    {
-      id: "liten-m",
-      name: t("tier_name_small"),
-      price: "795 kr",
-      period: "/mo",
-      color: "rose",
-      features: [
-        "Commitment period: 12 months",
-        "Start-up cost: None",
-        "Web hosting",
-        // Mirror one-time 'small'
-        "Subpages: 1–3",
-        "Custom design",
-        "Modern web development",
-        "Responsive design",
-        "Input of your texts",
-        "Image assistance up to 6 royalty-free images",
-        "1 contact form",
-        "Google Maps",
-        "Basic SEO",
-        "Social media linking: 2 channels",
-        "Revision rounds: 2 rounds",
-        "Changes on request",
-        "Publishing and walkthrough: 30 min",
-        "Personal contact",
-        "Service agreement",
-      ],
-      cta: t("pricing_cta_monthly"),
-    },
-    {
-      id: "mellan-m",
-      name: t("tier_name_medium"),
-      price: "995 kr",
-      period: "/mo",
-      color: "indigo",
-      features: [
-        "Commitment period: 12 months",
-        "Start-up cost: None",
-        "Web hosting",
-        // Mirror one-time 'medium'
-        "Subpages: 4–7",
-        "Custom design",
-        "Modern web development",
-        "Responsive design",
-        "Input of your texts",
-        "Image assistance up to 10 images",
-        "Up to 2 contact forms",
-        "Google Maps",
-        "SEO review for all pages",
-        "Social media linking",
-        "Blog, posts, news",
-        "Revision rounds: 3 rounds",
-        "Changes on request",
-        "Publishing and walkthrough: 45 min",
-        "Personal contact",
-        "Service agreement",
-      ],
-      cta: t("pricing_cta_monthly"),
-    },
-    {
-      id: "stor-m",
-      name: t("tier_name_large"),
-      price: "1295 kr",
-      period: "/mo",
-      color: "emerald",
-      features: [
-        "Commitment period: 12 months",
-        "Start-up cost: None",
-        "Web hosting",
-        // Mirror one-time 'large'
-        "Subpages: 8–15",
-        "Custom design",
-        "Modern web development",
-        "Responsive design",
-        "Input of your texts",
-        "Image assistance up to 15 images",
-        "Up to 3 contact forms",
-        "Google Maps",
-        "Blog, posts, news",
-        "Extended SEO (structure, internal links, share images)",
-        "Social media linking",
-        "Revision rounds: 4 rounds",
-        "Changes on request",
-        "Publishing and walkthrough: 60 min",
-        "Personal contact",
-        "Service agreement",
-      ],
-      cta: t("pricing_cta_monthly"),
-    },
-  ];
+  const monthlyTiers: Tier[] =
+    lang === "sv"
+      ? [
+          {
+            id: "liten-m",
+            name: t("tier_name_small"),
+            price: "795 kr",
+            period: "/mån",
+            color: "rose",
+            features: [
+              "Bindningstid: 12 månader",
+              "Startkostnad: Ingen",
+              "Webbhotell",
+              // Mirror one-time 'liten'
+              "Undersidor: 1–3",
+              "Anpassad design",
+              "Modern webbutveckling",
+              "Responsiv design",
+              "Inläggning av dina texter",
+              "Bildhjälp upp till 6 royaltyfria bilder",
+              "1 kontaktformulär",
+              "Google Maps",
+              "SEO Grundläggande",
+              "Koppling till sociala medier: 2 kanaler",
+              "Revisionsrundor: 2 rundor",
+              "Ändringar efter önskemål",
+              "Publicering och genomgång: 30 min",
+              "Personlig kontakt",
+              "Serviceavtal",
+            ],
+            cta: t("pricing_cta_monthly"),
+          },
+          {
+            id: "mellan-m",
+            name: t("tier_name_medium"),
+            price: "995 kr",
+            period: "/mån",
+            color: "indigo",
+            features: [
+              "Bindningstid: 12 månader",
+              "Startkostnad: Ingen",
+              "Webbhotell",
+              // Mirror one-time 'mellan'
+              "Undersidor: 4–7",
+              "Anpassad design",
+              "Modern webbutveckling",
+              "Responsiv design",
+              "Inläggning av dina texter",
+              "Bildhjälp upp till 10 bilder",
+              "Upp till 2 kontaktformulär",
+              "Google Maps",
+              "SEO genomgång för alla sidor",
+              "Koppling till sociala medier",
+              "Blogg, inlägg, nyheter",
+              "Revisionsrundor: 3 rundor",
+              "Ändringar efter önskemål",
+              "Publicering och genomgång: 45 min",
+              "Personlig kontakt",
+              "Serviceavtal",
+            ],
+            cta: t("pricing_cta_monthly"),
+          },
+          {
+            id: "stor-m",
+            name: t("tier_name_large"),
+            price: "1295 kr",
+            period: "/mån",
+            color: "emerald",
+            features: [
+              "Bindningstid: 12 månader",
+              "Startkostnad: Ingen",
+              "Webbhotell",
+              // Mirror one-time 'stor'
+              "Undersidor: 8–15",
+              "Anpassad design",
+              "Modern webbutveckling",
+              "Responsiv design",
+              "Inläggning av dina texter",
+              "Bildhjälp upp till 15 bilder",
+              "Upp till 3 kontaktformulär",
+              "Google Maps",
+              "Blogg, inlägg, nyheter",
+              "SEO Utökad (struktur, internlänkar, delningsbilder)",
+              "Koppling till sociala medier",
+              "Revisionsrundor: 4 rundor",
+              "Ändringar efter önskemål",
+              "Publicering och genomgång: 60 min",
+              "Personlig kontakt",
+              "Serviceavtal",
+            ],
+            cta: t("pricing_cta_monthly"),
+          },
+        ]
+      : [
+          {
+            id: "liten-m",
+            name: t("tier_name_small"),
+            price: "795 kr",
+            period: "/mo",
+            color: "rose",
+            features: [
+              "Commitment period: 12 months",
+              "Start-up cost: None",
+              "Web hosting",
+              // Mirror one-time 'small'
+              "Subpages: 1–3",
+              "Custom design",
+              "Modern web development",
+              "Responsive design",
+              "Input of your texts",
+              "Image assistance up to 6 royalty-free images",
+              "1 contact form",
+              "Google Maps",
+              "SEO Basic",
+              "Social media linking: 2 channels",
+              "Revision rounds: 2 rounds",
+              "Changes on request",
+              "Publishing and walkthrough: 30 min",
+              "Personal contact",
+              "Service agreement",
+            ],
+            cta: t("pricing_cta_monthly"),
+          },
+          {
+            id: "mellan-m",
+            name: t("tier_name_medium"),
+            price: "995 kr",
+            period: "/mo",
+            color: "indigo",
+            features: [
+              "Commitment period: 12 months",
+              "Start-up cost: None",
+              "Web hosting",
+              // Mirror one-time 'medium'
+              "Subpages: 4–7",
+              "Custom design",
+              "Modern web development",
+              "Responsive design",
+              "Input of your texts",
+              "Image assistance up to 10 images",
+              "Up to 2 contact forms",
+              "Google Maps",
+              "SEO review for all pages",
+              "Social media linking",
+              "Blog, posts, news",
+              "Revision rounds: 3 rounds",
+              "Changes on request",
+              "Publishing and walkthrough: 45 min",
+              "Personal contact",
+              "Service agreement",
+            ],
+            cta: t("pricing_cta_monthly"),
+          },
+          {
+            id: "stor-m",
+            name: t("tier_name_large"),
+            price: "1295 kr",
+            period: "/mo",
+            color: "emerald",
+            features: [
+              "Commitment period: 12 months",
+              "Start-up cost: None",
+              "Web hosting",
+              // Mirror one-time 'large'
+              "Subpages: 8–15",
+              "Custom design",
+              "Modern web development",
+              "Responsive design",
+              "Input of your texts",
+              "Image assistance up to 15 images",
+              "Up to 3 contact forms",
+              "Google Maps",
+              "Blog, posts, news",
+              "SEO Extended (structure, internal links, share images)",
+              "Social media linking",
+              "Revision rounds: 4 rounds",
+              "Changes on request",
+              "Publishing and walkthrough: 60 min",
+              "Personal contact",
+              "Service agreement",
+            ],
+            cta: t("pricing_cta_monthly"),
+          },
+        ];
 
 	return (
 		<main className="min-h-screen w-full">
@@ -478,6 +493,7 @@ export default function PriceContent() {
                 tier={tier}
                 packageLabel={t("pricing_package_label")}
                 priceLabel={tier.period ? t("pricing_monthly_label") : t("pricing_onetime_label")}
+                onSelect={(ti) => { setPrefill(makePrefill(ti.name, ti.price)); setOpen(true); }}
               />
 						))}
 					</div>
@@ -489,10 +505,26 @@ export default function PriceContent() {
                 tier={tier}
                 packageLabel={t("pricing_package_label")}
                 priceLabel={tier.period ? t("pricing_monthly_label") : t("pricing_onetime_label")}
+                onSelect={(ti) => { setPrefill(makePrefill(ti.name, `${ti.price}${ti.period ? ' ' + ti.period : ''}`)); setOpen(true); }}
               />
 						))}
 					</div>
 				)}
+
+        {open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+            <div className="relative z-10 w-full max-w-xl rounded-2xl bg-white p-4 md:p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">{lang === 'sv' ? 'Kontakta oss' : 'Contact us'}</h2>
+                <button aria-label={lang === 'sv' ? 'Stäng' : 'Close'} className="rounded-full p-2 hover:bg-black/5" onClick={() => setOpen(false)}>✕</button>
+              </div>
+              <div className="mt-4">
+                <ContactForm initialMessage={prefill} onSent={() => setOpen(false)} />
+              </div>
+            </div>
+          </div>
+        )}
 			</section>
 		</main>
 	);
