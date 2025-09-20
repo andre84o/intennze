@@ -21,6 +21,28 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo-favico-bild.svg",
   },
+  openGraph: {
+    title: "web development by intenzze",
+    description: "web utveckling, skreddarsytt websidor",
+    url: "https://intenzze.se",
+    siteName: "intenzze",
+    images: [
+      {
+        url: "/logoico-rosa.png",
+        width: 1200,
+        height: 630,
+        alt: "intenzze preview",
+      },
+    ],
+    locale: "sv_SE",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "web development by intenzze",
+    description: "web utveckling, skreddarsytt websidor",
+    images: ["/logoico-rosa.png"],
+  },
 };
 
 export default function RootLayout({
