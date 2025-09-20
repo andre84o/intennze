@@ -2,59 +2,82 @@
 
 import Image from "next/image";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
-import { dict } from "@/app/i18n/dict";
 
 export default function HomeContent() {
   const { lang } = useLanguage();
-  const t = dict[lang];
+  const sv = lang === "sv";
+
+  const HERO_TAGLINE = sv ? "Struktur före glitter" : "Structure before glitter";
+  const INTRO = sv
+    ? "Vi skapar snabba, tillgängliga och vackra webbupplevelser som driver affärsvärde. Från idé till drift, med fokus på struktur, prestanda och långsiktig hållbarhet."
+    : "We craft fast, accessible and beautiful web experiences that drive business value. From idea to operation, focusing on structure, performance and long‑term sustainability.";
+
+  const BTN_BOOK = sv ? "Boka ett möte" : "Book a meeting";
+  const BTN_READ = sv ? "Läs mer" : "Learn more";
+
+  const S1_TITLE = sv ? "Design" : "Design";
+  const S1_DESC = sv
+    ? "Från skiss till färdig upplevelse som driver engagemang."
+    : "From sketches to finished experiences that drive engagement.";
+  const S2_TITLE = sv ? "Utveckling" : "Development";
+  const S2_DESC = sv
+    ? "Moderna hemsidor som skalar med din verksamhet."
+    : "Modern websites that scale with your business.";
+  const S3_TITLE = sv ? "Drift" : "Operations";
+  const S3_DESC = sv
+    ? "Säker drift med regelbundna uppdateringar och optimeringar."
+    : "Secure operations with regular updates and optimizations.";
+
+  const CTA_TITLE = sv
+    ? "Låt oss ta din webb till nästa nivå"
+    : "Let’s take your website to the next level";
+  const CTA_BODY = sv
+    ? "Vi hjälper dig prioritera rätt – struktur först, glitter sen. Snabbt, stabilt och snyggt."
+    : "We help you prioritize what matters — structure first, polish second. Fast, stable and beautiful.";
+  const CTA_BTN = sv ? "Prata med oss" : "Talk to us";
+
   return (
     <main className="min-h-screen w-full flex flex-col">
       <section className="mx-auto max-w-7xl px-6 pt-24 md:pt-32">
         <div className="grid md:grid-cols-2 gap-10 items-center">
           <div className="relative w-full aspect-square overflow-hidden rounded-lg md:hidden shadow-sm">
             <h1 className="absolute inset-0 grid place-items-center px-6 text-center text-4xl font-semibold leading-tight">
-              <span
-                className="inline-block animate-slide-in-left will-change-transform"
-                style={{ animationDuration: "900ms" }}
-              >
+              <span className="inline-block animate-slide-in-left will-change-transform" style={{ animationDuration: "900ms" }}>
                 intenzze{" "}
               </span>
               <span
                 className="block animate-fade-in-up will-change-transform font-extrabold bg-gradient-to-r from-rose-600 to-fuchsia-600 bg-clip-text text-transparent"
                 style={{ animationDelay: "450ms", animationDuration: "800ms" }}
               >
-                {t.home_hero_tagline}
+                {HERO_TAGLINE}
               </span>
             </h1>
           </div>
           <div className="text-center md:text-left">
             <h1 className="hidden md:block text-5xl md:text-6xl font-semibold leading-tight">
-              <span
-                className="inline-block animate-slide-in-left will-change-transform"
-                style={{ animationDuration: "900ms" }}
-              >
+              <span className="inline-block animate-slide-in-left will-change-transform" style={{ animationDuration: "900ms" }}>
                 intenzze{" "}
               </span>
               <span
                 className="inline-block animate-fade-in-up will-change-transform font-extrabold bg-gradient-to-r from-rose-600 to-fuchsia-600 bg-clip-text text-transparent"
                 style={{ animationDelay: "450ms", animationDuration: "800ms" }}
               >
-                {t.home_hero_tagline}
+                {HERO_TAGLINE}
               </span>
             </h1>
-            <p className="mt-6 text-lg text-black/70 max-w-2xl md:max-w-none mx-auto md:mx-0">{t.home_intro}</p>
+            <p className="mt-6 text-lg text-black/70 max-w-2xl md:max-w-none mx-auto md:mx-0">{INTRO}</p>
             <div className="mt-8 flex flex-wrap gap-4 justify-center md:justify-start">
               <a
                 href="/kontakt"
                 className="inline-flex items-center rounded-full bg-rose-600 px-5 py-3 text-white text-sm font-medium shadow-sm hover:bg-rose-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
               >
-                {t.home_cta_book_meeting}
+                {BTN_BOOK}
               </a>
               <a
                 href="/om-oss"
                 className="inline-flex items-center rounded-full border border-black/10 bg-white/70 px-5 py-3 text-sm font-medium backdrop-blur hover:bg-white/90"
               >
-                {t.home_cta_read_more}
+                {BTN_READ}
               </a>
             </div>
           </div>
@@ -88,9 +111,9 @@ export default function HomeContent() {
                   <path d="M2 22s3-1 5-3 3-5 3-5l7-7a3 3 0 1 0-4-4l-7 7s-3 1-5 3-3 5-3 5" />
                 </svg>
               </span>
-              <h3 className="text-xl font-semibold">{t.home_service_design}</h3>
+              <h3 className="text-xl font-semibold">{S1_TITLE}</h3>
             </div>
-            <p className="mt-4 text-black/70">{t.home_service_design_desc}</p>
+            <p className="mt-4 text-black/70">{S1_DESC}</p>
           </div>
           <div className="rounded-xl bg-white/80 border border-black/10 p-6 backdrop-blur shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
@@ -100,9 +123,9 @@ export default function HomeContent() {
                   <polyline points="8 6 2 12 8 18" />
                 </svg>
               </span>
-              <h3 className="text-xl font-semibold">{t.home_service_dev}</h3>
+              <h3 className="text-xl font-semibold">{S2_TITLE}</h3>
             </div>
-            <p className="mt-4 text-black/70">{t.home_service_dev_desc}</p>
+            <p className="mt-4 text-black/70">{S2_DESC}</p>
           </div>
           <div className="rounded-xl bg-white/80 border border-black/10 p-6 backdrop-blur shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
@@ -111,9 +134,9 @@ export default function HomeContent() {
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </span>
-              <h3 className="text-xl font-semibold">{t.home_service_ops}</h3>
+              <h3 className="text-xl font-semibold">{S3_TITLE}</h3>
             </div>
-            <p className="mt-4 text-black/70">{t.home_service_ops_desc}</p>
+            <p className="mt-4 text-black/70">{S3_DESC}</p>
           </div>
         </div>
       </section>
@@ -122,15 +145,15 @@ export default function HomeContent() {
           <div className="absolute inset-0 bg-gradient-to-r from-rose-100/60 via-white/0 to-fuchsia-100/60" aria-hidden />
           <div className="relative p-8 md:p-12 text-center md:text-left grid md:grid-cols-2 gap-6 items-center">
             <div>
-              <h2 className="text-2xl md:text-3xl font-semibold">{t.cta_title}</h2>
-              <p className="mt-3 text-black/70 max-w-xl">{t.cta_body}</p>
+              <h2 className="text-2xl md:text-3xl font-semibold">{CTA_TITLE}</h2>
+              <p className="mt-3 text-black/70 max-w-xl">{CTA_BODY}</p>
             </div>
             <div className="flex justify-center md:justify-end">
               <a
                 href="/kontakt"
                 className="inline-flex items-center rounded-full bg-fuchsia-600 px-6 py-3 text-white text-sm font-medium shadow-sm hover:bg-fuchsia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-600"
               >
-                {t.cta_button}
+                {CTA_BTN}
               </a>
             </div>
           </div>
