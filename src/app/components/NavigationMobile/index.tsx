@@ -31,9 +31,11 @@ const NavigationMobile = () => {
     toggle(nextVal);
   };
 
+  // Close the menu when the route changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isOpen) toggle(false);
-  }, [pathname, isOpen]);
+  }, [pathname]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && toggle(false);
