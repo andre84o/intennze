@@ -18,6 +18,12 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus("sending");
+    // Meta Pixel: track contact intent
+    if (typeof window !== "undefined") {
+      try {
+        (window as any).fbq?.("track", "Contact");
+      } catch {}
+    }
     try {
       const form = e.currentTarget;
       const formData = new FormData(form);

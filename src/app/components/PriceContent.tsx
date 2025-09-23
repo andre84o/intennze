@@ -493,7 +493,16 @@ export default function PriceContent() {
                 tier={tier}
                 packageLabel={t("pricing_package_label")}
                 priceLabel={tier.period ? t("pricing_monthly_label") : t("pricing_onetime_label")}
-                onSelect={(ti) => { setPrefill(makePrefill(ti.name, ti.price)); setOpen(true); }}
+                onSelect={(ti) => {
+                  // Meta Pixel: track contact intent from one-time order CTA
+                  if (typeof window !== "undefined") {
+                    try {
+                      (window as any).fbq?.("track", "Contact");
+                    } catch {}
+                  }
+                  setPrefill(makePrefill(ti.name, ti.price));
+                  setOpen(true);
+                }}
               />
 						))}
 					</div>
@@ -505,7 +514,16 @@ export default function PriceContent() {
                 tier={tier}
                 packageLabel={t("pricing_package_label")}
                 priceLabel={tier.period ? t("pricing_monthly_label") : t("pricing_onetime_label")}
-                onSelect={(ti) => { setPrefill(makePrefill(ti.name, `${ti.price}${ti.period ? ' ' + ti.period : ''}`)); setOpen(true); }}
+                onSelect={(ti) => {
+                  // Meta Pixel: track contact intent from monthly choose CTA
+                  if (typeof window !== "undefined") {
+                    try {
+                      (window as any).fbq?.("track", "Contact");
+                    } catch {}
+                  }
+                  setPrefill(makePrefill(ti.name, `${ti.price}${ti.period ? ' ' + ti.period : ''}`));
+                  setOpen(true);
+                }}
               />
 						))}
 					</div>
