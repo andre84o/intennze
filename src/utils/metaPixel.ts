@@ -22,3 +22,4 @@ export function track(
   if (typeof window === "undefined") return;
   window.fbq?.(method, eventName, params);
 }
+
