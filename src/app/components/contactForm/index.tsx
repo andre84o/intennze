@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { trackContact } from "@/utils/metaPixel";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
 
@@ -19,8 +18,6 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus("sending");
-    // Meta Pixel: track contact intent
-    trackContact();
     try {
       const form = e.currentTarget;
       const formData = new FormData(form);
@@ -51,7 +48,12 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
         </div>
 
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-black/80">{t("name_label")}</label>
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-black/80"
+          >
+            {t("name_label")}
+          </label>
           <input
             id="name"
             name="name"
@@ -64,7 +66,12 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-black/80">{t("email_label")}</label>
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-black/80"
+          >
+            {t("email_label")}
+          </label>
           <input
             id="email"
             name="email"
@@ -77,7 +84,12 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
         </div>
 
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-black/80">{t("phone_label")}</label>
+          <label
+            htmlFor="phone"
+            className="block text-sm font-medium text-black/80"
+          >
+            {t("phone_label")}
+          </label>
           <input
             id="phone"
             name="phone"
@@ -91,7 +103,12 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
         </div>
 
         <div>
-          <label htmlFor="message" className="block text-sm font-medium text-black/80">{t("message_label")}</label>
+          <label
+            htmlFor="message"
+            className="block text-sm font-medium text-black/80"
+          >
+            {t("message_label")}
+          </label>
           <textarea
             id="message"
             name="message"
@@ -106,9 +123,18 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
         <button
           type="submit"
           disabled={status === "sending"}
+          onClick={() => {
+            if (typeof window !== "undefined" && (window as any).fbq) {
+              (window as any).fbq("track", "Lead");
+            }
+          }}
           className="mt-2 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-rose-600 to-fuchsia-600 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:from-rose-500 hover:to-fuchsia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-600 disabled:opacity-70"
         >
-          {status === "sending" ? t("sending") : status === "sent" ? t("sent") : t("submit")}
+          {status === "sending"
+            ? t("sending")
+            : status === "sent"
+              ? t("sent")
+              : t("submit")}
         </button>
 
         {status === "sent" && (
