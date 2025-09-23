@@ -2,7 +2,7 @@
 import ContactForm from "./contactForm";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
-
+//
 export default function ContactContent() {
   const { lang } = useLanguage();
   const t = dict[lang];
