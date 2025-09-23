@@ -13,6 +13,7 @@ const NavigationMobile = () => {
   const pathname = usePathname();
   const closeTimer = useRef<number | null>(null);
   const { lang } = useLanguage();
+  const isOpenRef = useRef(isOpen);
 
   const toggle = (val: boolean) => {
     if (val) {
@@ -32,7 +33,11 @@ const NavigationMobile = () => {
   };
 
   useEffect(() => {
-    if (isOpen) toggle(false);
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpenRef.current) toggle(false);
   }, [pathname]);
 
   useEffect(() => {

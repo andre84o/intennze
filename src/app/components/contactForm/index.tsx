@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { trackContact } from "@/utils/metaPixel";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
 
@@ -19,11 +20,7 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
     e.preventDefault();
     setStatus("sending");
     // Meta Pixel: track contact intent
-    if (typeof window !== "undefined") {
-      try {
-        (window as any).fbq?.("track", "Contact");
-      } catch {}
-    }
+    trackContact();
     try {
       const form = e.currentTarget;
       const formData = new FormData(form);

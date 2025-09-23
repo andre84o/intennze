@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
 import ContactForm from "./contactForm";
+import { trackContact } from "@/utils/metaPixel";
 
 type Tier = {
   id: string;
@@ -495,11 +496,7 @@ export default function PriceContent() {
                 priceLabel={tier.period ? t("pricing_monthly_label") : t("pricing_onetime_label")}
                 onSelect={(ti) => {
                   // Meta Pixel: track contact intent from one-time order CTA
-                  if (typeof window !== "undefined") {
-                    try {
-                      (window as any).fbq?.("track", "Contact");
-                    } catch {}
-                  }
+                  trackContact();
                   setPrefill(makePrefill(ti.name, ti.price));
                   setOpen(true);
                 }}
@@ -516,11 +513,7 @@ export default function PriceContent() {
                 priceLabel={tier.period ? t("pricing_monthly_label") : t("pricing_onetime_label")}
                 onSelect={(ti) => {
                   // Meta Pixel: track contact intent from monthly choose CTA
-                  if (typeof window !== "undefined") {
-                    try {
-                      (window as any).fbq?.("track", "Contact");
-                    } catch {}
-                  }
+                  trackContact();
                   setPrefill(makePrefill(ti.name, `${ti.price}${ti.period ? ' ' + ti.period : ''}`));
                   setOpen(true);
                 }}
