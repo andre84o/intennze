@@ -16,8 +16,8 @@ export default function LanguageSwitcher() {
         aria-pressed={lang === "sv"}
         className={`${btn} ${
           lang === "sv"
-            ? "bg-white text-black shadow-sm border border-black/10"
-            : "text-black/80 hover:bg-white/80 hover:text-black"
+            ? "bg-white/10 text-white border border-white/20"
+            : "text-white/70 hover:text-white hover:bg-white/5"
         }`}
         aria-label="Byt språk till svenska"
         title="Svenska"
@@ -31,8 +31,8 @@ export default function LanguageSwitcher() {
         aria-pressed={lang === "en"}
         className={`${btn} ${
           lang === "en"
-            ? "bg-white text-black shadow-sm border border-black/10"
-            : "text-black/80 hover:bg-white/80 hover:text-black"
+            ? "bg-white/10 text-white border border-white/20"
+            : "text-white/70 hover:text-white hover:bg-white/5"
         }`}
         aria-label="Switch language to English"
         title="English"

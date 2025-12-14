@@ -5,7 +5,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_home: "Hem",
     nav_about: "Om oss",
     nav_contact: "Kontakt",
-    nav_prices: "Priser",
+    nav_services: "Tjänster",
 
     pricing_title: "Priser",
     pricing_toggle_onetime: "Hemsida",
@@ -67,7 +67,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     nav_home: "Home",
     nav_about: "About us",
     nav_contact: "Contact",
-    nav_prices: "Prices",
+    nav_services: "Services",
 
     pricing_title: "Prices",
     pricing_toggle_onetime: "One-time",

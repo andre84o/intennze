@@ -11,7 +11,7 @@ export default function Navigation() {
   const items = [
     { name: dict[lang].nav_home, href: "/" },
     { name: dict[lang].nav_about, href: "/om-oss" },
-    { name: dict[lang].nav_prices, href: "/priser" },
+    { name: dict[lang].nav_services, href: "/tjanster" },
     { name: dict[lang].nav_contact, href: "/kontakt" },
   ];
 
@@ -24,10 +24,10 @@ export default function Navigation() {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-600 ${
+            className={`rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 ${
               active
-                ? "bg-white text-black shadow-sm border border-black/10"
-                : "text-black/80 hover:bg-white/80 hover:text-black"
+                ? "bg-white/10 text-white border border-white/20"
+                : "text-white/70 hover:text-white hover:bg-white/5"
             }`}
           >
             {item.name}

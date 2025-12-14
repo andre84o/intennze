@@ -72,7 +72,7 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const lang = cookieStore.get("lang")?.value === "en" ? "en" : "sv";
   return (
-    <html lang={lang} className="h-full">
+    <html lang={lang}>
       <head>
         <Script id="meta-pixel" strategy="afterInteractive">
           {`
@@ -99,7 +99,7 @@ export default async function RootLayout({
         </noscript>
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full min-h-dvh flex flex-col bag-shyne`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-950`}
       >
         <LanguageProvider>
           <div className="relative z-10">

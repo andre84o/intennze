@@ -38,20 +38,20 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
   };
 
   return (
-    <div className="w-full px-4">
+    <div className="w-full">
       <form
         onSubmit={onSubmit}
-        className="mx-auto flex w-full max-w-[420px] flex-col gap-4 rounded-2xl border border-black/10 bg-white/80 p-6 backdrop-blur shadow-sm"
+        className="flex flex-col gap-5 p-8 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl"
       >
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">{t("contact_title")}</h2>
-          <p className="mt-1 text-sm text-black/60">{t("contact_subtitle")}</p>
+        <div className="text-center mb-2">
+          <h2 className="text-2xl font-bold">{t("contact_title")}</h2>
+          <p className="mt-1 text-slate-400">{t("contact_subtitle")}</p>
         </div>
 
         <div>
           <label
             htmlFor="name"
-            className="block text-sm font-medium text-black/80"
+            className="block text-sm font-medium text-slate-300 mb-2"
           >
             {t("name_label")}
           </label>
@@ -61,7 +61,7 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
             type="text"
             required
             autoComplete="name"
-            className="mt-1 w-full rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-black placeholder-black/40 shadow-inner outline-none ring-0 transition focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-200"
+            className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
             placeholder={t("name_placeholder")}
           />
         </div>
@@ -69,7 +69,7 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-black/80"
+            className="block text-sm font-medium text-slate-300 mb-2"
           >
             {t("email_label")}
           </label>
@@ -79,7 +79,7 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
             type="email"
             required
             autoComplete="email"
-            className="mt-1 w-full rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-black placeholder-black/40 shadow-inner outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200"
+            className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
             placeholder={t("email_placeholder")}
           />
         </div>
@@ -87,7 +87,7 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
         <div>
           <label
             htmlFor="phone"
-            className="block text-sm font-medium text-black/80"
+            className="block text-sm font-medium text-slate-300 mb-2"
           >
             {t("phone_label")}
           </label>
@@ -98,7 +98,7 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
             inputMode="tel"
             required
             autoComplete="tel"
-            className="mt-1 w-full rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-black placeholder-black/40 shadow-inner outline-none ring-0 transition focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-200"
+            className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
             placeholder={t("phone_placeholder")}
           />
         </div>
@@ -106,7 +106,7 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
         <div>
           <label
             htmlFor="message"
-            className="block text-sm font-medium text-black/80"
+            className="block text-sm font-medium text-slate-300 mb-2"
           >
             {t("message_label")}
           </label>
@@ -115,7 +115,7 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
             name="message"
             required
             rows={5}
-            className="mt-1 w-full rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-black placeholder-black/40 shadow-inner outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200"
+            className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none"
             placeholder={t("message_placeholder")}
             defaultValue={initialMessage}
           />
@@ -125,20 +125,38 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
           type="submit"
           onClick={trackContact}
           disabled={status === "sending"}
-          className="mt-2 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-rose-600 to-fuchsia-600 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:from-rose-500 hover:to-fuchsia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-600 disabled:opacity-70"
+          className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 disabled:opacity-70 disabled:hover:scale-100"
         >
-          {status === "sending"
-            ? t("sending")
-            : status === "sent"
-              ? t("sent")
-              : t("submit")}
+          {status === "sending" ? (
+            <>
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              {t("sending")}
+            </>
+          ) : status === "sent" ? (
+            <>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              {t("sent")}
+            </>
+          ) : (
+            <>
+              {t("submit")}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </>
+          )}
         </button>
 
         {status === "sent" && (
-          <p className="text-center text-sm text-green-700">{t("sent_msg")}</p>
+          <p className="text-center text-sm text-emerald-400">{t("sent_msg")}</p>
         )}
         {status === "error" && (
-          <p className="text-center text-sm text-red-700">{t("error_msg")}</p>
+          <p className="text-center text-sm text-red-400">{t("error_msg")}</p>
         )}
       </form>
     </div>

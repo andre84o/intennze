@@ -7,18 +7,18 @@ export async function generateMetadata(): Promise<Metadata> {
   const lang = c.get("lang")?.value === "en" ? "en" : "sv";
   return lang === "en"
     ? {
-        title: "Prices",
-        description: "Website packages and prices — one-time cost or monthly plans.",
-        alternates: { canonical: "/priser" },
+        title: "Services",
+        description: "Web development services — websites, design and digital solutions.",
+        alternates: { canonical: "/tjanster" },
       }
     : {
-        title: "Priser",
-        description: "Paket och priser för hemsidor – engångskostnad eller månadspris.",
-        alternates: { canonical: "/priser" },
+        title: "Tjänster",
+        description: "Webbutveckling och digitala lösningar — hemsidor, design och mer.",
+        alternates: { canonical: "/tjanster" },
       };
 }
 
-export default async function PricesPage() {
+export default async function ServicesPage() {
   const c = await cookies();
   const lang = c.get("lang")?.value === "en" ? "en" : "sv";
   const base = "https://intenzze.com";
@@ -40,7 +40,7 @@ export default async function PricesPage() {
       },
       serviceName: "Webbutveckling och hemsidor",
       catalogName: "Hemsida – engångskostnad",
-      breadcrumbs: ["Start", "Priser"],
+      breadcrumbs: ["Start", "Tjänster"],
       descriptions: {
         budget: "Kom igång prisvärt med 1 undersida, enkel design och platshållarinnehåll.",
         small: "1–3 undersidor, anpassad design, responsiv och SEO grundläggande.",
@@ -63,7 +63,7 @@ export default async function PricesPage() {
       },
       serviceName: "Web development and websites",
       catalogName: "Website — one-time cost",
-      breadcrumbs: ["Home", "Prices"],
+      breadcrumbs: ["Home", "Services"],
       descriptions: {
         budget: "Get started affordably with 1 subpage, simple design and placeholder content.",
         small: "1–3 subpages, custom design, responsive and basic SEO.",
@@ -84,7 +84,7 @@ export default async function PricesPage() {
       sku: t.oneTime.budget.sku,
       description: t.descriptions.budget,
       brand: { "@type": "Organization", name: "intenzze" },
-      offers: { "@type": "Offer", price: t.oneTime.budget.price, priceCurrency: currency, url: `${base}/priser#budget` },
+      offers: { "@type": "Offer", price: t.oneTime.budget.price, priceCurrency: currency, url: `${base}/tjanster#budget` },
     },
     {
       "@context": "https://schema.org",
@@ -93,7 +93,7 @@ export default async function PricesPage() {
       sku: t.oneTime.small.sku,
       description: t.descriptions.small,
       brand: { "@type": "Organization", name: "intenzze" },
-      offers: { "@type": "Offer", price: t.oneTime.small.price, priceCurrency: currency, url: `${base}/priser#liten` },
+      offers: { "@type": "Offer", price: t.oneTime.small.price, priceCurrency: currency, url: `${base}/tjanster#liten` },
     },
     {
       "@context": "https://schema.org",
@@ -102,7 +102,7 @@ export default async function PricesPage() {
       sku: t.oneTime.medium.sku,
       description: t.descriptions.medium,
       brand: { "@type": "Organization", name: "intenzze" },
-      offers: { "@type": "Offer", price: t.oneTime.medium.price, priceCurrency: currency, url: `${base}/priser#mellan` },
+      offers: { "@type": "Offer", price: t.oneTime.medium.price, priceCurrency: currency, url: `${base}/tjanster#mellan` },
     },
     {
       "@context": "https://schema.org",
@@ -111,7 +111,7 @@ export default async function PricesPage() {
       sku: t.oneTime.large.sku,
       description: t.descriptions.large,
       brand: { "@type": "Organization", name: "intenzze" },
-      offers: { "@type": "Offer", price: t.oneTime.large.price, priceCurrency: currency, url: `${base}/priser#stor` },
+      offers: { "@type": "Offer", price: t.oneTime.large.price, priceCurrency: currency, url: `${base}/tjanster#stor` },
     },
   ];
 
@@ -136,7 +136,7 @@ export default async function PricesPage() {
           priceCurrency: currency,
           unitCode: "MON",
         },
-        url: `${base}/priser#${k}-m`,
+        url: `${base}/tjanster#${k}-m`,
       },
     };
   });
@@ -164,7 +164,7 @@ export default async function PricesPage() {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: t.breadcrumbs[0], item: base },
-      { "@type": "ListItem", position: 2, name: t.breadcrumbs[1], item: `${base}/priser` },
+      { "@type": "ListItem", position: 2, name: t.breadcrumbs[1], item: `${base}/tjanster` },
     ],
   } as const;
 

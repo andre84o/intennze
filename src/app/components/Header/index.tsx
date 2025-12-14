@@ -5,13 +5,16 @@ import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 
 const Header = () => {
     return (
-      <header className="relative z-10 w-full p-4 bg-transparent text-white flex justify-between items-center">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full p-4 bg-slate-950/80 backdrop-blur-md text-white flex justify-between items-center">
         <Logo />
-        <div className="flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-3">
           <Navigation />
           <LanguageSwitcher />
         </div>
-        <NavigationMobile />
+        <div className="flex md:hidden items-center gap-3">
+          <LanguageSwitcher />
+          <NavigationMobile />
+        </div>
       </header>
     );
 }

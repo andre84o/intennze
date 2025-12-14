@@ -9,47 +9,54 @@ export default function AboutContent() {
   const sv = lang === "sv";
 
   const T = {
-    title: sv ? "Om oss" : "About us",
-    intro1: sv
-      ? "intenzze bygger hemsidor som är snygga, snabba och lätta att använda."
-      : "intenzze builds websites that are beautiful, fast and easy to use.",
-    intro2: sv
-      ? "Vi har många års erfarenhet och har skapat flera lyckade sajter för små och stora företag. Du får en skräddarsydd hemsida som passar din verksamhet och dina mål. Vi lyssnar först och föreslår bara det du verkligen behöver."
-      : "We have many years of experience and have created successful sites for small and large companies. You get a tailored website that fits your business and goals. We listen first and only propose what you really need.",
-    whyTitle: sv ? "Varför välja oss" : "Why choose us",
-    bullets: sv
+    title: sv ? "Vi bygger digitala upplevelser som driver tillväxt" : "We build digital experiences that drive growth",
+    subtitle: sv ? "Om intenzze" : "About intenzze",
+    intro: sv
+      ? "intenzze är en digital byrå specialiserad på att skapa högpresterande webbplatser för ambitiösa företag. Vi kombinerar strategisk insikt med teknisk excellens för att leverera lösningar som inte bara ser bra ut – utan som levererar mätbara resultat."
+      : "intenzze is a digital agency specialized in creating high-performance websites for ambitious companies. We combine strategic insight with technical excellence to deliver solutions that don't just look good – but deliver measurable results.",
+
+    expertise: sv ? "Vår expertis" : "Our expertise",
+    expertiseItems: sv
       ? [
-          "• Tydlig plan och tydliga leveranser så du vet vad som händer i varje steg.",
-          "• Texter och bilder optimeras så sidan laddar snabbt.",
-          "• Designen är enkel och klar så besökare hittar rätt direkt.",
-          "• Vi ser till att sidan fungerar på mobil, surfplatta och dator.",
-          "• Grundläggande sökmotoroptimering ingår så du syns bättre på Google.",
-          "• Vi kan koppla formulär, bokning, betalning och nyhetsbrev när du vill.",
-          "• Du får utbildning som gör att du enkelt kan uppdatera själv.",
-          "• Support och uppdateringar finns när du behöver oss, så du kan växa tryggt.",
+          { title: "Strategi & Rådgivning", desc: "Vi analyserar era behov och marknadsposition för att skapa en digital strategi som stödjer era affärsmål." },
+          { title: "Design & UX", desc: "Användarvänliga gränssnitt som guidar besökare mot konvertering genom intuitiv design." },
+          { title: "Utveckling", desc: "Skalbara, säkra och blixtsnabba webbplatser byggda med modern teknologi." },
+          { title: "Optimering & Support", desc: "Kontinuerlig förbättring baserat på data och användarbeteende." },
         ]
       : [
-          "• A clear plan and deliverables so you know what's happening at every step.",
-          "• Copy and images are optimized so the site loads quickly.",
-          "• Simple, clear design so visitors find their way instantly.",
-          "• We ensure the site works on mobile, tablet and desktop.",
-          "• Basic SEO included to improve your presence on Google.",
-          "• We can integrate forms, booking, payments and newsletters whenever needed.",
-          "• You get training so you can easily update content yourself.",
-          "• Support and updates when you need us, so you can grow confidently.",
+          { title: "Strategy & Consulting", desc: "We analyze your needs and market position to create a digital strategy that supports your business goals." },
+          { title: "Design & UX", desc: "User-friendly interfaces that guide visitors toward conversion through intuitive design." },
+          { title: "Development", desc: "Scalable, secure and lightning-fast websites built with modern technology." },
+          { title: "Optimization & Support", desc: "Continuous improvement based on data and user behavior." },
         ],
-    howTitle: sv ? "Vårt arbetssätt" : "How we work",
-    howText: sv
-      ? "Vi prioriterar struktur före glitter. Det betyder fokus på prestanda, tillgänglighet och tydlighet – och först därefter animationer och effekter. På så sätt får du en webb som både känns modern och levererar resultat."
-      : "We prioritize structure before glitter. That means focusing on performance, accessibility and clarity — and only then animations and effects. This gives you a website that feels modern and delivers results.",
-    galleryTitle: sv ? "Bilder från vårt arbete" : "Images from our work",
+
+    approach: sv ? "Vårt tillvägagångssätt" : "Our approach",
+    approachTitle: sv ? "Struktur före glitter" : "Structure before glitter",
+    approachText: sv
+      ? "Vi tror på att bygga rätt från grunden. Det innebär att vi prioriterar prestanda, tillgänglighet och teknisk kvalitet innan vi lägger till visuella effekter. Resultatet är webbplatser som inte bara imponerar – utan som faktiskt fungerar och konverterar."
+      : "We believe in building right from the foundation. This means we prioritize performance, accessibility and technical quality before adding visual effects. The result is websites that don't just impress – but actually work and convert.",
+
+    stats: sv
+      ? [
+          { value: "100%", label: "Nöjda kunder" },
+          { value: "50+", label: "Projekt levererade" },
+          { value: "<1s", label: "Genomsnittlig laddtid" },
+        ]
+      : [
+          { value: "100%", label: "Satisfied clients" },
+          { value: "50+", label: "Projects delivered" },
+          { value: "<1s", label: "Average load time" },
+        ],
+
+    galleryTitle: sv ? "Utvalda projekt" : "Selected projects",
     galleryAlt: sv ? ["Projekt 1", "Projekt 2", "Projekt 3", "Projekt 4"] : ["Project 1", "Project 2", "Project 3", "Project 4"],
-    ctaTitle: sv ? "Redo att prata om din webb?" : "Ready to talk about your website?",
+
+    ctaTitle: sv ? "Redo att ta nästa steg?" : "Ready to take the next step?",
     ctaText: sv
-      ? "Vi lyssnar först och föreslår bara det du verkligen behöver. Låt oss skapa något snabbt, tydligt och vackert – tillsammans."
-      : "We listen first and only propose what you really need. Let's create something fast, clear and beautiful — together.",
-    ctaBtn: sv ? "Kontakta oss" : "Contact us",
-  } as const;
+      ? "Varje projekt börjar med ett samtal. Berätta om era utmaningar och mål så utforskar vi hur vi kan hjälpa er att nå dem."
+      : "Every project starts with a conversation. Tell us about your challenges and goals, and we'll explore how we can help you achieve them.",
+    ctaBtn: sv ? "Boka ett samtal" : "Book a call",
+  };
 
   const images = [
     { src: "/images/Projekt1.png", alt: T.galleryAlt[0] },
@@ -59,56 +66,117 @@ export default function AboutContent() {
   ];
 
   return (
-    <main className="min-h-screen w-full">
-      <section className="mx-auto max-w-7xl px-6 pt-24 md:pt-28">
-        <div className="grid md:grid-cols-2 gap-10 items-center">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-semibold leading-tight">{T.title}</h1>
-            <p className="mt-5 text-lg text-black/70 max-w-prose">{T.intro1}</p>
-            <p className="mt-3 text-black/70 max-w-prose">{T.intro2}</p>
-          </div>
-          <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl shadow-sm">
-            <Image src="/aboutpage.jpg" alt="intenzze studio" fill className="object-cover" priority />
+    <main className="min-h-screen w-full bg-slate-950 text-white overflow-x-hidden">
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-6">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl" />
+        </div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
+
+        <div className="relative z-10 max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-cyan-400 font-mono mb-6">
+                <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+                {T.subtitle}
+              </span>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-fuchsia-400">
+                  {T.title}
+                </span>
+              </h1>
+              <p className="mt-6 text-lg text-slate-400 leading-relaxed">
+                {T.intro}
+              </p>
+            </div>
+            <div className="relative">
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-slate-800">
+                <Image src="/aboutpage.jpg" alt="intenzze studio" fill className="object-cover" priority />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
-      <section className="mx-auto max-w-7xl px-6 mt-14 md:mt-20">
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="rounded-2xl border border-black/10 bg-white/80 p-6 backdrop-blur shadow-sm">
-            <h2 className="text-xl font-semibold">{T.whyTitle}</h2>
-            <ul className="mt-4 space-y-3 text-black/80">
-              {T.bullets.map((b, i) => (
-                <li key={i}>{b}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-2xl border border-black/10 bg-white/80 p-6 backdrop-blur shadow-sm">
-            <h2 className="text-xl font-semibold">{T.howTitle}</h2>
-            <p className="mt-4 text-black/70">{T.howText}</p>
+
+      {/* Stats Section */}
+      <section className="py-16 px-6 border-y border-slate-800">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-3 gap-8">
+            {T.stats.map((stat, i) => (
+              <div key={i} className="text-center">
+                <div className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+                  {stat.value}
+                </div>
+                <div className="mt-2 text-slate-400 text-sm">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
-      <section className="mx-auto max-w-7xl px-6 mt-14 md:mt-20">
-        <h2 className="text-xl font-semibold">{T.galleryTitle}</h2>
-        <p className="mt-1 text-sm text-black/60"></p>
-        <div className="mt-6">
+
+      {/* Expertise Section */}
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="inline-block px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-slate-400 font-mono mb-4">
+              {T.expertise}
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold">{sv ? "Vad vi levererar" : "What we deliver"}</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {T.expertiseItems.map((item, i) => (
+              <div key={i} className="group p-6 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl hover:border-cyan-500/50 transition-all duration-300">
+                <span className="text-4xl font-bold text-slate-800 group-hover:text-cyan-500/30 transition-colors">0{i + 1}</span>
+                <h3 className="mt-4 text-lg font-semibold">{item.title}</h3>
+                <p className="mt-2 text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Approach Section */}
+      <section className="py-24 px-6 bg-slate-900/30">
+        <div className="max-w-4xl mx-auto text-center">
+          <span className="inline-block px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-slate-400 font-mono mb-4">
+            {T.approach}
+          </span>
+          <h2 className="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+            {T.approachTitle}
+          </h2>
+          <p className="mt-6 text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
+            {T.approachText}
+          </p>
+        </div>
+      </section>
+
+      {/* Gallery Section */}
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-2xl font-semibold mb-8">{T.galleryTitle}</h2>
           <GalleryLightbox images={images} />
         </div>
       </section>
-      <section className="mx-auto max-w-7xl px-6 mt-16 md:mt-24 pb-10">
-        <div className="relative overflow-hidden rounded-2xl border border-black/10 bg-white/70 backdrop-blur">
-          <div className="absolute inset-0 bg-gradient-to-r from-rose-100/60 via-white/0 to-fuchsia-100/60" aria-hidden />
-          <div className="relative p-8 md:p-12 text-center md:text-left grid md:grid-cols-2 gap-6 items-center">
-            <div>
-              <h3 className="text-2xl md:text-3xl font-semibold">{T.ctaTitle}</h3>
-              <p className="mt-3 text-black/70 max-w-xl">{T.ctaText}</p>
-            </div>
-            <div className="flex justify-center md:justify-end">
+
+      {/* CTA Section */}
+      <section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-fuchsia-500/10 border border-slate-800 p-12 text-center">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.1),transparent_70%)]" />
+            <div className="relative z-10">
+              <h2 className="text-3xl md:text-4xl font-bold">{T.ctaTitle}</h2>
+              <p className="mt-4 text-slate-400 max-w-xl mx-auto">{T.ctaText}</p>
               <Link
                 href="/kontakt"
-                className="inline-flex items-center rounded-full bg-gradient-to-r from-rose-600 to-fuchsia-600 px-6 py-3 text-white text-sm font-medium shadow-sm transition hover:from-rose-500 hover:to-fuchsia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-600"
+                className="mt-8 inline-flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-full font-bold hover:scale-105 transition-transform"
               >
                 {T.ctaBtn}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
               </Link>
             </div>
           </div>
