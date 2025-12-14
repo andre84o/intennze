@@ -39,9 +39,9 @@ export const metadata: Metadata = {
     siteName: "intenzze",
     images: [
       {
-        url: "/aboutpage.jpg",
-        width: 1200,
-        height: 630,
+        url: "https://intenzze.com/bg-intenzze-t.jpg",
+        width: 6000,
+        height: 3376,
         alt: "intenzze - web development",
       },
     ],
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     title: "We build digital experiences that drive growth",
     description:
       "Fast, accessible and tailored websites that drive business value.",
-    images: ["/aboutpage.jpg"],
+    images: ["https://intenzze.com/bg-intenzze-t.jpg"],
     creator: "@intenzze",
   },
 };
