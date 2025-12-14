@@ -32,28 +32,28 @@ export const metadata: Metadata = {
     apple: "/logo.png",
   },
   openGraph: {
-    title: "Web development by intenzze",
+    title: "We build digital experiences that drive growth",
     description:
-      "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
+      "Fast, accessible and tailored websites that drive business value.",
     url: "https://intenzze.com",
     siteName: "intenzze",
     images: [
       {
-        url: "/home-pic.jpg",
+        url: "/bg-intenzze-t.jpg",
         width: 1200,
         height: 630,
-        alt: "intenzze website preview",
+        alt: "intenzze - web development",
       },
     ],
-    locale: "sv_SE",
+    locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Web development by intenzze",
+    title: "We build digital experiences that drive growth",
     description:
-      "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
-    images: ["/home-pic.jpg"],
+      "Fast, accessible and tailored websites that drive business value.",
+    images: ["/bg-intenzze-t.jpg"],
     creator: "@intenzze",
   },
 };

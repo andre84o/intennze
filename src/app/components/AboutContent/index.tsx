@@ -1,11 +1,13 @@
 "use client";
+import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
+import ContactForm from "../contactForm";
 
 export default function AboutContent() {
   const { lang } = useLanguage();
   const sv = lang === "sv";
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const T = {
     title: sv ? "Vi bygger digitala upplevelser som driver tillväxt" : "We build digital experiences that drive growth",
@@ -150,19 +152,49 @@ export default function AboutContent() {
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl font-bold">{T.ctaTitle}</h2>
               <p className="mt-4 text-slate-400 max-w-xl mx-auto">{T.ctaText}</p>
-              <Link
-                href="/kontakt"
+              <button
+                onClick={() => setShowContactModal(true)}
                 className="mt-8 inline-flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-full font-bold hover:scale-105 transition-transform"
               >
                 {T.ctaBtn}
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
-              </Link>
+              </button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowContactModal(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
+
+          {/* Modal */}
+          <div
+            className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowContactModal(false)}
+              className="absolute -top-12 right-0 p-2 text-slate-400 hover:text-white transition-colors"
+              aria-label={sv ? "Stäng" : "Close"}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <ContactForm onSent={() => setShowContactModal(false)} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

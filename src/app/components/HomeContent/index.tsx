@@ -1,9 +1,12 @@
 "use client";
+import { useState } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
+import ContactForm from "../contactForm";
 
 export default function HomeContent() {
   const { lang } = useLanguage();
   const sv = lang === "sv";
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const HERO_TAGLINE = sv ? "Struktur före glitter" : "Structure before glitter";
   const INTRO = sv
@@ -140,17 +143,47 @@ export default function HomeContent() {
               {sv ? "Redo att transformera din närvaro?" : "Ready to transform your presence?"}
             </span>
           </h2>
-          <a
-            href="/kontakt"
+          <button
+            onClick={() => setShowContactModal(true)}
             className="inline-flex items-center gap-3 px-10 py-5 bg-white text-slate-950 rounded-full font-bold text-lg hover:scale-105 transition-transform"
           >
             {sv ? "Starta nu" : "Start now"}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
-          </a>
+          </button>
         </div>
       </section>
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowContactModal(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
+
+          {/* Modal */}
+          <div
+            className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowContactModal(false)}
+              className="absolute -top-12 right-0 p-2 text-slate-400 hover:text-white transition-colors"
+              aria-label={sv ? "Stäng" : "Close"}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <ContactForm onSent={() => setShowContactModal(false)} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

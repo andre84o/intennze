@@ -1,10 +1,12 @@
 "use client";
-import Link from "next/link";
+import { useState } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
+import ContactForm from "../contactForm";
 
 export default function PriceContent() {
   const { lang } = useLanguage();
   const sv = lang === "sv";
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const T = {
     subtitle: sv ? "Tjänster" : "Services",
@@ -126,17 +128,47 @@ export default function PriceContent() {
             </span>
           </h2>
           <p className="mt-6 text-slate-400 text-lg max-w-xl mx-auto">{T.ctaText}</p>
-          <Link
-            href="/kontakt"
+          <button
+            onClick={() => setShowContactModal(true)}
             className="mt-10 inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full font-bold text-lg hover:scale-105 transition-transform"
           >
             {T.ctaBtn}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
-          </Link>
+          </button>
         </div>
       </section>
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowContactModal(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
+
+          {/* Modal */}
+          <div
+            className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowContactModal(false)}
+              className="absolute -top-12 right-0 p-2 text-slate-400 hover:text-white transition-colors"
+              aria-label={sv ? "Stäng" : "Close"}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <ContactForm onSent={() => setShowContactModal(false)} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
