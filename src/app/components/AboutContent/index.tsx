@@ -1,7 +1,6 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import GalleryLightbox from "@/app/components/GalleryLightbox";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 
 export default function AboutContent() {
@@ -48,22 +47,12 @@ export default function AboutContent() {
           { value: "<1s", label: "Average load time" },
         ],
 
-    galleryTitle: sv ? "Utvalda projekt" : "Selected projects",
-    galleryAlt: sv ? ["Projekt 1", "Projekt 2", "Projekt 3", "Projekt 4"] : ["Project 1", "Project 2", "Project 3", "Project 4"],
-
     ctaTitle: sv ? "Redo att ta nästa steg?" : "Ready to take the next step?",
     ctaText: sv
       ? "Varje projekt börjar med ett samtal. Berätta om era utmaningar och mål så utforskar vi hur vi kan hjälpa er att nå dem."
       : "Every project starts with a conversation. Tell us about your challenges and goals, and we'll explore how we can help you achieve them.",
     ctaBtn: sv ? "Boka ett samtal" : "Book a call",
   };
-
-  const images = [
-    { src: "/images/Projekt1.png", alt: T.galleryAlt[0] },
-    { src: "/images/prijekt2.png", alt: T.galleryAlt[1] },
-    { src: "/images/projekt3.png", alt: T.galleryAlt[2] },
-    { src: "/images/projekt4.png", alt: T.galleryAlt[3] },
-  ];
 
   return (
     <main className="min-h-screen w-full bg-slate-950 text-white overflow-x-hidden">
@@ -75,7 +64,7 @@ export default function AboutContent() {
         </div>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
-        <div className="relative z-10 max-w-7xl mx-auto">
+        <div className="relative max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
               <span className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-cyan-400 font-mono mb-6">
@@ -139,8 +128,8 @@ export default function AboutContent() {
       </section>
 
       {/* Approach Section */}
-      <section className="py-24 px-6 bg-slate-900/30">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="px-6 bg-slate-900/30">
+        <div className="max-w-4xl mx-auto text-center pb-2">
           <span className="inline-block px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-slate-400 font-mono mb-4">
             {T.approach}
           </span>
@@ -150,14 +139,6 @@ export default function AboutContent() {
           <p className="mt-6 text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
             {T.approachText}
           </p>
-        </div>
-      </section>
-
-      {/* Gallery Section */}
-      <section className="py-24 px-6">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-semibold mb-8">{T.galleryTitle}</h2>
-          <GalleryLightbox images={images} />
         </div>
       </section>
 

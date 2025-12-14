@@ -21,7 +21,7 @@ export default function HomeContent() {
   return (
     <main className="min-h-screen w-full flex flex-col bg-slate-950 text-white overflow-x-hidden">
       {/* Hero - Asymmetric with floating elements */}
-      <section className="relative min-h-screen flex items-center px-6 pt-28 pb-24">
+      <section className="relative min-h-screen flex items-center px-6 pt-28">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" />
@@ -32,7 +32,7 @@ export default function HomeContent() {
         {/* Grid pattern overlay */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
-        <div className="relative z-10 max-w-7xl mx-auto w-full">
+        <div className="relative max-w-7xl mx-auto w-full">
           <div className="grid lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7">
               <div className="flex items-center gap-3 mb-8">
@@ -63,7 +63,7 @@ export default function HomeContent() {
                 </a>
               </div>
             </div>
-            <div className="lg:col-span-5 relative">
+            <div className="lg:col-span-5 relative mt-8 md:mt-0">
               {/* 3D-like card stack */}
               <div className="relative h-80 lg:h-96">
                 <div className="absolute top-0 right-0 w-64 h-40 bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 backdrop-blur-xl border border-cyan-500/20 rounded-2xl transform rotate-6 hover:rotate-3 transition-transform" />
@@ -85,7 +85,7 @@ export default function HomeContent() {
       </section>
 
       {/* Services - Glassmorphism cards */}
-      <section className="relative py-24 px-6">
+      <section className="relative px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-slate-400 font-mono mb-4">

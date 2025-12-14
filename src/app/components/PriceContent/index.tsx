@@ -49,7 +49,7 @@ export default function PriceContent() {
     ctaBtn: sv ? "Boka samtal" : "Book consultation",
   };
 
-  const iconMap: Record<string, JSX.Element> = {
+  const iconMap: Record<string, React.ReactNode> = {
     design: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 22s3-1 5-3 3-5 3-5l7-7a3 3 0 1 0-4-4l-7 7s-3 1-5 3-3 5-3 5" /></svg>,
     code: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>,
     rocket: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" /><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" /></svg>,
@@ -59,14 +59,14 @@ export default function PriceContent() {
   return (
     <main className="min-h-screen w-full bg-slate-950 text-white overflow-x-hidden">
       {/* Hero */}
-      <section className="relative pt-32 pb-20 px-6">
+      <section className="relative pt-32 md:pb-20 px-6">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-40 left-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
         </div>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative max-w-4xl mx-auto text-center">
           <span className="inline-block px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-purple-400 font-mono mb-6">
             {T.subtitle}
           </span>
@@ -97,7 +97,7 @@ export default function PriceContent() {
       </section>
 
       {/* Process */}
-      <section className="py-24 px-6 bg-slate-900/30">
+      <section className="px-6 bg-slate-900/30">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">{T.processTitle}</h2>
           <div className="grid md:grid-cols-4 gap-8">

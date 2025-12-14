@@ -1,5 +1,5 @@
 "use client";
-import ContactForm from "./contactForm";
+import ContactForm from "../contactForm";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
 
@@ -18,7 +18,7 @@ export default function ContactContent() {
         </div>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
-        <div className="relative z-10 max-w-6xl mx-auto">
+        <div className="relative max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-start">
             {/* Left side - Info */}
             <div>
