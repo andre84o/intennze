@@ -58,10 +58,46 @@ const NavigationMobile = () => {
   }, [isOpen]);
 
   const items = [
-    { name: dict[lang].nav_home, href: "/" },
-    { name: dict[lang].nav_about, href: "/om-oss" },
-    { name: dict[lang].nav_services, href: "/tjanster" },
-    { name: dict[lang].nav_contact, href: "/kontakt" },
+    {
+      name: dict[lang].nav_home,
+      href: "/",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      )
+    },
+    {
+      name: dict[lang].nav_about,
+      href: "/om-oss",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      )
+    },
+    {
+      name: dict[lang].nav_services,
+      href: "/tjanster",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </svg>
+      )
+    },
+    {
+      name: dict[lang].nav_contact,
+      href: "/kontakt",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22,6 12,13 2,6" />
+        </svg>
+      )
+    },
   ];
 
   return (
@@ -138,13 +174,13 @@ const NavigationMobile = () => {
                           }`}
                         >
                           <span
-                            className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold ${
+                            className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
                               active
                                 ? "bg-gradient-to-br from-cyan-500 to-purple-500 text-white"
-                                : "bg-slate-800 text-white"
+                                : "bg-slate-800 text-slate-300"
                             }`}
                           >
-                            {index + 1}
+                            {item.icon}
                           </span>
                           <span className="text-white">{item.name}</span>
                           {active && (
