@@ -8,6 +8,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/om-oss`, lastModified: now },
     { url: `${base}/priser`, lastModified: now },
     { url: `${base}/kontakt`, lastModified: now },
-    { url: `${base}/cookies`, lastModified: now },
+    { url: `${base}/integritetspolicy`, lastModified: now },
   ];
 }
