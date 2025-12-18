@@ -24,11 +24,11 @@ function AdminContent({
 
       {/* Main content */}
       <main
-        className={`pt-16 min-h-screen transition-all duration-300 ease-in-out ${
-          isOpen ? "ml-64" : isCollapsed ? "ml-20" : "ml-0"
+        className={`pt-14 sm:pt-16 min-h-screen transition-all duration-300 ease-in-out ${
+          isOpen ? "ml-52 sm:ml-64" : isCollapsed ? "ml-14 sm:ml-20" : "ml-0"
         }`}
       >
-        <div className="p-6">{children}</div>
+        <div className="p-3 sm:p-6">{children}</div>
       </main>
     </div>
   );

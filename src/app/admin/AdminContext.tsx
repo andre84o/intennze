@@ -15,7 +15,7 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
-  const [sidebarState, setSidebarState] = useState<SidebarState>("open");
+  const [sidebarState, setSidebarState] = useState<SidebarState>("collapsed");
 
   // Cycle: open -> collapsed -> hidden -> open
   const toggleSidebar = () => {

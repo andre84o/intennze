@@ -1,18 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { useAdmin } from "./AdminContext";
-
-const menuItems = [
-  { label: "Dashboard", href: "/admin" },
-  { label: "Kunder", href: "/admin/kunder" },
-  { label: "Offerter", href: "/admin/offerter" },
-  { label: "Påminnelser", href: "/admin/paminnelser" },
-  { label: "Meddelanden", href: "/admin/meddelanden" },
-  { label: "Inställningar", href: "/admin/installningar" },
-];
 
 interface AdminHeaderProps {
   userEmail?: string;
@@ -21,7 +11,6 @@ interface AdminHeaderProps {
 export default function AdminHeader({ userEmail }: AdminHeaderProps) {
   const { sidebarState, toggleSidebar, openSidebar } = useAdmin();
   const router = useRouter();
-  const pathname = usePathname();
 
   const isOpen = sidebarState === "open";
   const isCollapsed = sidebarState === "collapsed";
@@ -73,11 +62,11 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
         <button
           onClick={openSidebar}
           type="button"
-          className="fixed top-4 left-4 z-50 w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 text-white shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+          className="fixed top-3 sm:top-4 left-3 sm:left-4 z-50 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 text-white shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
           aria-label="Öppna sidofält"
         >
           <svg
-            className="w-6 h-6 pointer-events-none"
+            className="w-5 h-5 sm:w-6 sm:h-6 pointer-events-none"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -94,22 +83,22 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
 
       {/* Main header */}
       <header
-        className={`fixed top-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 z-30 transition-all duration-300 ease-in-out ${
-          isOpen ? "left-64" : isCollapsed ? "left-20" : "left-0"
+        className={`fixed top-0 right-0 h-14 sm:h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 z-30 transition-all duration-300 ease-in-out ${
+          isOpen ? "left-52 sm:left-64" : isCollapsed ? "left-14 sm:left-20" : "left-0"
         }`}
       >
-        <div className="h-full px-6 flex items-center justify-between">
+        <div className="h-full px-3 sm:px-6 flex items-center justify-between">
           {/* Left side - Toggle button */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {!isHidden && (
               <button
                 onClick={toggleSidebar}
                 type="button"
-                className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700 active:bg-slate-600 active:scale-95 border border-slate-700 hover:border-slate-600 transition-all duration-150 cursor-pointer select-none"
+                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700 active:bg-slate-600 active:scale-95 border border-slate-700 hover:border-slate-600 transition-all duration-150 cursor-pointer select-none"
                 aria-label={isOpen ? "Minimera sidofält" : "Dölj sidofält"}
               >
                 <svg
-                  className="w-5 h-5 pointer-events-none"
+                  className="w-4 h-4 sm:w-5 sm:h-5 pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -121,39 +110,19 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
             )}
           </div>
 
-          {/* Center - Navigation menu */}
-          <nav className="hidden md:flex items-center gap-1">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white border border-cyan-500/30"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
           {/* Right side - User info & logout */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {userEmail && (
-              <span className="text-sm text-slate-400 hidden sm:block">
+              <span className="text-xs sm:text-sm text-slate-400 hidden md:block truncate max-w-[150px] sm:max-w-none">
                 {userEmail}
               </span>
             )}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 rounded-lg transition-all duration-200"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 rounded-lg transition-all duration-200"
             >
               <svg
-                className="w-4 h-4"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
