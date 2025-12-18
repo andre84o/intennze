@@ -116,28 +116,38 @@ export default function Footer() {
               {t.footer_contact_title}
             </h3>
             <ul className="space-y-3">
-              <li>
-                <a
-                  href="mailto:info@intenzze.com"
-                  className="text-slate-400 hover:text-cyan-400 transition-colors duration-200 inline-flex items-center gap-3"
+              <li className="text-slate-400 flex items-center gap-3">
+                <svg
+                  className="w-5 h-5 text-cyan-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                    />
-                  </svg>
-                  info@intenzze.com
-                </a>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>{lang === "sv" ? "Mån-Fre 09:00-17:00" : "Mon-Fri 09:00-17:00"}</span>
               </li>
-           
+              <li className="text-slate-400 flex items-center gap-3">
+                <svg
+                  className="w-5 h-5 text-green-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>{lang === "sv" ? "Svarar inom 24h" : "Response within 24h"}</span>
+              </li>
               <li className="text-slate-400 flex items-start gap-3">
                 <svg
                   className="w-5 h-5 mt-0.5 flex-shrink-0"
