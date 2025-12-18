@@ -27,9 +27,9 @@ export const metadata: Metadata = {
   description:
     "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
   icons: {
-    icon: "/logoico-rosa.png",
-    shortcut: "/logoico-rosa.png",
-    apple: "/logo.png",
+    icon: "/favicon20.png",
+    shortcut: "/favicon20.png",
+    apple: "/favicon20.png",
   },
   openGraph: {
     title: "We build digital experiences that drive growth",
