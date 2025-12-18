@@ -6,6 +6,7 @@ import "./globals.css";
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
 import CookieBanner from "@/app/components/CookieBanner";
+import ConditionalLayout from "@/app/components/ConditionalLayout";
 import { LanguageProvider } from "@/app/i18n/LanguageProvider";
 import GAListener from "./components/GAListener";
 
@@ -103,11 +104,16 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-950`}
       >
         <LanguageProvider>
-          <div className="relative z-10">
-            <Header />
-          </div>
-          {children}
-          <Footer />
+          <ConditionalLayout
+            header={
+              <div className="relative z-10">
+                <Header />
+              </div>
+            }
+            footer={<Footer />}
+          >
+            {children}
+          </ConditionalLayout>
           <CookieBanner />
         </LanguageProvider>
 
