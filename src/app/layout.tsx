@@ -4,6 +4,7 @@ import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/app/components/Header";
+import Footer from "@/app/components/Footer";
 import CookieBanner from "@/app/components/CookieBanner";
 import { LanguageProvider } from "@/app/i18n/LanguageProvider";
 import GAListener from "./components/GAListener";
@@ -106,6 +107,7 @@ export default async function RootLayout({
             <Header />
           </div>
           {children}
+          <Footer />
           <CookieBanner />
         </LanguageProvider>
 

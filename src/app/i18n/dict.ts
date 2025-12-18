@@ -62,6 +62,14 @@ export const dict: Record<Lang, Record<string, string>> = {
     sent: "Skickat!",
     sent_msg: "Tack! Ditt meddelande har skickats.",
     error_msg: "Något gick fel. Försök igen.",
+
+    footer_tagline: "Struktur före glitter",
+    footer_nav_title: "Navigation",
+    footer_contact_title: "Kontakt",
+    footer_follow_title: "Följ oss",
+    footer_rights: "Alla rättigheter förbehållna.",
+    footer_privacy: "Integritetspolicy",
+    footer_billing: "Fakturering sker via Utbetalning Sverige AB (org.nr 559484 9407). Tjänsten utförs av Intenzze Webbstudio.",
   },
   en: {
     nav_home: "Home",
@@ -124,5 +132,13 @@ export const dict: Record<Lang, Record<string, string>> = {
     sent: "Sent!",
     sent_msg: "Thanks! Your message has been sent.",
     error_msg: "Something went wrong. Please try again.",
+
+    footer_tagline: "Structure before glitter",
+    footer_nav_title: "Navigation",
+    footer_contact_title: "Contact",
+    footer_follow_title: "Follow us",
+    footer_rights: "All rights reserved.",
+    footer_privacy: "Privacy Policy",
+    footer_billing: "Billing through Utbetalning Sverige AB (reg.no 559484 9407). Service provided by Intenzze Webbstudio.",
   },
 };
