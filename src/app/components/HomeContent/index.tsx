@@ -105,19 +105,72 @@ export default function HomeContent() {
               </div>
             </div>
             <div className="lg:col-span-5 relative mt-8 md:mt-0">
-              {/* 3D-like card stack */}
-              <div className="relative h-80 lg:h-96">
-                <div className="absolute top-0 right-0 w-64 h-40 bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 backdrop-blur-xl border border-cyan-500/20 rounded-2xl transform rotate-6 hover:rotate-3 transition-transform" />
-                <div className="absolute top-8 right-8 w-64 h-40 bg-gradient-to-br from-purple-500/20 to-purple-500/5 backdrop-blur-xl border border-purple-500/20 rounded-2xl transform -rotate-3 hover:rotate-0 transition-transform" />
-                <div className="absolute top-16 right-16 w-64 h-40 bg-gradient-to-br from-fuchsia-500/20 to-fuchsia-500/5 backdrop-blur-xl border border-fuchsia-500/20 rounded-2xl transform rotate-1 hover:-rotate-2 transition-transform">
-                  <div className="p-6">
-                    <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-cyan-400">
-                      100%
+              {/* Modern code terminal */}
+              <div className="relative">
+                {/* Glow effect */}
+                <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-3xl blur-2xl opacity-60" />
+
+                {/* Terminal window */}
+                <div className="relative bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl">
+                  {/* Terminal header */}
+                  <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border-b border-slate-700/50">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                      <div className="w-3 h-3 rounded-full bg-green-500/80" />
                     </div>
-                    <p className="text-sm text-slate-400 mt-2">
-                      {sv ? "Nöjda kunder" : "Happy clients"}
-                    </p>
+                    <span className="ml-2 text-xs text-slate-500 font-mono">intenzze.webbstudio</span>
                   </div>
+
+                  {/* Terminal content */}
+                  <div className="p-5 font-mono text-sm space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-cyan-400">$</span>
+                      <span className="text-slate-300">npx create-next-app</span>
+                      <span className="w-2 h-4 bg-cyan-400 animate-pulse" />
+                    </div>
+                    <div className="text-slate-500 text-xs">
+                      {sv ? "Skapar din webbplats..." : "Creating your website..."}
+                    </div>
+                    <div className="space-y-1.5 pt-2">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-slate-400 text-xs">{sv ? "Responsiv design" : "Responsive design"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-slate-400 text-xs">{sv ? "Blixtsnabb laddning" : "Lightning fast"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-slate-400 text-xs">{sv ? "Säker & krypterad" : "Secure & encrypted"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-slate-400 text-xs">{sv ? "Modern teknologi" : "Modern technology"}</span>
+                      </div>
+                    </div>
+                    <div className="pt-3 flex items-center gap-2">
+                      <span className="text-green-400">✓</span>
+                      <span className="text-green-400 text-xs">{sv ? "Redo för lansering!" : "Ready to launch!"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating badges */}
+                <div className="absolute -top-3 -right-3 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full text-xs font-medium shadow-lg shadow-cyan-500/25">
+                  Next.js
+                </div>
+                <div className="absolute -bottom-3 -left-3 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-full text-xs font-medium shadow-lg shadow-purple-500/25">
+                  React
                 </div>
               </div>
             </div>

@@ -5,12 +5,12 @@ import nodemailer from "nodemailer";
 
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtp.zoho.eu",
   port: 465,
   secure: true,
   auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
+    user: process.env.ZOHO_USER,
+    pass: process.env.ZOHO_PASSWORD,
   },
 });
 
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     }
 
     const to = process.env.CONTACT_TO;
-    const from = process.env.FROM_EMAIL || process.env.GMAIL_USER || "";
+    const from = process.env.FROM_EMAIL || process.env.ZOHO_USER || "";
     if (!to || !from) {
       return NextResponse.json(
         { ok: false, error: "Servern saknar e-postkonfiguration" },

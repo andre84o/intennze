@@ -1,8 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { useAdmin } from "./AdminContext";
+
+const menuItems = [
+  { label: "Dashboard", href: "/admin" },
+  { label: "Kunder", href: "/admin/kunder" },
+  { label: "Påminnelser", href: "/admin/paminnelser" },
+  { label: "Meddelanden", href: "/admin/meddelanden" },
+  { label: "Inställningar", href: "/admin/installningar" },
+];
 
 interface AdminHeaderProps {
   userEmail?: string;
@@ -11,6 +20,7 @@ interface AdminHeaderProps {
 export default function AdminHeader({ userEmail }: AdminHeaderProps) {
   const { sidebarState, toggleSidebar, openSidebar } = useAdmin();
   const router = useRouter();
+  const pathname = usePathname();
 
   const isOpen = sidebarState === "open";
   const isCollapsed = sidebarState === "collapsed";
@@ -108,8 +118,27 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
                 </svg>
               </button>
             )}
-            <h1 className="text-lg font-semibold text-white">Admin Panel</h1>
           </div>
+
+          {/* Center - Navigation menu */}
+          <nav className="hidden md:flex items-center gap-1">
+            {menuItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white border border-cyan-500/30"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
 
           {/* Right side - User info & logout */}
           <div className="flex items-center gap-4">
