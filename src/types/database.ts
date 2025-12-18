@@ -2,6 +2,7 @@ export type CustomerStatus = 'lead' | 'contacted' | 'negotiating' | 'customer' |
 export type ReminderType = 'general' | 'follow_up' | 'service_update' | 'renewal' | 'upsell';
 export type RecurringInterval = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'sale' | 'other';
+export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired';
 
 export interface Customer {
   id: string;
@@ -68,6 +69,44 @@ export interface Purchase {
   created_by: string | null;
 }
 
+export interface Quote {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  quote_number: number;
+  customer_id: string | null;
+  title: string;
+  description: string | null;
+  valid_from: string;
+  valid_until: string | null;
+  status: QuoteStatus;
+  subtotal: number;
+  vat_rate: number;
+  vat_amount: number;
+  total: number;
+  notes: string | null;
+  terms: string | null;
+  sent_at: string | null;
+  sent_to_email: string | null;
+  created_by: string | null;
+  // Joined data
+  customer?: Customer;
+  items?: QuoteItem[];
+}
+
+export interface QuoteItem {
+  id: string;
+  created_at: string;
+  quote_id: string;
+  description: string;
+  details: string | null;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total: number;
+  sort_order: number;
+}
+
 // Form data types
 export interface CustomerFormData {
   first_name: string;
@@ -102,6 +141,27 @@ export interface ReminderFormData {
   recurring_interval: RecurringInterval | '';
 }
 
+export interface QuoteItemFormData {
+  id?: string;
+  description: string;
+  details: string;
+  quantity: string;
+  unit: string;
+  unit_price: string;
+}
+
+export interface QuoteFormData {
+  customer_id: string;
+  title: string;
+  description: string;
+  valid_from: string;
+  valid_until: string;
+  vat_rate: string;
+  notes: string;
+  terms: string;
+  items: QuoteItemFormData[];
+}
+
 // Status labels
 export const customerStatusLabels: Record<CustomerStatus, string> = {
   lead: 'Lead',
@@ -126,4 +186,12 @@ export const interactionTypeLabels: Record<InteractionType, string> = {
   note: 'Anteckning',
   sale: 'Försäljning',
   other: 'Övrigt',
+};
+
+export const quoteStatusLabels: Record<QuoteStatus, string> = {
+  draft: 'Utkast',
+  sent: 'Skickad',
+  accepted: 'Accepterad',
+  declined: 'Avböjd',
+  expired: 'Utgången',
 };

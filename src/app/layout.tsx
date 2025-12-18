@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/app/components/Header";
@@ -9,6 +10,7 @@ import CookieBanner from "@/app/components/CookieBanner";
 import ConditionalLayout from "@/app/components/ConditionalLayout";
 import { LanguageProvider } from "@/app/i18n/LanguageProvider";
 import GAListener from "./components/GAListener";
+import Analytics from "./components/Analytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -115,6 +117,9 @@ export default async function RootLayout({
             {children}
           </ConditionalLayout>
           <CookieBanner />
+          <Suspense fallback={null}>
+            <Analytics />
+          </Suspense>
         </LanguageProvider>
 
         <Script id="ld-org" type="application/ld+json">

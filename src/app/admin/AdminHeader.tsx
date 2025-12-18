@@ -8,6 +8,7 @@ import { useAdmin } from "./AdminContext";
 const menuItems = [
   { label: "Dashboard", href: "/admin" },
   { label: "Kunder", href: "/admin/kunder" },
+  { label: "Offerter", href: "/admin/offerter" },
   { label: "Påminnelser", href: "/admin/paminnelser" },
   { label: "Meddelanden", href: "/admin/meddelanden" },
   { label: "Inställningar", href: "/admin/installningar" },
