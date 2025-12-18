@@ -4,9 +4,16 @@ import Link from "next/link";
 
 const Logo = () => {
     return (
-      <div className="flex">
-        <Link href="/">
-          <Image src="/bild-logo-light.svg" alt="Intenzze logo" width={120} height={120} />
+      <div className="relative h-10 w-[160px]">
+        <Link href="/" className="block">
+          <Image
+            src="/logony22.png"
+            alt="Intenzze logo"
+            width={220}
+            height={220}
+            className="absolute -left-8 top-1/2 -translate-y-1/2"
+            priority
+          />
         </Link>
       </div>
     );
