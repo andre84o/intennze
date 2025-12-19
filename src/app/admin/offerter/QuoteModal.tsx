@@ -27,7 +27,7 @@ const getInitialFormData = (): QuoteFormData => ({
   valid_until: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
   vat_rate: "25",
   notes: "",
-  terms: "Offerten gäller i 10 dagar från offertdatum.\n\nBetalning: 50% vid start, 50% vid leverans. Betalningsvillkor: 10 dagar netto.\n\nLeverans och tidsplan: Leveransdatum räknas från den dag då första delbetalningen är mottagen och allt nödvändigt material har levererats av Uppdragsgivaren.\n\nFakturering och betalningshantering sker via Utbetalning Sverige AB (org.nr 559484 9407) genom Utbetalning.com. Tjänsten utförs av Intennze Webbstudio.",
+  terms: "Offerten gäller i 10 dagar från offertdatum.\n\nBetalning: 50% vid start, 50% vid leverans. Betalningsvillkor: 10 dagar netto.\n\nLeverans och tidsplan: Leveransdatum räknas från den dag då första delbetalningen är mottagen och allt nödvändigt material har levererats av Uppdragsgivaren.\n\nFakturering och betalningshantering sker via Utbetalning Sverige AB (org.nr 559484 9407) genom Utbetalning.com. Tjänsten utförs av Intenzze Webbstudio.",
   items: [{ ...emptyItem }],
 });
 

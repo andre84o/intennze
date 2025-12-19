@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Quote, QuoteItem, quoteStatusLabels } from "@/types/database";
+import { Quote, QuoteItem } from "@/types/database";
 
-interface QuoteWithDetails extends Quote {
+interface QuoteWithDetails extends Omit<Quote, 'customer'> {
   customer?: {
     first_name: string;
     last_name: string;
