@@ -62,7 +62,7 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
         <button
           onClick={openSidebar}
           type="button"
-          className="fixed top-3 sm:top-4 left-3 sm:left-4 z-50 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 text-white shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+          className="fixed top-3 sm:top-4 left-3 sm:left-4 z-50 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
           aria-label="Öppna sidofält"
         >
           <svg
@@ -83,7 +83,7 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
 
       {/* Main header */}
       <header
-        className={`fixed top-0 right-0 h-14 sm:h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 z-30 transition-all duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-14 sm:h-16 bg-white/80 backdrop-blur-md border-b border-gray-200 z-30 transition-all duration-300 ease-in-out ${
           isOpen ? "left-52 sm:left-64" : isCollapsed ? "left-14 sm:left-20" : "left-0"
         }`}
       >
@@ -94,15 +94,15 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
               <button
                 onClick={toggleSidebar}
                 type="button"
-                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700 active:bg-slate-600 active:scale-95 border border-slate-700 hover:border-slate-600 transition-all duration-150 cursor-pointer select-none"
+                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 active:scale-95 border border-gray-200 hover:border-gray-300 transition-all duration-150 cursor-pointer select-none"
                 aria-label={isOpen ? "Minimera sidofält" : "Dölj sidofält"}
               >
                 <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 pointer-events-none"
+                  className="w-5 h-5 sm:w-6 sm:h-6 pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                 >
                   {getToggleIcon()}
                 </svg>
@@ -110,32 +110,33 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
             )}
           </div>
 
-          {/* Right side - User info & logout */}
+          {/* Right side - User & Actions */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {userEmail && (
-              <span className="text-xs sm:text-sm text-slate-400 hidden md:block truncate max-w-[150px] sm:max-w-none">
-                {userEmail}
-              </span>
-            )}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 rounded-lg transition-all duration-200"
-            >
-              <svg
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
+            {/* User profile */}
+            <div className="flex items-center gap-3 pl-3 sm:pl-4 border-l border-gray-200">
+              <div className="hidden sm:block text-right">
+                <p className="text-sm font-medium text-gray-900">Admin</p>
+                <p className="text-xs text-gray-500">{userEmail || "admin@intenzze.se"}</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px]">
+                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                  <span className="font-bold text-transparent bg-clip-text bg-gradient-to-br from-blue-500 to-purple-500 text-xs sm:text-sm">
+                    A
+                  </span>
+                </div>
+              </div>
+              
+              {/* Logout button */}
+              <button
+                onClick={handleLogout}
+                className="ml-2 p-2 text-gray-400 hover:text-red-500 transition-colors"
+                title="Logga ut"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
-                />
-              </svg>
-              <span className="hidden sm:inline">Logga ut</span>
-            </button>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </header>

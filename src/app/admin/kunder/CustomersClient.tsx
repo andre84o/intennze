@@ -13,11 +13,19 @@ interface Props {
 }
 
 const statusColors: Record<CustomerStatus, string> = {
-  lead: "bg-slate-500",
+  lead: "bg-gray-500",
   contacted: "bg-blue-500",
-  negotiating: "bg-yellow-500",
+  negotiating: "bg-amber-500",
   customer: "bg-green-500",
   churned: "bg-red-500",
+};
+
+const statusBadges: Record<CustomerStatus, string> = {
+  lead: "bg-gray-100 text-gray-700 border-gray-200",
+  contacted: "bg-blue-50 text-blue-700 border-blue-200",
+  negotiating: "bg-amber-50 text-amber-700 border-amber-200",
+  customer: "bg-green-50 text-green-700 border-green-200",
+  churned: "bg-red-50 text-red-700 border-red-200",
 };
 
 // Facebook-ikon SVG
@@ -49,52 +57,30 @@ const WebsiteIcon = () => (
   </svg>
 );
 
-// Referens-ikon SVG
-const ReferralIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-    <circle cx="9" cy="7" r="4"/>
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-  </svg>
-);
+// Helper functions for lead source
+const getLeadSourceLabel = (source: string | null) => {
+  if (!source) return "";
+  return leadSourceLabels[source as LeadSource] || source;
+};
 
-// Funktion för att hämta lead source-ikon
+const getLeadSourceColor = (source: string | null) => {
+  if (!source) return "bg-gray-500";
+  return leadSourceColors[source as LeadSource] || "bg-gray-500";
+};
+
 const getLeadSourceIcon = (source: string | null) => {
-  if (!source) return null;
-
-  const sourceKey = source.toLowerCase().replace(/\s+/g, '_') as LeadSource;
-
-  switch (sourceKey) {
-    case 'facebook_ads':
+  switch (source) {
+    case "facebook_ads":
       return <FacebookIcon />;
-    case 'google_ads':
+    case "google_ads":
       return <GoogleAdsIcon />;
-    case 'linkedin':
+    case "linkedin_ads":
       return <LinkedInIcon />;
-    case 'website':
+    case "website":
       return <WebsiteIcon />;
-    case 'referral':
-      return <ReferralIcon />;
     default:
       return null;
   }
-};
-
-// Funktion för att hämta lead source-färg
-const getLeadSourceColor = (source: string | null): string => {
-  if (!source) return 'bg-slate-500';
-
-  const sourceKey = source.toLowerCase().replace(/\s+/g, '_') as LeadSource;
-  return leadSourceColors[sourceKey] || 'bg-slate-500';
-};
-
-// Funktion för att hämta lead source-label
-const getLeadSourceLabel = (source: string | null): string => {
-  if (!source) return source || '';
-
-  const sourceKey = source.toLowerCase().replace(/\s+/g, '_') as LeadSource;
-  return leadSourceLabels[sourceKey] || source;
 };
 
 export default function CustomersClient({
@@ -161,52 +147,52 @@ export default function CustomersClient({
   };
 
   return (
-    <div className="text-white">
+    <div className="text-gray-900">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-fuchsia-400">
+          <h1 className="text-2xl font-bold text-gray-900">
             Kunder
           </h1>
-          <p className="text-slate-400 mt-1">Hantera dina kunder och leads</p>
+          <p className="text-gray-500 mt-1">Hantera dina kunder och leads</p>
         </div>
         <button
           onClick={() => {
             setEditingCustomer(null);
             setShowModal(true);
           }}
-          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-medium hover:from-purple-500 hover:to-fuchsia-500 transition-all duration-300"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 shadow-sm"
         >
           + Ny kund
         </button>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
           {error}
         </div>
       )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-        <div className="p-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl">
-          <p className="text-slate-400 text-sm">Totalt</p>
-          <p className="text-2xl font-bold">{stats.total}</p>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Totalt</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
         </div>
-        <div className="p-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl">
-          <p className="text-slate-400 text-sm">Leads</p>
-          <p className="text-2xl font-bold text-blue-400">{stats.leads}</p>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Leads</p>
+          <p className="text-2xl font-bold text-blue-600">{stats.leads}</p>
         </div>
-        <div className="p-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl">
-          <p className="text-slate-400 text-sm">Kunder</p>
-          <p className="text-2xl font-bold text-green-400">{stats.customers}</p>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Kunder</p>
+          <p className="text-2xl font-bold text-green-600">{stats.customers}</p>
         </div>
-        <div className="p-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl">
-          <p className="text-slate-400 text-sm">Serviceavtal</p>
-          <p className="text-2xl font-bold text-purple-400">{stats.withService}</p>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Serviceavtal</p>
+          <p className="text-2xl font-bold text-purple-600">{stats.withService}</p>
         </div>
-        <div className="p-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl">
-          <div className="flex items-center gap-2 text-slate-400 text-sm">
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="flex items-center gap-2 text-gray-500 text-sm">
             <FacebookIcon />
             <span>Facebook Ads</span>
           </div>
@@ -216,8 +202,8 @@ export default function CustomersClient({
 
       {/* Upcoming reminders */}
       {upcomingReminders.length > 0 && (
-        <div className="mb-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-          <h3 className="text-amber-400 font-semibold mb-3 flex items-center gap-2">
+        <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <h3 className="text-amber-700 font-semibold mb-3 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -226,21 +212,21 @@ export default function CustomersClient({
           <div className="space-y-2">
             {upcomingReminders.slice(0, 5).map((reminder) => (
               <div key={reminder.id} className="flex items-center justify-between text-sm">
-                <span className="text-slate-300">
+                <span className="text-gray-700">
                   {reminder.title}
                   {reminder.customer && (
-                    <span className="text-slate-500 ml-2">
+                    <span className="text-gray-500 ml-2">
                       - {reminder.customer.first_name} {reminder.customer.last_name}
                     </span>
                   )}
                 </span>
-                <span className="text-amber-400">{reminder.reminder_date}</span>
+                <span className="text-amber-600 font-medium">{reminder.reminder_date}</span>
               </div>
             ))}
           </div>
           <Link
             href="/admin/paminnelser"
-            className="inline-block mt-3 text-sm text-amber-400 hover:text-amber-300"
+            className="inline-block mt-3 text-sm text-amber-600 hover:text-amber-700 font-medium"
           >
             Visa alla →
           </Link>
@@ -255,13 +241,13 @@ export default function CustomersClient({
             placeholder="Sök på namn, e-post eller företag..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as CustomerStatus | "all")}
-          className="px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">Alla statusar</option>
           {Object.entries(customerStatusLabels).map(([key, label]) => (
@@ -273,9 +259,9 @@ export default function CustomersClient({
       </div>
 
       {/* Customer list */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         {filteredCustomers.length === 0 ? (
-          <div className="p-8 text-center text-slate-400">
+          <div className="p-8 text-center text-gray-500">
             {customers.length === 0
               ? "Inga kunder ännu. Lägg till din första kund!"
               : "Inga kunder matchar din sökning."}
@@ -283,28 +269,28 @@ export default function CustomersClient({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-800/50">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">Namn</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-400 hidden md:table-cell">Företag</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-400 hidden sm:table-cell">Kontakt</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">Status</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-400 hidden lg:table-cell">Budget</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-slate-400">Åtgärder</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Namn</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 hidden md:table-cell">Företag</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 hidden sm:table-cell">Kontakt</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Status</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 hidden lg:table-cell">Budget</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">Åtgärder</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-gray-200">
                 {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-slate-800/30 transition-colors">
+                  <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-white">
+                          <p className="font-medium text-gray-900">
                             {customer.first_name} {customer.last_name}
                           </p>
                           {customer.source && (
                             <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded text-white ${getLeadSourceColor(customer.source)} bg-opacity-80`}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded text-white ${getLeadSourceColor(customer.source)} bg-opacity-90`}
                               title={getLeadSourceLabel(customer.source)}
                             >
                               {getLeadSourceIcon(customer.source)}
@@ -313,43 +299,43 @@ export default function CustomersClient({
                           )}
                         </div>
                         {customer.has_service_agreement && (
-                          <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 rounded">
+                          <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded">
                             Serviceavtal
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-400 hidden md:table-cell">
+                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">
                       {customer.company_name || "-"}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <div className="text-sm">
                         {customer.email && (
-                          <a href={`mailto:${customer.email}`} className="text-cyan-400 hover:underline block">
+                          <a href={`mailto:${customer.email}`} className="text-blue-600 hover:underline block">
                             {customer.email}
                           </a>
                         )}
                         {customer.phone && (
-                          <a href={`tel:${customer.phone}`} className="text-slate-400 hover:text-white">
+                          <a href={`tel:${customer.phone}`} className="text-gray-500 hover:text-gray-900">
                             {customer.phone}
                           </a>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${statusColors[customer.status]} bg-opacity-20`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusBadges[customer.status]}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${statusColors[customer.status]}`} />
                         {customerStatusLabels[customer.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-400 hidden lg:table-cell">
+                    <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">
                       {customer.budget ? `${customer.budget.toLocaleString()} kr` : "-"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/kunder/${customer.id}`}
-                          className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                          className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Visa"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
@@ -362,7 +348,7 @@ export default function CustomersClient({
                             setEditingCustomer(customer);
                             setShowModal(true);
                           }}
-                          className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-slate-700 rounded-lg transition-colors"
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Redigera"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
@@ -371,7 +357,7 @@ export default function CustomersClient({
                         </button>
                         <button
                           onClick={() => handleDelete(customer.id)}
-                          className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded-lg transition-colors"
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Ta bort"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
@@ -403,9 +389,9 @@ export default function CustomersClient({
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-xl font-bold text-white mb-2">Ta bort kund</h3>
-            <p className="text-slate-400 mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Ta bort kund</h3>
+            <p className="text-gray-500 mb-6">
               Är du säker på att du vill ta bort denna kund? Detta går inte att ångra.
             </p>
             <div className="flex justify-end gap-3">
@@ -414,13 +400,13 @@ export default function CustomersClient({
                   setShowDeleteModal(false);
                   setCustomerToDelete(null);
                 }}
-                className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Avbryt
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
               >
                 Ta bort
               </button>

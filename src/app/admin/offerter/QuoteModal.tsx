@@ -48,7 +48,6 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
         notes: quote.notes || "",
         terms: quote.terms || "",
         items: quote.items?.map((item) => ({
-          id: item.id,
           description: item.description,
           details: item.details || "",
           quantity: String(item.quantity),
@@ -56,31 +55,23 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
           unit_price: String(item.unit_price),
         })) || [{ ...emptyItem }],
       });
+    } else {
+      setFormData(getInitialFormData());
     }
   }, [quote]);
 
-  const calculateItemTotal = (item: QuoteItemFormData): number => {
-    const qty = parseFloat(item.quantity) || 0;
-    const price = parseFloat(item.unit_price) || 0;
-    return qty * price;
+  const addItem = () => {
+    setFormData({
+      ...formData,
+      items: [...formData.items, { ...emptyItem }],
+    });
   };
 
-  const calculateTotals = () => {
-    const subtotal = formData.items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
-    const vatRate = parseFloat(formData.vat_rate) || 0;
-    const vatAmount = subtotal * (vatRate / 100);
-    const total = subtotal + vatAmount;
-    return { subtotal, vatAmount, total };
-  };
-
-  const { subtotal, vatAmount, total } = calculateTotals();
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("sv-SE", {
-      style: "currency",
-      currency: "SEK",
-      minimumFractionDigits: 0,
-    }).format(amount);
+  const removeItem = (index: number) => {
+    setFormData({
+      ...formData,
+      items: formData.items.filter((_, i) => i !== index),
+    });
   };
 
   const handleItemChange = (index: number, field: keyof QuoteItemFormData, value: string) => {
@@ -89,14 +80,22 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
     setFormData({ ...formData, items: newItems });
   };
 
-  const addItem = () => {
-    setFormData({ ...formData, items: [...formData.items, { ...emptyItem }] });
+  const calculateItemTotal = (item: QuoteItemFormData) => {
+    const qty = parseFloat(item.quantity) || 0;
+    const price = parseFloat(item.unit_price) || 0;
+    return qty * price;
   };
 
-  const removeItem = (index: number) => {
-    if (formData.items.length === 1) return;
-    const newItems = formData.items.filter((_, i) => i !== index);
-    setFormData({ ...formData, items: newItems });
+  const subtotal = formData.items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+  const vatAmount = subtotal * (parseFloat(formData.vat_rate) / 100);
+  const total = subtotal + vatAmount;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("sv-SE", {
+      style: "currency",
+      currency: "SEK",
+      minimumFractionDigits: 0,
+    }).format(amount);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,18 +192,18 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       <div
-        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-2xl"
+        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white border border-gray-200 rounded-2xl shadow-xl"
       >
-        <div className="sticky top-0 z-10 border-b border-slate-800 px-6 py-4 flex items-center justify-between bg-slate-900">
-          <h2 className="text-xl font-bold text-white">
+        <div className="sticky top-0 z-10 border-b border-gray-200 px-6 py-4 flex items-center justify-between bg-white rounded-t-2xl">
+          <h2 className="text-xl font-bold text-gray-900">
             {quote ? "Redigera offert" : "Ny offert"}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -214,7 +213,7 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
               {error}
             </div>
           )}
@@ -222,13 +221,13 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
           {/* Basic info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Kund
               </label>
               <select
                 value={formData.customer_id}
                 onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Välj kund...</option>
                 {customers.map((customer) => (
@@ -240,7 +239,7 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Titel *
               </label>
               <input
@@ -249,13 +248,13 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="T.ex. Webbplats - Företag AB"
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Beskrivning
             </label>
             <textarea
@@ -263,42 +262,42 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Kort beskrivning av offerten..."
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Giltig från
               </label>
               <input
                 type="date"
                 value={formData.valid_from}
                 onChange={(e) => setFormData({ ...formData, valid_from: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Giltig t.o.m.
               </label>
               <input
                 type="date"
                 value={formData.valid_until}
                 onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Moms (%)
               </label>
               <input
                 type="number"
                 value={formData.vat_rate}
                 onChange={(e) => setFormData({ ...formData, vat_rate: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -306,18 +305,18 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
           {/* Items */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-slate-300">Rader</label>
+              <label className="text-sm font-medium text-gray-700">Rader</label>
               <button
                 type="button"
                 onClick={addItem}
-                className="text-sm text-cyan-400 hover:text-cyan-300"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
                 + Lägg till rad
               </button>
             </div>
             <div className="space-y-4">
               {formData.items.map((item, index) => (
-                <div key={index} className="p-4 bg-slate-800/30 border border-slate-700 rounded-lg">
+                <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   {/* Title row */}
                   <div className="flex items-start gap-3 mb-3">
                     <div className="flex-1">
@@ -326,14 +325,14 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
                         placeholder="Titel / Tjänst *"
                         value={item.description}
                         onChange={(e) => handleItemChange(index, "description", e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white font-medium placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 font-medium placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     {formData.items.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeItem(index)}
-                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -349,7 +348,7 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
                       placeholder="Vad ingår? Förklaring..."
                       value={item.details}
                       onChange={(e) => handleItemChange(index, "details", e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-300 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
@@ -361,7 +360,7 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
                         placeholder="Antal"
                         value={item.quantity}
                         onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       />
                     </div>
                     <div className="w-16">
@@ -370,7 +369,7 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
                         placeholder="Enhet"
                         value={item.unit}
                         onChange={(e) => handleItemChange(index, "unit", e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       />
                     </div>
                     <div className="w-28">
@@ -379,11 +378,11 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
                         placeholder="Á-pris *"
                         value={item.unit_price}
                         onChange={(e) => handleItemChange(index, "unit_price", e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       />
                     </div>
                     <div className="flex-1 text-right">
-                      <span className="text-white font-medium">{formatCurrency(calculateItemTotal(item))}</span>
+                      <span className="text-gray-900 font-medium">{formatCurrency(calculateItemTotal(item))}</span>
                     </div>
                   </div>
                 </div>
@@ -392,17 +391,17 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
           </div>
 
           {/* Totals */}
-          <div className="p-4 bg-slate-800/30 border border-slate-700 rounded-lg">
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <div className="space-y-2">
-              <div className="flex justify-between text-slate-400">
+              <div className="flex justify-between text-gray-500">
                 <span>Subtotal (exkl. moms)</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-slate-400">
+              <div className="flex justify-between text-gray-500">
                 <span>Moms ({formData.vat_rate}%)</span>
                 <span>{formatCurrency(vatAmount)}</span>
               </div>
-              <div className="flex justify-between text-white font-bold text-lg pt-2 border-t border-slate-700">
+              <div className="flex justify-between text-gray-900 font-bold text-lg pt-2 border-t border-gray-200">
                 <span>Totalt (inkl. moms)</span>
                 <span>{formatCurrency(total)}</span>
               </div>
@@ -412,7 +411,7 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
           {/* Notes and Terms */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Anteckningar
               </label>
               <textarea
@@ -420,11 +419,11 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Interna anteckningar..."
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Villkor
               </label>
               <textarea
@@ -432,24 +431,24 @@ export default function QuoteModal({ quote, customers, onClose, onSave }: Props)
                 value={formData.terms}
                 onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
                 placeholder="Betalningsvillkor etc..."
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-lg transition-colors"
             >
               Avbryt
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-medium hover:from-purple-500 hover:to-fuchsia-500 transition-all duration-300 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 disabled:opacity-50 shadow-sm"
             >
               {loading ? "Sparar..." : quote ? "Uppdatera" : "Skapa offert"}
             </button>

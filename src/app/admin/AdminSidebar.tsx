@@ -55,19 +55,19 @@ export default function AdminSidebar() {
     <aside
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
-      className={`fixed top-0 left-0 h-full bg-slate-900/95 backdrop-blur-xl border-r border-slate-800 z-40 transition-all duration-300 ease-in-out ${
+      className={`fixed top-0 left-0 h-full bg-white/95 backdrop-blur-xl border-r border-gray-200 z-40 transition-all duration-300 ease-in-out ${
         shouldExpand ? "w-52 sm:w-64" : isCollapsed ? "w-14 sm:w-20" : "w-0 -translate-x-full"
       }`}
     >
       <div className={`${isHidden ? "opacity-0" : "opacity-100"} transition-opacity duration-200`}>
         {/* Logo */}
-        <div className="h-14 sm:h-16 flex items-center px-3 sm:px-6 border-b border-slate-800">
+        <div className="h-14 sm:h-16 flex items-center px-3 sm:px-6 border-b border-gray-200">
           <Link href="/admin" className="flex items-center gap-2 sm:gap-3">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-xs sm:text-sm">i</span>
             </div>
             <span
-              className={`font-bold text-sm sm:text-base text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 transition-opacity duration-300 ${
+              className={`font-bold text-sm sm:text-base text-gray-900 transition-opacity duration-300 ${
                 shouldExpand ? "opacity-100" : "opacity-0 w-0"
               }`}
             >
@@ -86,13 +86,13 @@ export default function AdminSidebar() {
                 href={item.href}
                 className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-200 group ${
                   isActive
-                    ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white border border-cyan-500/30"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                    ? "bg-blue-50 text-blue-600 border border-blue-100"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 <span
                   className={`flex-shrink-0 ${
-                    isActive ? "text-cyan-400" : "text-slate-400 group-hover:text-cyan-400"
+                    isActive ? "text-blue-600" : "text-gray-400 group-hover:text-blue-600"
                   } transition-colors`}
                 >
                   <svg
@@ -121,13 +121,13 @@ export default function AdminSidebar() {
         </nav>
 
         {/* Bottom section */}
-        <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 border-t border-slate-800">
+        <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 border-t border-gray-200">
           <Link
             href="/"
-            className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 group"
+            className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 group"
           >
             <svg
-              className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-slate-400 group-hover:text-cyan-400 transition-colors"
+              className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-gray-400 group-hover:text-blue-600 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

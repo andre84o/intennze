@@ -84,7 +84,7 @@ export default function ReminderNotifications() {
   if (reminders.length === 0) return null;
 
   const typeColors: Record<string, string> = {
-    general: "bg-slate-500",
+    general: "bg-gray-500",
     follow_up: "bg-blue-500",
     service_update: "bg-purple-500",
     renewal: "bg-amber-500",
@@ -108,7 +108,7 @@ export default function ReminderNotifications() {
 
       {/* Expanded view - list of reminders */}
       {isExpanded && (
-        <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500">
             <h3 className="text-white font-semibold flex items-center gap-2">
@@ -132,30 +132,30 @@ export default function ReminderNotifications() {
             {reminders.map((reminder) => (
               <div
                 key={reminder.id}
-                className="p-4 border-b border-slate-800 last:border-b-0 hover:bg-slate-800/50 transition-colors"
+                className="p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`w-2 h-2 rounded-full ${typeColors[reminder.type] || typeColors.general}`} />
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-gray-500">
                         {reminderTypeLabels[reminder.type]}
                       </span>
                     </div>
-                    <h4 className="text-white font-medium truncate">{reminder.title}</h4>
+                    <h4 className="text-gray-900 font-medium truncate">{reminder.title}</h4>
                     {reminder.customer && (
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-gray-500 text-sm">
                         {reminder.customer.first_name} {reminder.customer.last_name}
                       </p>
                     )}
-                    <p className="text-slate-500 text-xs mt-1">
+                    <p className="text-gray-400 text-xs mt-1">
                       {reminder.reminder_date} {reminder.reminder_time || ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleMarkComplete(reminder.id)}
-                      className="p-1.5 text-green-400 hover:bg-green-500/20 rounded transition-colors"
+                      className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
                       title="Markera som klar"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -164,7 +164,7 @@ export default function ReminderNotifications() {
                     </button>
                     <button
                       onClick={() => handleDismiss(reminder.id)}
-                      className="p-1.5 text-slate-400 hover:bg-slate-700 rounded transition-colors"
+                      className="p-1.5 text-gray-400 hover:bg-gray-100 rounded transition-colors"
                       title="Avfärda"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -178,10 +178,10 @@ export default function ReminderNotifications() {
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-3 bg-slate-800/50 border-t border-slate-700">
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
             <Link
               href="/admin/forsaljning"
-              className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+              className="text-sm text-blue-600 hover:text-blue-500 transition-colors"
             >
               Gå till försäljning →
             </Link>

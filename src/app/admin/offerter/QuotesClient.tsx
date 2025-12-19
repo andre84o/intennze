@@ -13,7 +13,15 @@ interface Props {
 }
 
 const statusColors: Record<QuoteStatus, string> = {
-  draft: "bg-slate-500",
+  draft: "bg-gray-100 text-gray-700 border-gray-200",
+  sent: "bg-blue-50 text-blue-700 border-blue-200",
+  accepted: "bg-green-50 text-green-700 border-green-200",
+  declined: "bg-red-50 text-red-700 border-red-200",
+  expired: "bg-amber-50 text-amber-700 border-amber-200",
+};
+
+const statusDotColors: Record<QuoteStatus, string> = {
+  draft: "bg-gray-500",
   sent: "bg-blue-500",
   accepted: "bg-green-500",
   declined: "bg-red-500",
@@ -55,48 +63,54 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
     if (!quoteToDelete) return;
 
     const supabase = createClient();
-    const { error } = await supabase.from("quotes").delete().eq("id", quoteToDelete);
+    const { error } = await supabase
+      .from("quotes")
+      .delete()
+      .eq("id", quoteToDelete);
 
-    if (!error) {
-      setQuotes((prev) => prev.filter((q) => q.id !== quoteToDelete));
+    if (error) {
+      console.error("Error deleting quote:", error);
+      alert("Kunde inte ta bort offerten");
+      return;
     }
+
+    setQuotes((prev) => prev.filter((q) => q.id !== quoteToDelete));
     setShowDeleteModal(false);
     setQuoteToDelete(null);
   };
 
   const handleSendEmail = (quote: Quote) => {
-    if (!quote.customer?.email) {
-      alert("Kunden har ingen e-postadress registrerad.");
-      return;
-    }
     setQuoteToSend(quote);
   };
 
-  const confirmSendEmail = async () => {
+  const confirmSendEmail = async (email: string, message: string) => {
     if (!quoteToSend) return;
     
-    const quote = quoteToSend;
-    setSendingId(quote.id);
+    setSendingId(quoteToSend.id);
+    setQuoteToSend(null); // Close modal immediately
 
     try {
       const response = await fetch("/api/quote/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quoteId: quote.id }),
+        body: JSON.stringify({
+          quoteId: quoteToSend.id,
+          email,
+          message,
+        }),
       });
 
       const result = await response.json();
 
-      if (result.ok) {
-        // Update local state
+      if (response.ok) {
+        // Update status locally
         setQuotes((prev) =>
           prev.map((q) =>
-            q.id === quote.id
-              ? { ...q, status: "sent" as QuoteStatus, sent_at: new Date().toISOString(), sent_to_email: quote.customer?.email || null }
+            q.id === quoteToSend.id
+              ? { ...q, status: "sent", sent_at: new Date().toISOString(), sent_to_email: email }
               : q
           )
         );
-        setQuoteToSend(null);
         // Optional: Show success toast instead of alert
       } else {
         alert(`Fel: ${result.error || "Kunde inte skicka offerten"}`);
@@ -120,33 +134,33 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
     const isSending = sendingId === quote.id;
 
     return (
-      <div className="p-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl hover:border-slate-700 transition-all">
+      <div className="p-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-slate-500 text-sm font-mono">#{quote.quote_number}</span>
+              <span className="text-gray-500 text-sm font-mono">#{quote.quote_number}</span>
               <span
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[quote.status]} bg-opacity-20`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[quote.status]}`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${statusColors[quote.status]}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${statusDotColors[quote.status]}`} />
                 {quoteStatusLabels[quote.status]}
               </span>
             </div>
-            <h3 className="font-medium text-white">{quote.title}</h3>
+            <h3 className="font-semibold text-gray-900">{quote.title}</h3>
             {quote.customer && (
-              <p className="text-sm text-cyan-400 mt-1">
+              <p className="text-sm text-blue-600 mt-1 font-medium">
                 {quote.customer.first_name} {quote.customer.last_name}
                 {quote.customer.company_name && ` - ${quote.customer.company_name}`}
               </p>
             )}
             <div className="flex items-center gap-4 mt-3">
-              <p className="text-lg font-bold text-white">{formatCurrency(quote.total)}</p>
-              <p className="text-sm text-slate-500">
+              <p className="text-lg font-bold text-gray-900">{formatCurrency(quote.total)}</p>
+              <p className="text-sm text-gray-500">
                 Giltig t.o.m. {quote.valid_until || "—"}
               </p>
             </div>
             {quote.sent_at && (
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-gray-500 mt-2">
                 Skickad {new Date(quote.sent_at).toLocaleDateString("sv-SE")} till {quote.sent_to_email}
               </p>
             )}
@@ -156,7 +170,7 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
               <button
                 onClick={() => handleSendEmail(quote)}
                 disabled={isSending}
-                className="p-2 text-slate-400 hover:text-green-400 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
                 title="Skicka via e-post"
               >
                 {isSending ? (
@@ -176,7 +190,7 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
                 setEditingQuote(quote);
                 setShowModal(true);
               }}
-              className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               title="Redigera"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
@@ -185,7 +199,7 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
             </button>
             <button
               onClick={() => handleDelete(quote.id)}
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               title="Ta bort"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
@@ -208,49 +222,49 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
   };
 
   return (
-    <div className="text-white">
+    <div className="text-gray-900">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-fuchsia-400">
+          <h1 className="text-2xl font-bold text-gray-900">
             Offerter
           </h1>
-          <p className="text-slate-400 mt-1">Skapa och skicka offerter till kunder</p>
+          <p className="text-gray-500 mt-1">Skapa och skicka offerter till kunder</p>
         </div>
         <button
           onClick={() => {
             setEditingQuote(null);
             setShowModal(true);
           }}
-          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-medium hover:from-purple-500 hover:to-fuchsia-500 transition-all duration-300"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 shadow-sm hover:shadow"
         >
           + Ny offert
         </button>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
           {error}
         </div>
       )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl">
-          <p className="text-slate-400 text-sm">Totalt</p>
-          <p className="text-2xl font-bold text-white">{stats.total}</p>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Totalt</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
         </div>
-        <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl">
-          <p className="text-slate-400 text-sm">Utkast</p>
-          <p className="text-2xl font-bold text-slate-400">{stats.draft}</p>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Utkast</p>
+          <p className="text-2xl font-bold text-gray-700">{stats.draft}</p>
         </div>
-        <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl">
-          <p className="text-slate-400 text-sm">Skickade</p>
-          <p className="text-2xl font-bold text-blue-400">{stats.sent}</p>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Skickade</p>
+          <p className="text-2xl font-bold text-blue-600">{stats.sent}</p>
         </div>
-        <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl">
-          <p className="text-slate-400 text-sm">Accepterade</p>
-          <p className="text-2xl font-bold text-green-400">{formatCurrency(stats.totalValue)}</p>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Accepterade</p>
+          <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalValue)}</p>
         </div>
       </div>
 
@@ -267,10 +281,10 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key as QuoteStatus | "all")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
               filter === tab.key
-                ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-                : "bg-slate-800/50 text-slate-400 border border-slate-700 hover:text-white"
+                ? "bg-blue-50 text-blue-700 border-blue-200"
+                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900"
             }`}
           >
             {tab.label}
@@ -286,7 +300,7 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
       </div>
 
       {filteredQuotes.length === 0 && (
-        <div className="p-8 bg-slate-900/50 border border-slate-800 rounded-xl text-center text-slate-400">
+        <div className="p-8 bg-white border border-gray-200 rounded-xl text-center text-gray-500">
           Inga offerter att visa.
         </div>
       )}
@@ -317,9 +331,9 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-xl font-bold text-white mb-2">Ta bort offert</h3>
-            <p className="text-slate-400 mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Ta bort offert</h3>
+            <p className="text-gray-500 mb-6">
               Är du säker på att du vill ta bort denna offert? Detta går inte att ångra.
             </p>
             <div className="flex justify-end gap-3">
@@ -328,13 +342,13 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
                   setShowDeleteModal(false);
                   setQuoteToDelete(null);
                 }}
-                className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Avbryt
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
               >
                 Ta bort
               </button>
