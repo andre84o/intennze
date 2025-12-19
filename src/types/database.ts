@@ -3,6 +3,26 @@ export type ReminderType = 'general' | 'follow_up' | 'service_update' | 'renewal
 export type RecurringInterval = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'sale' | 'other';
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired';
+export type LeadSource = 'facebook_ads' | 'google_ads' | 'website' | 'referral' | 'linkedin' | 'other';
+
+// Lead source labels och ikoner
+export const leadSourceLabels: Record<LeadSource, string> = {
+  facebook_ads: 'Facebook Ads',
+  google_ads: 'Google Ads',
+  website: 'Webbplats',
+  referral: 'Referens',
+  linkedin: 'LinkedIn',
+  other: 'Övrigt',
+};
+
+export const leadSourceColors: Record<LeadSource, string> = {
+  facebook_ads: 'bg-blue-600',
+  google_ads: 'bg-red-500',
+  website: 'bg-cyan-500',
+  referral: 'bg-green-500',
+  linkedin: 'bg-blue-700',
+  other: 'bg-slate-500',
+};
 
 export interface Customer {
   id: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Customer, CustomerFormData, CustomerStatus, customerStatusLabels } from "@/types/database";
+import { Customer, CustomerFormData, CustomerStatus, customerStatusLabels, leadSourceLabels, LeadSource } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
 
 interface Props {
@@ -316,13 +316,18 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
                 <label className="block text-sm font-medium text-slate-300 mb-1">
                   Källa
                 </label>
-                <input
-                  type="text"
-                  placeholder="T.ex. Google, Referens, LinkedIn..."
+                <select
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
+                  className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                >
+                  <option value="">Välj källa...</option>
+                  {Object.entries(leadSourceLabels).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex items-center gap-4 pt-6">
                 <label className="flex items-center gap-2 cursor-pointer">

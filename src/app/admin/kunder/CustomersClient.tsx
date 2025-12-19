@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Customer, Reminder, customerStatusLabels, CustomerStatus } from "@/types/database";
+import { Customer, Reminder, customerStatusLabels, CustomerStatus, LeadSource, leadSourceLabels, leadSourceColors } from "@/types/database";
 import CustomerModal from "./CustomerModal";
 import { createClient } from "@/utils/supabase/client";
 
@@ -18,6 +18,83 @@ const statusColors: Record<CustomerStatus, string> = {
   negotiating: "bg-yellow-500",
   customer: "bg-green-500",
   churned: "bg-red-500",
+};
+
+// Facebook-ikon SVG
+const FacebookIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
+
+// Google Ads-ikon SVG
+const GoogleAdsIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/>
+  </svg>
+);
+
+// LinkedIn-ikon SVG
+const LinkedInIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  </svg>
+);
+
+// Webbplats-ikon SVG
+const WebsiteIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>
+);
+
+// Referens-ikon SVG
+const ReferralIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+
+// Funktion för att hämta lead source-ikon
+const getLeadSourceIcon = (source: string | null) => {
+  if (!source) return null;
+
+  const sourceKey = source.toLowerCase().replace(/\s+/g, '_') as LeadSource;
+
+  switch (sourceKey) {
+    case 'facebook_ads':
+      return <FacebookIcon />;
+    case 'google_ads':
+      return <GoogleAdsIcon />;
+    case 'linkedin':
+      return <LinkedInIcon />;
+    case 'website':
+      return <WebsiteIcon />;
+    case 'referral':
+      return <ReferralIcon />;
+    default:
+      return null;
+  }
+};
+
+// Funktion för att hämta lead source-färg
+const getLeadSourceColor = (source: string | null): string => {
+  if (!source) return 'bg-slate-500';
+
+  const sourceKey = source.toLowerCase().replace(/\s+/g, '_') as LeadSource;
+  return leadSourceColors[sourceKey] || 'bg-slate-500';
+};
+
+// Funktion för att hämta lead source-label
+const getLeadSourceLabel = (source: string | null): string => {
+  if (!source) return source || '';
+
+  const sourceKey = source.toLowerCase().replace(/\s+/g, '_') as LeadSource;
+  return leadSourceLabels[sourceKey] || source;
 };
 
 export default function CustomersClient({
@@ -71,6 +148,7 @@ export default function CustomersClient({
     leads: customers.filter((c) => c.status === "lead").length,
     customers: customers.filter((c) => c.status === "customer").length,
     withService: customers.filter((c) => c.has_service_agreement).length,
+    fromFacebook: customers.filter((c) => c.source === "facebook_ads").length,
   };
 
   return (
@@ -101,7 +179,7 @@ export default function CustomersClient({
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <div className="p-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl">
           <p className="text-slate-400 text-sm">Totalt</p>
           <p className="text-2xl font-bold">{stats.total}</p>
@@ -117,6 +195,13 @@ export default function CustomersClient({
         <div className="p-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl">
           <p className="text-slate-400 text-sm">Serviceavtal</p>
           <p className="text-2xl font-bold text-purple-400">{stats.withService}</p>
+        </div>
+        <div className="p-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl">
+          <div className="flex items-center gap-2 text-slate-400 text-sm">
+            <FacebookIcon />
+            <span>Facebook Ads</span>
+          </div>
+          <p className="text-2xl font-bold text-blue-600">{stats.fromFacebook}</p>
         </div>
       </div>
 
@@ -204,9 +289,20 @@ export default function CustomersClient({
                   <tr key={customer.id} className="hover:bg-slate-800/30 transition-colors">
                     <td className="px-4 py-3">
                       <div>
-                        <p className="font-medium text-white">
-                          {customer.first_name} {customer.last_name}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-white">
+                            {customer.first_name} {customer.last_name}
+                          </p>
+                          {customer.source && (
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded text-white ${getLeadSourceColor(customer.source)} bg-opacity-80`}
+                              title={getLeadSourceLabel(customer.source)}
+                            >
+                              {getLeadSourceIcon(customer.source)}
+                              {customer.source === 'facebook_ads' && <span>FB</span>}
+                            </span>
+                          )}
+                        </div>
                         {customer.has_service_agreement && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 rounded">
                             Serviceavtal
