@@ -115,6 +115,10 @@ export interface Quote {
   sent_at: string | null;
   sent_to_email: string | null;
   created_by: string | null;
+  // Public access token
+  public_token: string | null;
+  customer_response_at: string | null;
+  customer_response_note: string | null;
   // Joined data
   customer?: Customer;
   items?: QuoteItem[];

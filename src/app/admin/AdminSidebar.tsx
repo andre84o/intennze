@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAdmin } from "./AdminContext";
 
@@ -63,8 +64,13 @@ export default function AdminSidebar() {
         {/* Logo */}
         <div className="h-14 sm:h-16 flex items-center px-3 sm:px-6 border-b border-gray-200">
           <Link href="/admin" className="flex items-center gap-2 sm:gap-3">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-xs sm:text-sm">i</span>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 relative">
+              <Image
+                src="/favicon20.png"
+                alt="Intenzze Logo"
+                fill
+                className="object-contain"
+              />
             </div>
             <span
               className={`font-bold text-sm sm:text-base text-gray-900 transition-opacity duration-300 ${

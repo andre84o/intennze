@@ -2,7 +2,13 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import crypto from "crypto";
 import { createClient } from "@/utils/supabase/server";
+
+// Generate a secure random token
+function generateToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
 
 const transporter = nodemailer.createTransport({
   host: "smtp.zoho.eu",
@@ -84,6 +90,11 @@ export async function POST(req: Request) {
 
     const customerName = `${quote.customer.first_name} ${quote.customer.last_name}`;
 
+    // Generate public token for customer response
+    const publicToken = quote.public_token || generateToken();
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://intenzze.com";
+    const quoteUrl = `${baseUrl}/offert/${publicToken}`;
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -151,7 +162,13 @@ export async function POST(req: Request) {
               : ""
           }
 
-          <div style="margin-top: 32px; text-align: center;">
+          <div style="margin-top: 32px; text-align: center; padding: 24px; background: #f0fdf4; border-radius: 12px;">
+            <p style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #166534;">Är du redo att gå vidare?</p>
+            <a href="${quoteUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Se offert och godkänn</a>
+            <p style="margin: 16px 0 0 0; font-size: 14px; color: #6b7280;">Eller <a href="${quoteUrl}" style="color: #2563eb;">klicka här</a> för att avböja</p>
+          </div>
+
+          <div style="margin-top: 24px; text-align: center;">
             <p style="color: #6b7280;">Har du frågor? Kontakta oss gärna!</p>
           </div>
         </div>
@@ -172,13 +189,14 @@ export async function POST(req: Request) {
       html,
     });
 
-    // Update quote status
+    // Update quote status and save token
     await supabase
       .from("quotes")
       .update({
         status: "sent",
         sent_at: new Date().toISOString(),
         sent_to_email: quote.customer.email,
+        public_token: publicToken,
       })
       .eq("id", quoteId);
 

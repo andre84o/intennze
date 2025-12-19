@@ -182,6 +182,11 @@ CREATE TABLE IF NOT EXISTS quotes (
   sent_at TIMESTAMP WITH TIME ZONE,
   sent_to_email TEXT,
 
+  -- Public access for customer response
+  public_token TEXT UNIQUE,
+  customer_response_at TIMESTAMP WITH TIME ZONE,
+  customer_response_note TEXT,
+
   created_by UUID REFERENCES auth.users(id)
 );
 
@@ -210,11 +215,18 @@ CREATE POLICY "Allow authenticated users to read quotes" ON quotes FOR SELECT TO
 CREATE POLICY "Allow authenticated users to insert quotes" ON quotes FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Allow authenticated users to update quotes" ON quotes FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "Allow authenticated users to delete quotes" ON quotes FOR DELETE TO authenticated USING (true);
+-- Allow anonymous access to quotes via public_token
+CREATE POLICY "Allow anonymous to read quotes by token" ON quotes FOR SELECT TO anon USING (public_token IS NOT NULL);
+CREATE POLICY "Allow anonymous to update quote response" ON quotes FOR UPDATE TO anon USING (public_token IS NOT NULL);
 
 CREATE POLICY "Allow authenticated users to read quote_items" ON quote_items FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated users to insert quote_items" ON quote_items FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Allow authenticated users to update quote_items" ON quote_items FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "Allow authenticated users to delete quote_items" ON quote_items FOR DELETE TO authenticated USING (true);
+-- Allow anonymous access to quote_items for quotes with public_token
+CREATE POLICY "Allow anonymous to read quote_items" ON quote_items FOR SELECT TO anon USING (
+  EXISTS (SELECT 1 FROM quotes WHERE quotes.id = quote_items.quote_id AND quotes.public_token IS NOT NULL)
+);
 
 -- Trigger to auto-update updated_at for quotes
 CREATE TRIGGER update_quotes_updated_at
@@ -229,6 +241,7 @@ CREATE INDEX IF NOT EXISTS idx_reminders_date ON reminders(reminder_date);
 CREATE INDEX IF NOT EXISTS idx_reminders_completed ON reminders(is_completed);
 CREATE INDEX IF NOT EXISTS idx_quotes_status ON quotes(status);
 CREATE INDEX IF NOT EXISTS idx_quotes_customer ON quotes(customer_id);
+CREATE INDEX IF NOT EXISTS idx_quotes_public_token ON quotes(public_token);
 CREATE INDEX IF NOT EXISTS idx_quote_items_quote ON quote_items(quote_id);
 
 -- Page views / Analytics table
