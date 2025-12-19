@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 const META_PIXEL_ID = process.env.META_PIXEL_ID || "1537867027358765";
-const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || "";
+const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || process.env.FACEBOOK_ACCESS_TOKEN || "";
 const META_API_VERSION = "v24.0";
 
 // SHA256 hash funktion
