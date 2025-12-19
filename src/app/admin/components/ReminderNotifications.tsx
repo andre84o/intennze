@@ -180,10 +180,10 @@ export default function ReminderNotifications() {
           {/* Footer */}
           <div className="px-4 py-3 bg-slate-800/50 border-t border-slate-700">
             <Link
-              href="/admin/paminnelser"
+              href="/admin/forsaljning"
               className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
             >
-              Visa alla påminnelser →
+              Gå till försäljning →
             </Link>
           </div>
         </div>
