@@ -97,6 +97,7 @@ const chartConfig = {
 const deviceChartConfig = {
   value: {
     label: "Besökare",
+    color: "#3b82f6", // blue-500
   },
   desktop: {
     label: "Dator",
