@@ -81,8 +81,10 @@ export async function POST(request: NextRequest) {
       userData.zp = [sha256Hash(customer.postal_code)];
     }
 
-    // Alltid Sverige
-    userData.country = [sha256Hash("se")];
+    // Land (default Sverige)
+    const country = customer.country || "Sverige";
+    const countryCode = country.toLowerCase() === "sverige" ? "se" : country.toLowerCase().slice(0, 2);
+    userData.country = [sha256Hash(countryCode)];
 
     // Bygg händelse-payload
     const eventData = {

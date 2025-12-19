@@ -35,6 +35,7 @@ export interface Customer {
   address: string | null;
   postal_code: string | null;
   city: string | null;
+  country: string | null;
   company_name: string | null;
   org_number: string | null;
   budget: number | null;
@@ -141,6 +142,7 @@ export interface CustomerFormData {
   address: string;
   postal_code: string;
   city: string;
+  country: string;
   company_name: string;
   org_number: string;
   budget: string;

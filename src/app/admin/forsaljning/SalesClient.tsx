@@ -100,6 +100,23 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
     return reminders.some((r) => r.customer_id === customerId && !r.is_completed && r.reminder_date === today);
   };
 
+  const handleUpdateCustomerBoolean = async (customerId: string, field: string, value: boolean) => {
+    setSavingCustomer(customerId);
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("customers")
+      .update({ [field]: value })
+      .eq("id", customerId);
+
+    if (!error) {
+      setCustomers((prev) =>
+        prev.map((c) => (c.id === customerId ? { ...c, [field]: value } : c))
+      );
+    }
+    setSavingCustomer(null);
+  };
+
   const handleUpdateCustomer = async (customerId: string, field: string, value: string) => {
     setSavingCustomer(customerId);
     const supabase = createClient();
@@ -347,6 +364,21 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</span>
                     <p className="text-gray-900">{customer.phone || "-"}</p>
                   </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={customer.has_service_agreement}
+                      onChange={(e) => handleUpdateCustomerBoolean(customer.id, "has_service_agreement", e.target.checked)}
+                      disabled={savingCustomer === customer.id}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Har serviceavtal</span>
+                    {customer.has_service_agreement && (
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">Aktiv</span>
+                    )}
+                  </label>
                 </div>
               </div>
 

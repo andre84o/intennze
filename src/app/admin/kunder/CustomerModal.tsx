@@ -18,6 +18,7 @@ const initialFormData: CustomerFormData = {
   address: "",
   postal_code: "",
   city: "",
+  country: "Sverige",
   company_name: "",
   org_number: "",
   budget: "",
@@ -43,6 +44,7 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
           address: customer.address || "",
           postal_code: customer.postal_code || "",
           city: customer.city || "",
+          country: customer.country || "Sverige",
           company_name: customer.company_name || "",
           org_number: customer.org_number || "",
           budget: customer.budget?.toString() || "",
@@ -76,6 +78,7 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
       address: formData.address || null,
       postal_code: formData.postal_code || null,
       city: formData.city || null,
+      country: formData.country || null,
       company_name: formData.company_name || null,
       org_number: formData.org_number || null,
       wishes: formData.wishes || null,
@@ -254,12 +257,21 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
                     className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Ort</label>
                   <input
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Land</label>
+                  <input
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

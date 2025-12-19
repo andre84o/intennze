@@ -31,7 +31,7 @@ export default function SendQuoteModal({ quote, onClose, onConfirm, isSending }:
               Avbryt
             </button>
             <button
-              onClick={() => onConfirm(quote.customer!.email, "")}
+              onClick={() => onConfirm(quote.customer!.email!, "")}
               disabled={isSending}
               className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
             >
