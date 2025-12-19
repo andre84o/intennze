@@ -27,6 +27,8 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [quoteToSend, setQuoteToSend] = useState<Quote | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [quoteToDelete, setQuoteToDelete] = useState<string | null>(null);
 
   const filteredQuotes = filter === "all"
     ? quotes
@@ -44,15 +46,22 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
     setEditingQuote(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Är du säker på att du vill ta bort denna offert?")) return;
+  const handleDelete = (id: string) => {
+    setQuoteToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!quoteToDelete) return;
 
     const supabase = createClient();
-    const { error } = await supabase.from("quotes").delete().eq("id", id);
+    const { error } = await supabase.from("quotes").delete().eq("id", quoteToDelete);
 
     if (!error) {
-      setQuotes((prev) => prev.filter((q) => q.id !== id));
+      setQuotes((prev) => prev.filter((q) => q.id !== quoteToDelete));
     }
+    setShowDeleteModal(false);
+    setQuoteToDelete(null);
   };
 
   const handleSendEmail = (quote: Quote) => {
@@ -303,6 +312,35 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
           onConfirm={confirmSendEmail}
           isSending={!!sendingId}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold text-white mb-2">Ta bort offert</h3>
+            <p className="text-slate-400 mb-6">
+              Är du säker på att du vill ta bort denna offert? Detta går inte att ångra.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setQuoteToDelete(null);
+                }}
+                className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                Avbryt
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+              >
+                Ta bort
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

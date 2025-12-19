@@ -20,13 +20,24 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
+  // Om inga parametrar - visa status
+  if (!mode && !token && !challenge) {
+    return NextResponse.json({
+      status: "Facebook Lead Ads Webhook Active",
+      endpoint: "/api/facebook/leads",
+      verify_token_configured: !!VERIFY_TOKEN,
+      access_token_configured: !!process.env.FACEBOOK_ACCESS_TOKEN,
+      service_role_configured: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    });
+  }
+
   // Verifiera att det är en subscription-förfrågan
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
     console.log("Facebook webhook verified successfully");
     return new NextResponse(challenge, { status: 200 });
   }
 
-  console.log("Facebook webhook verification failed");
+  console.log("Facebook webhook verification failed", { mode, token, expected: VERIFY_TOKEN });
   return NextResponse.json({ error: "Verification failed" }, { status: 403 });
 }
 
