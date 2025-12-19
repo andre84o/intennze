@@ -24,16 +24,29 @@ function normalizePhone(phone: string): string {
   return cleaned;
 }
 
-// Mappa status till Meta event_name
+// Mappa CRM-status till Facebook försäljningstratt-händelser
+// Dessa matchar Facebooks fördefinierade händelser för Lead Ads
 function statusToEventName(status: string): string {
   const statusMap: Record<string, string> = {
-    lead: "Lead",
-    contacted: "Contact",
-    negotiating: "Qualified",
-    customer: "Converted",
-    churned: "Disqualified",
+    lead: "Lead",                    // Ny lead
+    contacted: "Contact",            // Kontaktad
+    negotiating: "Schedule",         // Möte/förhandling
+    customer: "Purchase",            // Blev kund (köp)
+    churned: "Other",                // Förlorad
   };
   return statusMap[status] || "Lead";
+}
+
+// Få värde baserat på steg (används för Facebook optimering)
+function getLeadScore(status: string): number {
+  const scoreMap: Record<string, number> = {
+    lead: 1,
+    contacted: 2,
+    negotiating: 3,
+    customer: 4,
+    churned: 0,
+  };
+  return scoreMap[status] || 0;
 }
 
 export async function POST(request: NextRequest) {
@@ -87,10 +100,13 @@ export async function POST(request: NextRequest) {
     userData.country = [sha256Hash(countryCode)];
 
     // Bygg händelse-payload
+    const eventName = statusToEventName(customer.status);
+    const leadScore = getLeadScore(customer.status);
+
     const eventData = {
       data: [
         {
-          event_name: statusToEventName(customer.status),
+          event_name: eventName,
           event_time: Math.floor(Date.now() / 1000),
           action_source: "system_generated",
           user_data: userData,
@@ -98,6 +114,8 @@ export async function POST(request: NextRequest) {
             event_source: "crm",
             lead_event_source: "Intenzze CRM",
             currency: "SEK",
+            value: leadScore * 1000, // Värde för Facebook optimering
+            lead_score: leadScore,
             previous_status: previousStatus || null,
             new_status: customer.status,
           },
@@ -107,11 +125,14 @@ export async function POST(request: NextRequest) {
 
     // Logga vad som skickas
     console.log("\n========== META CONVERSION API ==========");
+    console.log("📊 FÖRSÄLJNINGSTRATT-HÄNDELSE");
     console.log("Kund:", customer.first_name, customer.last_name);
     console.log("Email:", customer.email || "(saknas)");
     console.log("Telefon:", customer.phone || "(saknas)");
     console.log("Status:", previousStatus, "→", customer.status);
-    console.log("Event:", statusToEventName(customer.status));
+    console.log("Facebook Event:", eventName);
+    console.log("Lead Score:", leadScore, "/ 4");
+    console.log("Värde:", leadScore * 1000, "SEK");
     console.log("Pixel ID:", META_PIXEL_ID ? "Ja ✓" : "Nej ✗");
     console.log("Token:", META_ACCESS_TOKEN ? "Ja ✓" : "Nej ✗");
     console.log("==========================================\n");

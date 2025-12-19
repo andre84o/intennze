@@ -21,8 +21,8 @@ interface Props {
 export default function QuoteResponseClient({ quote: initialQuote, token }: Props) {
   const [quote, setQuote] = useState(initialQuote);
   const [loading, setLoading] = useState(false);
-  const [responseNote, setResponseNote] = useState("");
-  const [showNoteField, setShowNoteField] = useState(false);
+  const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [declineNote, setDeclineNote] = useState("");
   const [responded, setResponded] = useState(
     quote.status === "accepted" || quote.status === "declined"
   );
@@ -37,7 +37,7 @@ export default function QuoteResponseClient({ quote: initialQuote, token }: Prop
         body: JSON.stringify({
           token,
           accept,
-          note: responseNote,
+          note: accept ? undefined : declineNote,
         }),
       });
 
@@ -46,7 +46,7 @@ export default function QuoteResponseClient({ quote: initialQuote, token }: Prop
           ...prev,
           status: accept ? "accepted" : "declined",
           customer_response_at: new Date().toISOString(),
-          customer_response_note: responseNote || null,
+          customer_response_note: accept ? null : declineNote || null,
         }));
         setResponded(true);
       }
@@ -184,70 +184,58 @@ export default function QuoteResponseClient({ quote: initialQuote, token }: Prop
         {/* Response buttons */}
         {!responded && !isExpired && (
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-            <h3 className="font-semibold text-gray-900 mb-4 text-center">Vad vill du göra?</h3>
+            <h3 className="font-semibold text-gray-900 mb-4 text-center">
+              {showDeclineForm ? "Avböj offert" : "Vad vill du göra?"}
+            </h3>
 
-            {showNoteField && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Meddelande (valfritt)
-                </label>
-                <textarea
-                  value={responseNote}
-                  onChange={(e) => setResponseNote(e.target.value)}
-                  placeholder="Lägg till ett meddelande..."
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            )}
-
-            {!showNoteField ? (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={() => {
-                    setShowNoteField(true);
-                  }}
-                  disabled={loading}
-                  className="flex-1 px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 text-lg"
-                >
-                  ✓ Godkänn offert
-                </button>
-                <button
-                  onClick={() => {
-                    setShowNoteField(true);
-                  }}
-                  disabled={loading}
-                  className="flex-1 px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors disabled:opacity-50 border border-gray-300 text-lg"
-                >
-                  ✗ Avböj offert
-                </button>
+            {showDeclineForm ? (
+              <div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Anledning (valfritt)
+                  </label>
+                  <textarea
+                    value={declineNote}
+                    onChange={(e) => setDeclineNote(e.target.value)}
+                    placeholder="Berätta gärna varför du avböjer..."
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => setShowDeclineForm(false)}
+                    disabled={loading}
+                    className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors disabled:opacity-50 border border-gray-300"
+                  >
+                    Tillbaka
+                  </button>
+                  <button
+                    onClick={() => handleResponse(false)}
+                    disabled={loading}
+                    className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    {loading ? "Skickar..." : "✗ Bekräfta avböjande"}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => handleResponse(true)}
                   disabled={loading}
-                  className="flex-1 px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+                  className="flex-1 px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 text-lg"
                 >
-                  {loading ? "Skickar..." : "✓ Bekräfta godkännande"}
+                  {loading ? "Skickar..." : "✓ Godkänn offert"}
                 </button>
                 <button
-                  onClick={() => handleResponse(false)}
+                  onClick={() => setShowDeclineForm(true)}
                   disabled={loading}
-                  className="flex-1 px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+                  className="flex-1 px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors disabled:opacity-50 border border-gray-300 text-lg"
                 >
-                  {loading ? "Skickar..." : "✗ Bekräfta avböjande"}
+                  ✗ Avböj offert
                 </button>
               </div>
-            )}
-
-            {showNoteField && (
-              <button
-                onClick={() => setShowNoteField(false)}
-                className="w-full mt-3 px-4 py-2 text-gray-500 hover:text-gray-700 text-sm"
-              >
-                Tillbaka
-              </button>
             )}
           </div>
         )}

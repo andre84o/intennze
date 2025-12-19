@@ -60,6 +60,14 @@ interface Props {
 
 const SOURCE_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 
+const DEVICE_COLORS = [
+  "#3b82f6", // Blue 500
+  "#60a5fa", // Blue 400
+  "#2563eb", // Blue 600
+  "#1d4ed8", // Blue 700
+  "#93c5fd", // Blue 300
+];
+
 const sourceLabels: Record<string, string> = {
   direct: "Direkt",
   google: "Google",
@@ -92,15 +100,15 @@ const deviceChartConfig = {
   },
   desktop: {
     label: "Dator",
-    color: "hsl(var(--chart-1))",
+    color: "#2563eb", // blue-600
   },
   mobile: {
     label: "Mobil",
-    color: "hsl(var(--chart-2))",
+    color: "#60a5fa", // blue-400
   },
   tablet: {
     label: "Surfplatta",
-    color: "hsl(var(--chart-3))",
+    color: "#1e40af", // blue-800
   },
 } satisfies ChartConfig;
 
@@ -330,7 +338,10 @@ export default function DashboardClient({ analytics, customersCount, remindersCo
                     strokeWidth={5}
                   >
                     {deviceStats.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${index + 1}))`} />
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={deviceChartConfig[entry.name as keyof typeof deviceChartConfig]?.color || DEVICE_COLORS[index % DEVICE_COLORS.length]} 
+                      />
                     ))}
                     <Label
                       content={({ viewBox }) => {
