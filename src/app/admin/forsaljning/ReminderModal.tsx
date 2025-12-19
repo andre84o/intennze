@@ -91,12 +91,11 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
 
       <div
         className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-slate-800 px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">
@@ -181,12 +180,33 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
               <label className="block text-sm font-medium text-slate-300 mb-1">
                 Tid
               </label>
-              <input
-                type="time"
-                value={formData.reminder_time}
-                onChange={(e) => setFormData({ ...formData, reminder_time: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  placeholder="00"
+                  maxLength={2}
+                  value={formData.reminder_time ? formData.reminder_time.split(":")[0] : ""}
+                  onChange={(e) => {
+                    const hour = e.target.value.replace(/\D/g, "");
+                    const minute = formData.reminder_time?.split(":")[1] || "";
+                    setFormData({ ...formData, reminder_time: hour || minute ? `${hour}:${minute}` : "" });
+                  }}
+                  className="w-12 px-2 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-center focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+                <span className="text-slate-400 font-medium">:</span>
+                <input
+                  type="text"
+                  placeholder="00"
+                  maxLength={2}
+                  value={formData.reminder_time ? formData.reminder_time.split(":")[1] || "" : ""}
+                  onChange={(e) => {
+                    const minute = e.target.value.replace(/\D/g, "");
+                    const hour = formData.reminder_time?.split(":")[0] || "";
+                    setFormData({ ...formData, reminder_time: hour || minute ? `${hour}:${minute}` : "" });
+                  }}
+                  className="w-12 px-2 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-center focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+              </div>
             </div>
           </div>
 

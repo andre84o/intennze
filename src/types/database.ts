@@ -48,6 +48,9 @@ export interface Customer {
   service_renewal_date: string | null;
   source: string | null;
   created_by: string | null;
+  // Meta Conversions API
+  meta_lead_id: string | null;
+  fbclid: string | null;
 }
 
 export interface Reminder {
@@ -63,6 +66,8 @@ export interface Reminder {
   completed_at: string | null;
   is_recurring: boolean;
   recurring_interval: RecurringInterval | null;
+  notification_sent: boolean;
+  notification_sent_at: string | null;
   created_by: string | null;
   // Joined data
   customer?: Customer;

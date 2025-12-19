@@ -107,6 +107,8 @@ export default function CustomersClient({
   const [statusFilter, setStatusFilter] = useState<CustomerStatus | "all">("all");
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
@@ -132,15 +134,22 @@ export default function CustomersClient({
     setEditingCustomer(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Är du säker på att du vill ta bort denna kund?")) return;
+  const handleDelete = (id: string) => {
+    setCustomerToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!customerToDelete) return;
 
     const supabase = createClient();
-    const { error } = await supabase.from("customers").delete().eq("id", id);
+    const { error } = await supabase.from("customers").delete().eq("id", customerToDelete);
 
     if (!error) {
-      setCustomers((prev) => prev.filter((c) => c.id !== id));
+      setCustomers((prev) => prev.filter((c) => c.id !== customerToDelete));
     }
+    setShowDeleteModal(false);
+    setCustomerToDelete(null);
   };
 
   const stats = {
@@ -389,6 +398,35 @@ export default function CustomersClient({
           }}
           onSave={handleSave}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold text-white mb-2">Ta bort kund</h3>
+            <p className="text-slate-400 mb-6">
+              Är du säker på att du vill ta bort denna kund? Detta går inte att ångra.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setCustomerToDelete(null);
+                }}
+                className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                Avbryt
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+              >
+                Ta bort
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

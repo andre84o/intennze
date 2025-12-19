@@ -38,7 +38,11 @@ CREATE TABLE IF NOT EXISTS customers (
   source TEXT,
 
   -- User who created
-  created_by UUID REFERENCES auth.users(id)
+  created_by UUID REFERENCES auth.users(id),
+
+  -- Meta Conversions API
+  meta_lead_id TEXT,
+  fbclid TEXT
 );
 
 -- Reminders table
@@ -61,6 +65,10 @@ CREATE TABLE IF NOT EXISTS reminders (
 
   is_recurring BOOLEAN DEFAULT FALSE,
   recurring_interval TEXT CHECK (recurring_interval IN ('weekly', 'monthly', 'quarterly', 'yearly')),
+
+  -- Notification tracking
+  notification_sent BOOLEAN DEFAULT FALSE,
+  notification_sent_at TIMESTAMP WITH TIME ZONE,
 
   created_by UUID REFERENCES auth.users(id)
 );
