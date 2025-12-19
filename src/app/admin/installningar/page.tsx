@@ -67,39 +67,39 @@ export default function SettingsPage() {
   };
 
   if (loading) {
-    return <div className="text-slate-400">Laddar...</div>;
+    return <div className="text-gray-500">Laddar...</div>;
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto text-gray-900">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Inställningar</h1>
-        <p className="text-slate-400 mt-1">Hantera ditt konto och preferenser</p>
+        <h1 className="text-2xl font-bold text-gray-900">Inställningar</h1>
+        <p className="text-gray-500 mt-1">Hantera ditt konto och preferenser</p>
       </div>
 
       {/* Account info */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Kontoinformation</h2>
+      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Kontoinformation</h2>
         <div className="space-y-4">
           <div>
-            <label className="text-xs text-slate-500 uppercase tracking-wider">
+            <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">
               E-post
             </label>
-            <p className="text-white">{user?.email}</p>
+            <p className="text-gray-900">{user?.email}</p>
           </div>
         </div>
       </div>
 
       {/* Change password */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Byt lösenord</h2>
+      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Byt lösenord</h2>
 
         {message && (
           <div
             className={`p-3 rounded-lg mb-4 ${
               message.type === "success"
-                ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                : "bg-red-500/20 text-red-400 border border-red-500/30"
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-red-50 text-red-700 border border-red-200"
             }`}
           >
             {message.text}
@@ -108,33 +108,33 @@ export default function SettingsPage() {
 
         <form onSubmit={handlePasswordChange} className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">
+            <label className="block text-sm text-gray-700 mb-1 font-medium">
               Nytt lösenord
             </label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-1">
+            <label className="block text-sm text-gray-700 mb-1 font-medium">
               Bekräfta nytt lösenord
             </label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:bg-slate-600 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors font-medium shadow-sm"
           >
             {saving ? "Sparar..." : "Uppdatera lösenord"}
           </button>
@@ -142,22 +142,22 @@ export default function SettingsPage() {
       </div>
 
       {/* Integrations info */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Integrationer</h2>
+      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Integrationer</h2>
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
                 <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
               </div>
               <div>
-                <p className="text-white font-medium">Meta Conversions API</p>
-                <p className="text-slate-400 text-sm">Spårar leadstatus i Meta Ads</p>
+                <p className="text-gray-900 font-medium">Meta Conversions API</p>
+                <p className="text-gray-500 text-sm">Spårar leadstatus i Meta Ads</p>
               </div>
             </div>
-            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
+            <span className="px-2 py-1 bg-green-50 text-green-700 border border-green-200 text-xs rounded-full font-medium">
               Aktiv
             </span>
           </div>
@@ -165,11 +165,11 @@ export default function SettingsPage() {
       </div>
 
       {/* Sign out */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Session</h2>
+      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Session</h2>
         <button
           onClick={handleSignOut}
-          className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-lg transition-colors"
+          className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg transition-colors font-medium"
         >
           Logga ut
         </button>

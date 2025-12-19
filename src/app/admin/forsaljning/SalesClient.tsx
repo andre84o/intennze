@@ -247,7 +247,10 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
         }`}
       >
         {/* Header - Always visible */}
-        <div className="p-4">
+        <div 
+          className="p-4 cursor-pointer"
+          onClick={() => setExpandedCustomer(isExpanded ? null : customer.id)}
+        >
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -284,7 +287,10 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setExpandedCustomer(isExpanded ? null : customer.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpandedCustomer(isExpanded ? null : customer.id);
+                }}
                 className={`p-2 rounded-lg transition-colors ${
                   isExpanded
                     ? "text-blue-600 bg-blue-50"

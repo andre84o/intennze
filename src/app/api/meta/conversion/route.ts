@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
-const META_PIXEL_ID = process.env.META_PIXEL_ID || "1537867027358765";
+const META_PIXEL_ID = process.env.META_PIXEL_ID || "";
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || process.env.FACEBOOK_ACCESS_TOKEN || "";
 const META_API_VERSION = "v24.0";
 
@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { customer, previousStatus } = body;
 
-    if (!META_ACCESS_TOKEN) {
-      console.warn("META_ACCESS_TOKEN not configured");
+    if (!META_ACCESS_TOKEN || !META_PIXEL_ID) {
+      console.warn("META_ACCESS_TOKEN or META_PIXEL_ID not configured");
       return NextResponse.json({ success: false, error: "Meta not configured" }, { status: 200 });
     }
 
@@ -110,8 +110,8 @@ export async function POST(request: NextRequest) {
     console.log("Telefon:", customer.phone || "(saknas)");
     console.log("Status:", previousStatus, "→", customer.status);
     console.log("Event:", statusToEventName(customer.status));
-    console.log("Pixel ID:", META_PIXEL_ID);
-    console.log("Token konfigurerad:", META_ACCESS_TOKEN ? "Ja ✓" : "Nej ✗");
+    console.log("Pixel ID:", META_PIXEL_ID ? "Ja ✓" : "Nej ✗");
+    console.log("Token:", META_ACCESS_TOKEN ? "Ja ✓" : "Nej ✗");
     console.log("==========================================\n");
 
     // Skicka till Meta
