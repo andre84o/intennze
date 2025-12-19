@@ -218,7 +218,7 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
     draft: quotes.filter((q) => q.status === "draft").length,
     sent: quotes.filter((q) => q.status === "sent").length,
     accepted: quotes.filter((q) => q.status === "accepted").length,
-    totalValue: quotes.filter((q) => q.status === "accepted").reduce((sum, q) => sum + q.total, 0),
+    totalValue: quotes.filter((q) => q.status === "accepted").reduce((sum, q) => sum + q.subtotal, 0),
   };
 
   return (
@@ -263,7 +263,7 @@ export default function QuotesClient({ initialQuotes, customers, error }: Props)
           <p className="text-2xl font-bold text-blue-600">{stats.sent}</p>
         </div>
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-          <p className="text-gray-500 text-sm">Accepterade</p>
+          <p className="text-gray-500 text-sm">Accepterade (exkl. moms)</p>
           <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalValue)}</p>
         </div>
       </div>

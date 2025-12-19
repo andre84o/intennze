@@ -43,24 +43,37 @@ export async function GET(request: NextRequest) {
 
 // POST - Ta emot leads från Facebook
 export async function POST(request: NextRequest) {
+  console.log("=== FACEBOOK LEAD WEBHOOK START ===");
+  console.log("Tidpunkt:", new Date().toLocaleString("sv-SE"));
+
   try {
     const body = await request.json();
 
-    console.log("Received Facebook lead webhook:", JSON.stringify(body, null, 2));
+    console.log("📥 Mottagen data från Facebook:");
+    console.log(JSON.stringify(body, null, 2));
 
     // Facebook skickar data i entry-array
     if (!body.entry || !Array.isArray(body.entry)) {
+      console.log("❌ Ogiltig payload - saknar entry array");
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
+
+    console.log(`📋 Antal entries: ${body.entry.length}`);
 
     const processedLeads: string[] = [];
 
     for (const entry of body.entry) {
       // Varje entry kan ha flera changes
       const changes = entry.changes || [];
+      console.log(`📋 Antal changes i entry: ${changes.length}`);
 
       for (const change of changes) {
-        if (change.field !== "leadgen") continue;
+        console.log(`🔍 Change field: ${change.field}`);
+
+        if (change.field !== "leadgen") {
+          console.log("⏭️ Hoppar över - inte leadgen");
+          continue;
+        }
 
         const leadgenId = change.value?.leadgen_id;
         const formId = change.value?.form_id;
@@ -68,11 +81,18 @@ export async function POST(request: NextRequest) {
         const adgroupId = change.value?.adgroup_id;
         const pageId = change.value?.page_id;
 
+        console.log("📝 Lead metadata:", { leadgenId, formId, adId, adgroupId, pageId });
+
         // Hämta lead-data från Facebook Graph API
+        console.log("🔄 Hämtar lead-data från Facebook Graph API...");
         const leadData = await fetchLeadData(leadgenId);
 
         if (leadData) {
+          console.log("✅ Lead-data hämtad från Facebook");
+          console.log("📄 Lead field_data:", JSON.stringify(leadData.field_data, null, 2));
+
           // Spara lead i databasen
+          console.log("💾 Sparar lead i databasen...");
           const saved = await saveLeadToDatabase(leadData, {
             leadgen_id: leadgenId,
             form_id: formId,
@@ -82,11 +102,18 @@ export async function POST(request: NextRequest) {
           });
 
           if (saved) {
+            console.log("✅ Lead sparad!");
             processedLeads.push(leadgenId);
+          } else {
+            console.log("⚠️ Lead kunde inte sparas (kanske duplikat)");
           }
+        } else {
+          console.log("❌ Kunde inte hämta lead-data från Facebook");
         }
       }
     }
+
+    console.log(`=== FACEBOOK LEAD WEBHOOK KLAR - ${processedLeads.length} leads processade ===`);
 
     return NextResponse.json({
       success: true,
@@ -94,7 +121,7 @@ export async function POST(request: NextRequest) {
       leads: processedLeads,
     });
   } catch (error) {
-    console.error("Error processing Facebook lead:", error);
+    console.error("❌ FEL vid processning av Facebook lead:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -107,9 +134,12 @@ async function fetchLeadData(leadgenId: string) {
   const accessToken = process.env.FACEBOOK_ACCESS_TOKEN;
 
   if (!accessToken) {
-    console.error("FACEBOOK_ACCESS_TOKEN is not configured");
+    console.error("❌ FACEBOOK_ACCESS_TOKEN är inte konfigurerad!");
+    console.error("Lägg till FACEBOOK_ACCESS_TOKEN i Vercel miljövariabler");
     return null;
   }
+
+  console.log(`🔗 Anropar Facebook Graph API för lead ${leadgenId}`);
 
   try {
     const response = await fetch(
@@ -117,14 +147,16 @@ async function fetchLeadData(leadgenId: string) {
     );
 
     if (!response.ok) {
-      console.error("Failed to fetch lead data:", await response.text());
+      const errorText = await response.text();
+      console.error("❌ Facebook API-fel:", response.status, errorText);
       return null;
     }
 
     const data = await response.json();
+    console.log("✅ Facebook API svarade OK");
     return data;
   } catch (error) {
-    console.error("Error fetching lead data:", error);
+    console.error("❌ Nätverksfel vid anrop till Facebook:", error);
     return null;
   }
 }
@@ -145,21 +177,54 @@ async function saveLeadToDatabase(
     const fieldData = leadData.field_data || [];
     const fields: Record<string, string> = {};
 
+    console.log("📋 Extraherar fält från lead...");
+
     for (const field of fieldData) {
       const name = field.name?.toLowerCase();
       const value = field.values?.[0] || "";
       fields[name] = value;
+      console.log(`   - ${field.name}: ${value}`);
     }
 
     // Mappa Facebook-fält till våra fält
     // Vanliga Facebook lead-fält: email, phone_number, full_name, first_name, last_name, company_name, etc.
-    const firstName = fields.first_name || fields.full_name?.split(" ")[0] || "Facebook";
-    const lastName = fields.last_name || fields.full_name?.split(" ").slice(1).join(" ") || "Lead";
-    const email = fields.email || null;
-    const phone = fields.phone_number || fields.phone || null;
-    const companyName = fields.company_name || fields.company || null;
-    const city = fields.city || null;
-    const message = fields.message || fields.question || fields.comments || null;
+    // Stöd för både engelska och svenska fältnamn
+    const firstName = fields.first_name || fields.förnamn || fields.full_name?.split(" ")[0] || "Facebook";
+    const lastName = fields.last_name || fields.efternamn || fields.full_name?.split(" ").slice(1).join(" ") || "Lead";
+    const email = fields.email || fields['e-post'] || null;
+    const phone = fields.phone_number || fields.phone || fields.telefon || null;
+    const companyName = fields.company_name || fields.company || fields.företag || null;
+    const city = fields.city || fields.stad || null;
+
+    console.log("👤 Mappade kundfält:");
+    console.log(`   Namn: ${firstName} ${lastName}`);
+    console.log(`   E-post: ${email || '(saknas)'}`);
+    console.log(`   Telefon: ${phone || '(saknas)'}`);
+    console.log(`   Företag: ${companyName || '(saknas)'}`);
+    console.log(`   Stad: ${city || '(saknas)'}`);
+
+    // Samla alla formulärsvar (inkl. egna frågor) för Önskemål / Behov
+    const standardFields = ['first_name', 'last_name', 'full_name', 'email', 'phone_number', 'phone', 'company_name', 'company', 'city', 'förnamn', 'efternamn', 'e-post', 'telefon', 'företag', 'stad'];
+    const customAnswers: string[] = [];
+
+    for (const field of fieldData) {
+      const name = field.name?.toLowerCase();
+      const value = field.values?.[0] || "";
+
+      // Hoppa över standardfält som redan mappas
+      if (standardFields.includes(name) || !value) continue;
+
+      // Formatera fältnamn snyggt (t.ex. "budget_range" → "Budget range")
+      const label = field.name?.replace(/_/g, ' ').replace(/^\w/, (c: string) => c.toUpperCase()) || name;
+      customAnswers.push(`${label}: ${value}`);
+    }
+
+    const wishes = customAnswers.length > 0 ? customAnswers.join('\n') : null;
+
+    if (wishes) {
+      console.log("📝 Önskemål/Behov:");
+      console.log(wishes);
+    }
 
     // Kolla om lead redan finns (via email eller facebook_lead_id)
     if (email) {
@@ -170,12 +235,13 @@ async function saveLeadToDatabase(
         .single();
 
       if (existing) {
-        console.log(`Lead with email ${email} already exists, skipping`);
+        console.log(`⚠️ Lead med e-post ${email} finns redan - hoppar över`);
         return false;
       }
     }
 
     // Skapa lead i databasen
+    console.log("💾 Skapar kund i databasen...");
     const { data, error } = await supabaseAdmin.from("customers").insert({
       first_name: firstName,
       last_name: lastName,
@@ -183,7 +249,7 @@ async function saveLeadToDatabase(
       phone,
       company_name: companyName,
       city,
-      wishes: message,
+      wishes,
       status: "lead",
       source: "facebook_ads",
       notes: `Facebook Lead Ad
@@ -194,14 +260,17 @@ Skapad: ${new Date().toLocaleString("sv-SE")}`,
     }).select().single();
 
     if (error) {
-      console.error("Error saving lead to database:", error);
+      console.error("❌ Databasfel vid sparande:", error.message);
+      console.error("   Kod:", error.code);
+      console.error("   Detaljer:", error.details);
       return false;
     }
 
-    console.log(`Successfully saved Facebook lead: ${data.id}`);
+    console.log(`✅ Kund skapad! ID: ${data.id}`);
 
     // Skapa automatisk påminnelse för uppföljning
-    await supabaseAdmin.from("reminders").insert({
+    console.log("⏰ Skapar påminnelse för uppföljning...");
+    const { error: reminderError } = await supabaseAdmin.from("reminders").insert({
       customer_id: data.id,
       title: "Följ upp Facebook-lead",
       description: `Ny lead från Facebook annons. Kontakta ${firstName} ${lastName} snarast.`,
@@ -209,9 +278,15 @@ Skapad: ${new Date().toLocaleString("sv-SE")}`,
       type: "follow_up",
     });
 
+    if (reminderError) {
+      console.error("⚠️ Kunde inte skapa påminnelse:", reminderError.message);
+    } else {
+      console.log("✅ Påminnelse skapad");
+    }
+
     return true;
   } catch (error) {
-    console.error("Error in saveLeadToDatabase:", error);
+    console.error("❌ Oväntat fel i saveLeadToDatabase:", error);
     return false;
   }
 }

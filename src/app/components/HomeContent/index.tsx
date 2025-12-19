@@ -38,7 +38,7 @@ export default function HomeContent() {
     },
     {
       url: "https://demo-barber-seven.vercel.app/",
-      title: sv ? "Frisör" : "Barber",
+      title: sv ? "Barber" : "Barber",
       desc: sv ? "Stilren design för salong" : "Sleek design for salons",
       gradient: "from-purple-500/50 to-purple-500/20",
       border: "hover:border-purple-500/50"
