@@ -92,18 +92,18 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" />
 
       <div
-        className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl"
+        className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl"
       >
-        <div className="border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">
+        <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">
             {reminder ? "Redigera påminnelse" : "Ny påminnelse"}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -111,21 +111,21 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Kund (valfritt)
             </label>
             <select
               value={formData.customer_id}
               onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Ingen kund vald</option>
               {customers.map((customer) => (
@@ -138,7 +138,7 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Titel *
             </label>
             <input
@@ -147,25 +147,25 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="T.ex. Ring upp kund, Uppdatera WordPress..."
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Beskrivning
             </label>
             <textarea
               rows={2}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Datum *
               </label>
               <input
@@ -173,11 +173,11 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
                 required
                 value={formData.reminder_date}
                 onChange={(e) => setFormData({ ...formData, reminder_date: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Tid
               </label>
               <div className="flex items-center gap-1">
@@ -191,9 +191,9 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
                     const minute = formData.reminder_time?.split(":")[1] || "";
                     setFormData({ ...formData, reminder_time: hour || minute ? `${hour}:${minute}` : "" });
                   }}
-                  className="w-12 px-2 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-center focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-12 px-2 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                <span className="text-slate-400 font-medium">:</span>
+                <span className="text-gray-400 font-medium">:</span>
                 <input
                   type="text"
                   placeholder="00"
@@ -204,20 +204,20 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
                     const hour = formData.reminder_time?.split(":")[0] || "";
                     setFormData({ ...formData, reminder_time: hour || minute ? `${hour}:${minute}` : "" });
                   }}
-                  className="w-12 px-2 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-center focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-12 px-2 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Typ
             </label>
             <select
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value as ReminderType })}
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {Object.entries(reminderTypeLabels).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -233,20 +233,20 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
                 type="checkbox"
                 checked={formData.is_recurring}
                 onChange={(e) => setFormData({ ...formData, is_recurring: e.target.checked })}
-                className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-slate-300">Återkommande påminnelse</span>
+              <span className="text-sm text-gray-700 font-medium">Återkommande påminnelse</span>
             </label>
 
             {formData.is_recurring && (
               <div className="pl-6">
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Intervall
                 </label>
                 <select
                   value={formData.recurring_interval}
                   onChange={(e) => setFormData({ ...formData, recurring_interval: e.target.value as RecurringInterval })}
-                  className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Välj intervall</option>
                   <option value="weekly">Varje vecka</option>
@@ -259,18 +259,18 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 bg-gray-50 -mx-6 -mb-6 px-6 py-4 rounded-b-2xl">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-700 hover:text-gray-900 bg-white border border-gray-300 rounded-lg transition-colors font-medium shadow-sm"
             >
               Avbryt
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-medium hover:from-purple-500 hover:to-fuchsia-500 transition-all duration-300 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 disabled:opacity-50 shadow-sm"
             >
               {loading ? "Sparar..." : reminder ? "Uppdatera" : "Skapa"}
             </button>

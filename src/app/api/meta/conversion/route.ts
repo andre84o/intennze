@@ -103,6 +103,17 @@ export async function POST(request: NextRequest) {
       ],
     };
 
+    // Logga vad som skickas
+    console.log("\n========== META CONVERSION API ==========");
+    console.log("Kund:", customer.first_name, customer.last_name);
+    console.log("Email:", customer.email || "(saknas)");
+    console.log("Telefon:", customer.phone || "(saknas)");
+    console.log("Status:", previousStatus, "→", customer.status);
+    console.log("Event:", statusToEventName(customer.status));
+    console.log("Pixel ID:", META_PIXEL_ID);
+    console.log("Token konfigurerad:", META_ACCESS_TOKEN ? "Ja ✓" : "Nej ✗");
+    console.log("==========================================\n");
+
     // Skicka till Meta
     const metaUrl = `https://graph.facebook.com/${META_API_VERSION}/${META_PIXEL_ID}/events?access_token=${META_ACCESS_TOKEN}`;
 
@@ -117,15 +128,11 @@ export async function POST(request: NextRequest) {
     const result = await response.json();
 
     if (!response.ok) {
-      console.error("Meta API error:", result);
+      console.error("❌ META FEL:", result.error?.message || result);
       return NextResponse.json({ success: false, error: result }, { status: 200 });
     }
 
-    console.log("Meta conversion sent:", {
-      event: statusToEventName(customer.status),
-      customer_id: customer.id,
-      result,
-    });
+    console.log("✅ META LYCKADES! Events mottagna:", result.events_received || 1);
 
     return NextResponse.json({ success: true, result });
   } catch (error) {
