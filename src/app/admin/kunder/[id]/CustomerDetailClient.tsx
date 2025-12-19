@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -26,11 +26,11 @@ interface Props {
 }
 
 const statusColors: Record<CustomerStatus, string> = {
-  lead: "bg-slate-500",
-  contacted: "bg-blue-500",
-  negotiating: "bg-yellow-500",
-  customer: "bg-green-500",
-  churned: "bg-red-500",
+  lead: "bg-gray-100 text-gray-700 border-gray-200",
+  contacted: "bg-blue-50 text-blue-700 border-blue-200",
+  negotiating: "bg-amber-50 text-amber-700 border-amber-200",
+  customer: "bg-green-50 text-green-700 border-green-200",
+  churned: "bg-red-50 text-red-700 border-red-200",
 };
 
 export default function CustomerDetailClient({
@@ -121,18 +121,18 @@ export default function CustomerDetailClient({
         <div className="flex items-center gap-4">
           <Link
             href="/admin/kunder"
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-gray-900">
               {customer.first_name} {customer.last_name}
             </h1>
             {customer.company_name && (
-              <p className="text-slate-400">{customer.company_name}</p>
+              <p className="text-gray-500">{customer.company_name}</p>
             )}
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function CustomerDetailClient({
             value={customer.status}
             onChange={(e) => handleUpdateStatus(e.target.value as CustomerStatus)}
             disabled={saving}
-            className={`px-3 py-2 rounded-lg text-white text-sm font-medium ${statusColors[customer.status]} border-0 focus:outline-none focus:ring-2 focus:ring-white/20`}
+            className={`px-3 py-2 rounded-lg text-sm font-medium border ${statusColors[customer.status]} focus:outline-none focus:ring-2 focus:ring-blue-500`}
           >
             {Object.entries(customerStatusLabels).map(([value, label]) => (
               <option key={value} value={value}>
@@ -151,7 +151,7 @@ export default function CustomerDetailClient({
           </select>
           <button
             onClick={handleDelete}
-            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+            className="p-2 text-red-400 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
             title="Radera kund"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -165,29 +165,29 @@ export default function CustomerDetailClient({
         {/* Left column - Customer info */}
         <div className="lg:col-span-1 space-y-6">
           {/* Contact info */}
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Kontaktuppgifter</h2>
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Kontaktuppgifter</h2>
             <div className="space-y-4">
               {customer.email && (
                 <div>
-                  <label className="text-xs text-slate-500 uppercase tracking-wider">E-post</label>
-                  <a href={`mailto:${customer.email}`} className="block text-cyan-400 hover:text-cyan-300">
+                  <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">E-post</label>
+                  <a href={`mailto:${customer.email}`} className="block text-blue-600 hover:text-blue-700 font-medium">
                     {customer.email}
                   </a>
                 </div>
               )}
               {customer.phone && (
                 <div>
-                  <label className="text-xs text-slate-500 uppercase tracking-wider">Telefon</label>
-                  <a href={`tel:${customer.phone}`} className="block text-cyan-400 hover:text-cyan-300">
+                  <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">Telefon</label>
+                  <a href={`tel:${customer.phone}`} className="block text-blue-600 hover:text-blue-700 font-medium">
                     {customer.phone}
                   </a>
                 </div>
               )}
               {(customer.address || customer.city) && (
                 <div>
-                  <label className="text-xs text-slate-500 uppercase tracking-wider">Adress</label>
-                  <p className="text-white">
+                  <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">Adress</label>
+                  <p className="text-gray-900">
                     {customer.address}
                     {customer.postal_code && `, ${customer.postal_code}`}
                     {customer.city && ` ${customer.city}`}
@@ -196,18 +196,18 @@ export default function CustomerDetailClient({
               )}
               {customer.org_number && (
                 <div>
-                  <label className="text-xs text-slate-500 uppercase tracking-wider">Org.nummer</label>
-                  <p className="text-white">{customer.org_number}</p>
+                  <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">Org.nummer</label>
+                  <p className="text-gray-900">{customer.org_number}</p>
                 </div>
               )}
             </div>
 
             {/* Quick actions */}
-            <div className="mt-6 pt-6 border-t border-slate-800 flex gap-2">
+            <div className="mt-6 pt-6 border-t border-gray-100 flex gap-2">
               {customer.phone && (
                 <a
                   href={`tel:${customer.phone}`}
-                  className="flex-1 px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-center text-sm transition-colors"
+                  className="flex-1 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg text-center text-sm font-medium transition-colors"
                 >
                   Ring
                 </a>
@@ -215,7 +215,7 @@ export default function CustomerDetailClient({
               {customer.email && (
                 <a
                   href={`mailto:${customer.email}`}
-                  className="flex-1 px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-center text-sm transition-colors"
+                  className="flex-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-center text-sm font-medium transition-colors"
                 >
                   Maila
                 </a>
@@ -225,31 +225,31 @@ export default function CustomerDetailClient({
 
           {/* Notes / wishes */}
           {customer.wishes && (
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Önskemål</h2>
-              <p className="text-slate-300 whitespace-pre-wrap">{customer.wishes}</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Önskemål</h2>
+              <p className="text-gray-600 whitespace-pre-wrap">{customer.wishes}</p>
             </div>
           )}
 
           {/* Stats */}
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Statistik</h2>
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Statistik</h2>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-white">{purchases.length}</p>
-                <p className="text-xs text-slate-400">Köp</p>
+              <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+                <p className="text-2xl font-bold text-gray-900">{purchases.length}</p>
+                <p className="text-xs text-gray-500 font-medium">Köp</p>
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-white">{totalPurchases.toLocaleString("sv-SE")} kr</p>
-                <p className="text-xs text-slate-400">Totalt</p>
+              <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+                <p className="text-2xl font-bold text-gray-900">{totalPurchases.toLocaleString("sv-SE")} kr</p>
+                <p className="text-xs text-gray-500 font-medium">Totalt</p>
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-white">{quotes.length}</p>
-                <p className="text-xs text-slate-400">Offerter</p>
+              <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+                <p className="text-2xl font-bold text-gray-900">{quotes.length}</p>
+                <p className="text-xs text-gray-500 font-medium">Offerter</p>
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-white">{interactions.length}</p>
-                <p className="text-xs text-slate-400">Interaktioner</p>
+              <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+                <p className="text-2xl font-bold text-gray-900">{interactions.length}</p>
+                <p className="text-xs text-gray-500 font-medium">Interaktioner</p>
               </div>
             </div>
           </div>
@@ -258,24 +258,24 @@ export default function CustomerDetailClient({
         {/* Right column - Activity */}
         <div className="lg:col-span-2 space-y-6">
           {/* Interaction form */}
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Aktivitetslogg</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Aktivitetslogg</h2>
               <button
                 onClick={() => setShowInteractionForm(!showInteractionForm)}
-                className="px-3 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white text-sm rounded-lg transition-colors"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors font-medium shadow-sm"
               >
                 + Logga aktivitet
               </button>
             </div>
 
             {showInteractionForm && (
-              <form onSubmit={handleAddInteraction} className="mb-6 p-4 bg-slate-800/50 rounded-lg">
+              <form onSubmit={handleAddInteraction} className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <div className="flex gap-3 mb-3">
                   <select
                     value={newInteraction.type}
                     onChange={(e) => setNewInteraction((prev) => ({ ...prev, type: e.target.value as InteractionType }))}
-                    className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+                    className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {Object.entries(interactionTypeLabels).map(([value, label]) => (
                       <option key={value} value={value}>
@@ -289,19 +289,19 @@ export default function CustomerDetailClient({
                   onChange={(e) => setNewInteraction((prev) => ({ ...prev, description: e.target.value }))}
                   placeholder="Beskriv aktiviteten..."
                   rows={3}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 mb-3"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
                 />
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setShowInteractionForm(false)}
-                    className="px-3 py-1.5 text-slate-400 hover:text-white transition-colors"
+                    className="px-3 py-1.5 text-gray-600 hover:text-gray-900 bg-white border border-gray-300 rounded-lg transition-colors text-sm font-medium"
                   >
                     Avbryt
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors"
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium shadow-sm"
                   >
                     Spara
                   </button>
@@ -311,29 +311,29 @@ export default function CustomerDetailClient({
 
             {/* Interaction list */}
             {interactions.length === 0 ? (
-              <p className="text-slate-500 text-center py-8">Inga aktiviteter ännu</p>
+              <p className="text-gray-500 text-center py-8">Inga aktiviteter ännu</p>
             ) : (
               <div className="space-y-3">
                 {interactions.map((interaction) => (
                   <div
                     key={interaction.id}
-                    className="flex gap-3 p-3 bg-slate-800/30 rounded-lg"
+                    className="flex gap-3 p-3 bg-gray-50 border border-gray-100 rounded-lg"
                   >
-                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-slate-400">
+                    <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <span className="text-xs text-gray-500 font-medium">
                         {interactionTypeLabels[interaction.type]?.charAt(0) || "?"}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-white">
+                        <span className="text-sm font-medium text-gray-900">
                           {interactionTypeLabels[interaction.type]}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-gray-500">
                           {new Date(interaction.created_at).toLocaleString("sv-SE")}
                         </span>
                       </div>
-                      <p className="text-slate-300 text-sm">{interaction.description}</p>
+                      <p className="text-gray-600 text-sm">{interaction.description}</p>
                     </div>
                   </div>
                 ))}
@@ -343,28 +343,28 @@ export default function CustomerDetailClient({
 
           {/* Reminders */}
           {reminders.length > 0 && (
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Påminnelser</h2>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Påminnelser</h2>
               <div className="space-y-2">
                 {reminders.map((reminder) => (
                   <div
                     key={reminder.id}
-                    className={`p-3 rounded-lg flex items-center justify-between ${
+                    className={`p-3 rounded-lg flex items-center justify-between border ${
                       reminder.is_completed
-                        ? "bg-slate-800/30 opacity-60"
-                        : "bg-amber-500/10 border border-amber-500/30"
+                        ? "bg-gray-50 border-gray-100 opacity-60"
+                        : "bg-amber-50 border-amber-200"
                     }`}
                   >
                     <div>
-                      <p className={`font-medium ${reminder.is_completed ? "text-slate-400 line-through" : "text-white"}`}>
+                      <p className={`font-medium ${reminder.is_completed ? "text-gray-400 line-through" : "text-gray-900"}`}>
                         {reminder.title}
                       </p>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-gray-500">
                         {reminder.reminder_date} {reminder.reminder_time || ""}
                       </p>
                     </div>
                     {reminder.is_completed && (
-                      <span className="text-green-400 text-sm">Klar</span>
+                      <span className="text-green-600 text-sm font-medium">Klar</span>
                     )}
                   </div>
                 ))}
@@ -374,25 +374,25 @@ export default function CustomerDetailClient({
 
           {/* Quotes */}
           {quotes.length > 0 && (
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Offerter</h2>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Offerter</h2>
               <div className="space-y-2">
                 {quotes.map((quote) => (
                   <Link
                     key={quote.id}
                     href={`/admin/offerter/${quote.id}`}
-                    className="block p-3 bg-slate-800/30 hover:bg-slate-800/50 rounded-lg transition-colors"
+                    className="block p-3 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-lg transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-white">{quote.title}</p>
-                        <p className="text-sm text-slate-500">#{quote.quote_number}</p>
+                        <p className="font-medium text-gray-900">{quote.title}</p>
+                        <p className="text-sm text-gray-500">#{quote.quote_number}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-white font-medium">
+                        <p className="text-gray-900 font-medium">
                           {quote.total.toLocaleString("sv-SE")} kr
                         </p>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-gray-500">
                           {quoteStatusLabels[quote.status]}
                         </span>
                       </div>
