@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAdmin } from "./AdminContext";
 
-const menuItems = [
+interface MenuItem {
+  label: string;
+  href: string;
+  iconPath: string;
+  iconPath2?: string;
+}
+
+const defaultMenuItems: MenuItem[] = [
   {
     label: "Dashboard",
     href: "/admin",
@@ -44,6 +51,10 @@ export default function AdminSidebar() {
   const { sidebarState } = useAdmin();
   const pathname = usePathname();
   const [isHovering, setIsHovering] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenuItems);
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
+  const [dragOverItem, setDragOverItem] = useState<number | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const isOpen = sidebarState === "open";
   const isCollapsed = sidebarState === "collapsed";
@@ -51,6 +62,68 @@ export default function AdminSidebar() {
 
   // Expand on hover when collapsed
   const shouldExpand = isOpen || (isCollapsed && isHovering);
+
+  // Load sidebar order from database
+  useEffect(() => {
+    const loadSidebarOrder = async () => {
+      try {
+        const response = await fetch("/api/preferences/sidebar-order");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.sidebarOrder && Array.isArray(data.sidebarOrder)) {
+            const orderedItems = data.sidebarOrder
+              .map((href: string) => defaultMenuItems.find(item => item.href === href))
+              .filter(Boolean) as MenuItem[];
+
+            // Add any new items that weren't in the saved order
+            const savedHrefs = new Set(data.sidebarOrder);
+            const newItems = defaultMenuItems.filter(item => !savedHrefs.has(item.href));
+
+            setMenuItems([...orderedItems, ...newItems]);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load sidebar order:", error);
+      }
+    };
+
+    loadSidebarOrder();
+  }, []);
+
+  // Save sidebar order to database
+  const saveSidebarOrder = useCallback(async (items: MenuItem[]) => {
+    try {
+      const sidebarOrder = items.map(item => item.href);
+      await fetch("/api/preferences/sidebar-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sidebarOrder })
+      });
+    } catch (error) {
+      console.error("Failed to save sidebar order:", error);
+    }
+  }, []);
+
+  const handleDragStart = (index: number) => {
+    setDraggedItem(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverItem(index);
+  };
+
+  const handleDragEnd = () => {
+    if (draggedItem !== null && dragOverItem !== null && draggedItem !== dragOverItem) {
+      const newItems = [...menuItems];
+      const [draggedMenuItem] = newItems.splice(draggedItem, 1);
+      newItems.splice(dragOverItem, 0, draggedMenuItem);
+      setMenuItems(newItems);
+      saveSidebarOrder(newItems);
+    }
+    setDraggedItem(null);
+    setDragOverItem(null);
+  };
 
   return (
     <aside
@@ -82,46 +155,84 @@ export default function AdminSidebar() {
           </Link>
         </div>
 
+        {/* Edit mode toggle */}
+        {shouldExpand && (
+          <div className="px-2 sm:px-4 pt-2">
+            <button
+              onClick={() => setIsEditMode(!isEditMode)}
+              className={`w-full flex items-center justify-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all ${
+                isEditMode
+                  ? "bg-blue-100 text-blue-600 border border-blue-200"
+                  : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+              {isEditMode ? "Klar" : "Ändra ordning"}
+            </button>
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="p-2 sm:p-4 space-y-1 sm:space-y-2">
-          {menuItems.map((item) => {
+          {menuItems.map((item, index) => {
             const isActive = pathname === item.href;
+            const isDragging = draggedItem === index;
+            const isDragOver = dragOverItem === index;
+
             return (
-              <Link
+              <div
                 key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-200 group ${
-                  isActive
-                    ? "bg-blue-50 text-blue-600 border border-blue-100"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
-                }`}
+                draggable={isEditMode}
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragEnd={handleDragEnd}
+                className={`${isDragging ? "opacity-50" : ""} ${isDragOver ? "border-t-2 border-blue-400" : ""}`}
               >
-                <span
-                  className={`flex-shrink-0 ${
-                    isActive ? "text-blue-600" : "text-gray-400 group-hover:text-blue-600"
-                  } transition-colors`}
+                <Link
+                  href={isEditMode ? "#" : item.href}
+                  onClick={(e) => isEditMode && e.preventDefault()}
+                  className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-200 group ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 border border-blue-100"
+                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                  } ${isEditMode ? "cursor-grab active:cursor-grabbing" : ""}`}
                 >
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
+                  {isEditMode && (
+                    <span className="text-gray-400 flex-shrink-0">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
+                      </svg>
+                    </span>
+                  )}
+                  <span
+                    className={`flex-shrink-0 ${
+                      isActive ? "text-blue-600" : "text-gray-400 group-hover:text-blue-600"
+                    } transition-colors`}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath} />
-                    {item.iconPath2 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath2} />
-                    )}
-                  </svg>
-                </span>
-                <span
-                  className={`whitespace-nowrap text-sm sm:text-base transition-all duration-300 ${
-                    shouldExpand ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </Link>
+                    <svg
+                      className="w-4 h-4 sm:w-5 sm:h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath} />
+                      {item.iconPath2 && (
+                        <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath2} />
+                      )}
+                    </svg>
+                  </span>
+                  <span
+                    className={`whitespace-nowrap text-sm sm:text-base transition-all duration-300 ${
+                      shouldExpand ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              </div>
             );
           })}
         </nav>
