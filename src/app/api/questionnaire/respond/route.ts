@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         has_domain: responses.has_domain,
         domain_name: responses.domain_name || null,
         wants_domain_help: responses.wants_domain_help,
+        domain_suggestions: responses.domain_suggestions || null,
         wants_maintenance: responses.wants_maintenance,
         page_count: responses.page_count || null,
         has_content: responses.has_content,
@@ -142,14 +143,17 @@ function buildWishesSummary(responses: Record<string, unknown>): string {
     lines.push(`Domän: ${responses.domain_name || "Ja, har domän"}`);
   } else if (responses.has_domain === false) {
     if (responses.wants_domain_help) {
-      lines.push("Domän: Behöver hjälp (350 kr/år)");
+      lines.push("Domän: Behöver hjälp");
+      if (responses.domain_suggestions) {
+        lines.push(`Domänförslag: ${responses.domain_suggestions}`);
+      }
     } else {
       lines.push("Domän: Fixar själv");
     }
   }
 
   if (responses.wants_maintenance === true) {
-    lines.push("Underhåll: Ja (500 kr/mån)");
+    lines.push("Underhåll: Ja");
   } else if (responses.wants_maintenance === false) {
     lines.push("Underhåll: Sköter själv");
   }

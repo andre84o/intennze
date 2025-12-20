@@ -13,6 +13,7 @@ interface FormData {
   has_domain: boolean | null;
   domain_name: string;
   wants_domain_help: boolean | null;
+  domain_suggestions: string;
   wants_maintenance: boolean | null;
   page_count: string;
   has_content: boolean | null;
@@ -21,7 +22,6 @@ interface FormData {
   other_features: string;
   design_preferences: string;
   reference_sites: string;
-  budget_range: string;
   timeline: string;
   additional_info: string;
 }
@@ -48,15 +48,6 @@ const PAGE_COUNT_OPTIONS = [
   { value: "15+", label: "Fler än 15 sidor" },
 ];
 
-const BUDGET_OPTIONS = [
-  { value: "5000-10000", label: "5 000 - 10 000 kr" },
-  { value: "10000-20000", label: "10 000 - 20 000 kr" },
-  { value: "20000-40000", label: "20 000 - 40 000 kr" },
-  { value: "40000-60000", label: "40 000 - 60 000 kr" },
-  { value: "60000+", label: "Över 60 000 kr" },
-  { value: "unsure", label: "Vet inte än" },
-];
-
 const TIMELINE_OPTIONS = [
   { value: "asap", label: "Så snart som möjligt" },
   { value: "1-2weeks", label: "1-2 veckor" },
@@ -74,6 +65,7 @@ export default function QuestionnaireClient({ token, customerName, companyName }
     has_domain: null,
     domain_name: "",
     wants_domain_help: null,
+    domain_suggestions: "",
     wants_maintenance: null,
     page_count: "",
     has_content: null,
@@ -82,7 +74,6 @@ export default function QuestionnaireClient({ token, customerName, companyName }
     other_features: "",
     design_preferences: "",
     reference_sites: "",
-    budget_range: "",
     timeline: "",
     additional_info: "",
   });
@@ -234,7 +225,6 @@ export default function QuestionnaireClient({ token, customerName, companyName }
                       }`}
                     >
                       <span className="font-semibold text-gray-900">Nej</span>
-                      <p className="text-xs text-gray-500 mt-1">Vi kan hjälpa er (350 kr/år)</p>
                     </button>
                   </div>
                 </div>
@@ -270,7 +260,6 @@ export default function QuestionnaireClient({ token, customerName, companyName }
                         }`}
                       >
                         <span className="font-semibold text-gray-900">Ja tack</span>
-                        <p className="text-xs text-gray-500 mt-1">350 kr/år exkl. moms</p>
                       </button>
                       <button
                         type="button"
@@ -284,6 +273,22 @@ export default function QuestionnaireClient({ token, customerName, companyName }
                         <span className="font-semibold text-gray-900">Nej, vi fixar själva</span>
                       </button>
                     </div>
+
+                    {formData.wants_domain_help === true && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Skriv 5 förslag på domännamn
+                        </label>
+                        <textarea
+                          value={formData.domain_suggestions}
+                          onChange={(e) => updateField("domain_suggestions", e.target.value)}
+                          placeholder="T.ex:&#10;mittforetag.se&#10;foretagetmitt.se&#10;mittab.se&#10;foretaget.nu&#10;mittforetag.com"
+                          rows={5}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Ett förslag per rad</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -311,8 +316,7 @@ export default function QuestionnaireClient({ token, customerName, companyName }
                       }`}
                     >
                       <span className="font-semibold text-gray-900">Ja tack</span>
-                      <p className="text-xs text-gray-500 mt-1">500 kr/mån exkl. moms</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Uppdateringar, säkerhet, support</p>
+                      <p className="text-xs text-gray-400 mt-1">Uppdateringar, säkerhet, support</p>
                     </button>
                     <button
                       type="button"
@@ -481,34 +485,12 @@ export default function QuestionnaireClient({ token, customerName, companyName }
             </div>
           )}
 
-          {/* Step 5: Budget & Tidslinje */}
+          {/* Step 5: Tidslinje */}
           {step === 5 && (
             <div className="p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Budget & Tidslinje</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Tidslinje</h2>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Ungefärlig budget?
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {BUDGET_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => updateField("budget_range", option.value)}
-                        className={`p-4 rounded-xl border-2 text-left transition-all ${
-                          formData.budget_range === option.value
-                            ? "border-cyan-500 bg-cyan-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <span className="font-semibold text-gray-900">{option.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
                     När vill ni ha webbplatsen klar?

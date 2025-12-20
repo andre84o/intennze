@@ -82,13 +82,8 @@ export async function POST(req: Request) {
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
         <div style="background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%); padding: 40px 30px; border-radius: 16px 16px 0 0; text-align: center;">
-          <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;">
-            <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-weight: bold; font-size: 20px;">i</span>
-            </div>
-            <span style="color: white; font-weight: bold; font-size: 24px;">intenzze</span>
-          </div>
-          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Berätta om ert projekt</h1>
+          <h2 style="color: white; margin: 0 0 16px 0; font-size: 32px; font-weight: 800; letter-spacing: -1px;">intenzze</h2>
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 500; opacity: 0.95;">Berätta om ert projekt</h1>
         </div>
 
         <div style="background: white; padding: 40px 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 16px 16px;">
