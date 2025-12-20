@@ -990,35 +990,41 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
               ) : (
                 <div className="space-y-6">
                   {/* Status */}
-                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      questionnaireResponses.questionnaire_status === "completed"
-                        ? "bg-green-100 text-green-700"
-                        : questionnaireResponses.questionnaire_status === "opened"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-blue-100 text-blue-700"
-                    }`}>
-                      {questionnaireResponses.questionnaire_status === "completed" ? "Besvarad" :
-                       questionnaireResponses.questionnaire_status === "opened" ? "Öppnad" : "Skickad"}
-                    </div>
-                    {questionnaireResponses.sent_at && (
-                      <span className="text-sm text-gray-500">
-                        Skickad: {new Date(questionnaireResponses.sent_at as string).toLocaleDateString("sv-SE")}
-                      </span>
-                    )}
-                    {questionnaireResponses.completed_at && (
-                      <span className="text-sm text-gray-500">
-                        Besvarad: {new Date(questionnaireResponses.completed_at as string).toLocaleDateString("sv-SE")}
-                      </span>
-                    )}
-                  </div>
+                  {(() => {
+                    const status = questionnaireResponses.questionnaire_status as string;
+                    const sentAt = questionnaireResponses.sent_at as string | null;
+                    const completedAt = questionnaireResponses.completed_at as string | null;
+                    return (
+                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                        <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          status === "completed"
+                            ? "bg-green-100 text-green-700"
+                            : status === "opened"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}>
+                          {status === "completed" ? "Besvarad" : status === "opened" ? "Öppnad" : "Skickad"}
+                        </div>
+                        {sentAt && (
+                          <span className="text-sm text-gray-500">
+                            Skickad: {new Date(sentAt).toLocaleDateString("sv-SE")}
+                          </span>
+                        )}
+                        {completedAt && (
+                          <span className="text-sm text-gray-500">
+                            Besvarad: {new Date(completedAt).toLocaleDateString("sv-SE")}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Response Details */}
                   <div className="grid gap-4">
-                    {questionnaireResponses.industry && (
+                    {typeof questionnaireResponses.industry === "string" && questionnaireResponses.industry && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Bransch</span>
-                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.industry as string}</p>
+                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.industry}</p>
                       </div>
                     )}
 
@@ -1031,9 +1037,9 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                           ? "Behöver hjälp"
                           : "Fixar själv"}
                       </p>
-                      {questionnaireResponses.domain_suggestions && (
+                      {typeof questionnaireResponses.domain_suggestions === "string" && questionnaireResponses.domain_suggestions && (
                         <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">
-                          Förslag: {questionnaireResponses.domain_suggestions as string}
+                          Förslag: {questionnaireResponses.domain_suggestions}
                         </p>
                       )}
                     </div>
@@ -1045,10 +1051,10 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                       </p>
                     </div>
 
-                    {questionnaireResponses.page_count && (
+                    {typeof questionnaireResponses.page_count === "string" && questionnaireResponses.page_count && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Antal sidor</span>
-                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.page_count as string}</p>
+                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.page_count}</p>
                       </div>
                     )}
 
@@ -1063,7 +1069,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                       </p>
                     </div>
 
-                    {(questionnaireResponses.features as string[])?.length > 0 && (
+                    {Array.isArray(questionnaireResponses.features) && questionnaireResponses.features.length > 0 && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Funktioner</span>
                         <div className="flex flex-wrap gap-2 mt-2">
@@ -1076,38 +1082,38 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                       </div>
                     )}
 
-                    {questionnaireResponses.other_features && (
+                    {typeof questionnaireResponses.other_features === "string" && questionnaireResponses.other_features && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Övriga funktioner</span>
-                        <p className="text-gray-900 mt-1">{questionnaireResponses.other_features as string}</p>
+                        <p className="text-gray-900 mt-1">{questionnaireResponses.other_features}</p>
                       </div>
                     )}
 
-                    {questionnaireResponses.design_preferences && (
+                    {typeof questionnaireResponses.design_preferences === "string" && questionnaireResponses.design_preferences && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Designönskemål</span>
-                        <p className="text-gray-900 mt-1">{questionnaireResponses.design_preferences as string}</p>
+                        <p className="text-gray-900 mt-1">{questionnaireResponses.design_preferences}</p>
                       </div>
                     )}
 
-                    {questionnaireResponses.reference_sites && (
+                    {typeof questionnaireResponses.reference_sites === "string" && questionnaireResponses.reference_sites && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Referenssidor</span>
-                        <p className="text-gray-900 mt-1">{questionnaireResponses.reference_sites as string}</p>
+                        <p className="text-gray-900 mt-1">{questionnaireResponses.reference_sites}</p>
                       </div>
                     )}
 
-                    {questionnaireResponses.timeline && (
+                    {typeof questionnaireResponses.timeline === "string" && questionnaireResponses.timeline && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tidslinje</span>
-                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.timeline as string}</p>
+                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.timeline}</p>
                       </div>
                     )}
 
-                    {questionnaireResponses.additional_info && (
+                    {typeof questionnaireResponses.additional_info === "string" && questionnaireResponses.additional_info && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Övrigt</span>
-                        <p className="text-gray-900 mt-1">{questionnaireResponses.additional_info as string}</p>
+                        <p className="text-gray-900 mt-1">{questionnaireResponses.additional_info}</p>
                       </div>
                     )}
                   </div>
