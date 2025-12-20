@@ -226,3 +226,52 @@ export const quoteStatusLabels: Record<QuoteStatus, string> = {
   declined: 'Avböjd',
   expired: 'Utgången',
 };
+
+// Questionnaire types
+export type QuestionnaireStatus = 'sent' | 'opened' | 'completed' | 'expired';
+
+export interface Questionnaire {
+  id: string;
+  created_at: string;
+  customer_id: string;
+  public_token: string;
+  status: QuestionnaireStatus;
+  sent_at: string;
+  sent_to_email: string;
+  opened_at: string | null;
+  completed_at: string | null;
+  expires_at: string | null;
+  created_by: string | null;
+  // Joined data
+  customer?: Customer;
+  responses?: QuestionnaireResponse;
+}
+
+export interface QuestionnaireResponse {
+  id: string;
+  created_at: string;
+  questionnaire_id: string;
+  // Answers
+  industry: string | null;
+  has_domain: boolean | null;
+  domain_name: string | null;
+  wants_domain_help: boolean | null;
+  wants_maintenance: boolean | null;
+  page_count: string | null;
+  has_content: boolean | null;
+  content_help_needed: string | null;
+  features: string[] | null;
+  other_features: string | null;
+  design_preferences: string | null;
+  reference_sites: string | null;
+  budget_range: string | null;
+  timeline: string | null;
+  additional_info: string | null;
+}
+
+export const questionnaireStatusLabels: Record<QuestionnaireStatus, string> = {
+  sent: 'Skickad',
+  opened: 'Öppnad',
+  completed: 'Besvarad',
+  expired: 'Utgången',
+};
