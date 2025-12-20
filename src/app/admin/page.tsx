@@ -46,18 +46,24 @@ export default async function AdminPage() {
   // Process page views data
   const views: PageView[] = pageViews || [];
 
-  // Daily visitors (unique visitors per day)
-  const dailyMap = new Map<string, Set<string>>();
-  const dailyPageViews = new Map<string, number>();
+  // Daily visitors by device type (unique visitors per day per device)
+  const dailyMobileVisitors = new Map<string, Set<string>>();
+  const dailyDesktopVisitors = new Map<string, Set<string>>();
 
   views.forEach((view) => {
     const date = view.created_at.split("T")[0];
-    if (!dailyMap.has(date)) {
-      dailyMap.set(date, new Set());
-      dailyPageViews.set(date, 0);
+    const deviceType = view.device_type || "desktop";
+
+    if (!dailyMobileVisitors.has(date)) {
+      dailyMobileVisitors.set(date, new Set());
+      dailyDesktopVisitors.set(date, new Set());
     }
-    dailyMap.get(date)!.add(view.visitor_id);
-    dailyPageViews.set(date, (dailyPageViews.get(date) || 0) + 1);
+
+    if (deviceType === "mobile" || deviceType === "tablet") {
+      dailyMobileVisitors.get(date)!.add(view.visitor_id);
+    } else {
+      dailyDesktopVisitors.get(date)!.add(view.visitor_id);
+    }
   });
 
   // Generate all dates in range
@@ -67,8 +73,8 @@ export default async function AdminPage() {
     const dateStr = currentDate.toISOString().split("T")[0];
     dailyVisitors.push({
       date: new Date(dateStr).toLocaleDateString("sv-SE", { day: "numeric", month: "short" }),
-      visitors: dailyMap.get(dateStr)?.size || 0,
-      pageViews: dailyPageViews.get(dateStr) || 0,
+      mobile: dailyMobileVisitors.get(dateStr)?.size || 0,
+      desktop: dailyDesktopVisitors.get(dateStr)?.size || 0,
     });
     currentDate.setDate(currentDate.getDate() + 1);
   }

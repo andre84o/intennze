@@ -7,14 +7,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  PieChart,
-  Pie,
   Cell,
   BarChart,
   Bar,
-  ResponsiveContainer,
-  Tooltip,
-  Label,
 } from "recharts";
 import {
   Card,
@@ -40,7 +35,7 @@ import {
 } from "@/components/ui/select";
 
 interface AnalyticsData {
-  dailyVisitors: { date: string; visitors: number; pageViews: number }[];
+  dailyVisitors: { date: string; mobile: number; desktop: number }[];
   deviceStats: { name: string; value: number }[];
   sourceStats: { name: string; value: number }[];
   totals: {
@@ -60,14 +55,6 @@ interface Props {
 
 const SOURCE_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 
-const DEVICE_COLORS = [
-  "#3b82f6", // Blue 500
-  "#60a5fa", // Blue 400
-  "#2563eb", // Blue 600
-  "#1d4ed8", // Blue 700
-  "#93c5fd", // Blue 300
-];
-
 const sourceLabels: Record<string, string> = {
   direct: "Direkt",
   google: "Google",
@@ -77,44 +64,19 @@ const sourceLabels: Record<string, string> = {
   other: "Annan",
 };
 
-const deviceLabels: Record<string, string> = {
-  desktop: "Dator",
-  mobile: "Mobil",
-  tablet: "Surfplatta",
-};
-
 const chartConfig = {
-  visitors: {
-    label: "Besökare",
-    color: "hsl(var(--chart-1))",
-  },
-  pageViews: {
-    label: "Sidvisningar",
-    color: "hsl(var(--chart-2))",
-  },
-} satisfies ChartConfig;
-
-const deviceChartConfig = {
-  value: {
-    label: "Besökare",
-    color: "#3b82f6", // blue-500
-  },
-  desktop: {
-    label: "Dator",
-    color: "#2563eb", // blue-600
-  },
   mobile: {
     label: "Mobil",
     color: "#60a5fa", // blue-400
   },
-  tablet: {
-    label: "Surfplatta",
-    color: "#1e40af", // blue-800
+  desktop: {
+    label: "Desktop",
+    color: "#2563eb", // blue-600
   },
 } satisfies ChartConfig;
 
 export default function DashboardClient({ analytics, customersCount, remindersCount, quotesCount }: Props) {
-  const { dailyVisitors, deviceStats, sourceStats, totals } = analytics;
+  const { dailyVisitors, sourceStats, totals } = analytics;
   const [timeRange, setTimeRange] = React.useState("30d");
 
   const filteredData = React.useMemo(() => {
@@ -122,10 +84,6 @@ export default function DashboardClient({ analytics, customersCount, remindersCo
     const daysToShow = timeRange === "7d" ? 7 : timeRange === "14d" ? 14 : 30;
     return dailyVisitors.slice(-daysToShow);
   }, [dailyVisitors, timeRange]);
-
-  const totalDeviceVisitors = React.useMemo(() => {
-    return deviceStats.reduce((acc, curr) => acc + curr.value, 0);
-  }, [deviceStats]);
 
   return (
     <div className="text-gray-900">
@@ -215,7 +173,7 @@ export default function DashboardClient({ analytics, customersCount, remindersCo
               <div className="grid flex-1 gap-1 text-center sm:text-left">
                 <CardTitle className="text-gray-900">Besökare per dag</CardTitle>
                 <CardDescription className="text-gray-500">
-                  Visar besökare och sidvisningar över tid
+                  Visar besökare uppdelat på Mobil och Desktop
                 </CardDescription>
               </div>
               <Select value={timeRange} onValueChange={setTimeRange}>
@@ -243,13 +201,13 @@ export default function DashboardClient({ analytics, customersCount, remindersCo
                 <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
                   <AreaChart data={filteredData}>
                     <defs>
-                      <linearGradient id="fillVisitors" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--color-visitors)" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="var(--color-visitors)" stopOpacity={0.1} />
+                      <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.1} />
                       </linearGradient>
-                      <linearGradient id="fillPageViews" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--color-pageViews)" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="var(--color-pageViews)" stopOpacity={0.1} />
+                      <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0.1} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid vertical={false} stroke="#e2e8f0" />
@@ -291,18 +249,20 @@ export default function DashboardClient({ analytics, customersCount, remindersCo
                       }
                     />
                     <Area
-                      dataKey="pageViews"
+                      dataKey="desktop"
                       type="natural"
-                      fill="url(#fillPageViews)"
-                      stroke="var(--color-pageViews)"
+                      fill="url(#fillDesktop)"
+                      stroke="#2563eb"
                       stackId="a"
+                      name="Desktop"
                     />
                     <Area
-                      dataKey="visitors"
+                      dataKey="mobile"
                       type="natural"
-                      fill="url(#fillVisitors)"
-                      stroke="var(--color-visitors)"
-                      stackId="b"
+                      fill="url(#fillMobile)"
+                      stroke="#60a5fa"
+                      stackId="a"
+                      name="Mobil"
                     />
                     <ChartLegend content={<ChartLegendContent />} />
                   </AreaChart>
@@ -313,78 +273,6 @@ export default function DashboardClient({ analytics, customersCount, remindersCo
                 </div>
               )}
             </CardContent>
-          </Card>
-
-          {/* Device Stats - Pie Chart */}
-          <Card className="flex flex-col bg-white border-gray-200 shadow-sm">
-            <CardHeader className="items-center pb-0">
-              <CardTitle className="text-gray-900">Enheter</CardTitle>
-              <CardDescription className="text-gray-500">Besökare per enhet</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pb-0">
-              <ChartContainer
-                config={deviceChartConfig}
-                className="mx-auto aspect-square max-h-[250px]"
-              >
-                <PieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Pie
-                    data={deviceStats}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={60}
-                    strokeWidth={5}
-                  >
-                    {deviceStats.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={deviceChartConfig[entry.name as keyof typeof deviceChartConfig]?.color || DEVICE_COLORS[index % DEVICE_COLORS.length]} 
-                      />
-                    ))}
-                    <Label
-                      content={({ viewBox }) => {
-                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                          return (
-                            <text
-                              x={viewBox.cx}
-                              y={viewBox.cy}
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                            >
-                              <tspan
-                                x={viewBox.cx}
-                                y={viewBox.cy}
-                                className="fill-gray-900 text-3xl font-bold"
-                              >
-                                {totalDeviceVisitors.toLocaleString()}
-                              </tspan>
-                              <tspan
-                                x={viewBox.cx}
-                                y={(viewBox.cy || 0) + 24}
-                                className="fill-gray-500 text-xs"
-                              >
-                                Besökare
-                              </tspan>
-                            </text>
-                          );
-                        }
-                      }}
-                    />
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-            <div className="flex-col gap-2 text-sm p-6 pt-0">
-              <div className="flex items-center justify-center gap-2 font-medium leading-none text-gray-900">
-                Mest populär: {deviceStats.length > 0 ? deviceLabels[deviceStats[0].name] || deviceStats[0].name : "-"}
-              </div>
-              <div className="leading-none text-gray-500 text-center mt-1">
-                Baserat på de senaste 30 dagarna
-              </div>
-            </div>
           </Card>
 
           {/* Source Stats - Bar Chart */}
