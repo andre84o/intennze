@@ -14,10 +14,17 @@ import {
 } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
 
+interface Questionnaire {
+  id: string;
+  customer_id: string;
+  status: string;
+}
+
 interface Props {
   customers: Customer[];
   reminders: Reminder[];
   interactions: CustomerInteraction[];
+  questionnaires: Questionnaire[];
   error?: string;
 }
 
@@ -54,10 +61,11 @@ const interactionIcons: Record<InteractionType, string> = {
   other: "M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
 };
 
-export default function SalesClient({ customers: initialCustomers, reminders: initialReminders, interactions: initialInteractions, error }: Props) {
+export default function SalesClient({ customers: initialCustomers, reminders: initialReminders, interactions: initialInteractions, questionnaires: initialQuestionnaires, error }: Props) {
   const [customers, setCustomers] = useState(initialCustomers);
   const [reminders, setReminders] = useState(initialReminders);
   const [interactions, setInteractions] = useState(initialInteractions);
+  const [questionnaires, setQuestionnaires] = useState(initialQuestionnaires);
   const [filter, setFilter] = useState<CustomerStatus | "all">("all");
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
   const [savingCustomer, setSavingCustomer] = useState<string | null>(null);
@@ -66,6 +74,9 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
   const [reminderForm, setReminderForm] = useState({ title: "", date: "", time: "", type: "follow_up" as ReminderType });
   const [sendingQuestionnaire, setSendingQuestionnaire] = useState<string | null>(null);
   const [showSuccessPopup, setShowSuccessPopup] = useState<{ show: boolean; email?: string }>({ show: false });
+  const [showResponsesPopup, setShowResponsesPopup] = useState<string | null>(null);
+  const [questionnaireResponses, setQuestionnaireResponses] = useState<Record<string, unknown> | null>(null);
+  const [loadingResponses, setLoadingResponses] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -83,6 +94,10 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
       const result = await response.json();
 
       if (response.ok) {
+        // Add the new questionnaire to state so the button appears immediately
+        if (result.questionnaireId) {
+          setQuestionnaires((prev) => [...prev, { id: result.questionnaireId, customer_id: customerId, status: "sent" }]);
+        }
         setShowSuccessPopup({ show: true, email: customer?.email || undefined });
         setTimeout(() => setShowSuccessPopup({ show: false }), 4000);
       } else {
@@ -93,6 +108,42 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
     } finally {
       setSendingQuestionnaire(null);
     }
+  };
+
+  // Fetch questionnaire responses for a customer
+  const handleViewResponses = async (customerId: string) => {
+    setShowResponsesPopup(customerId);
+    setLoadingResponses(true);
+    setQuestionnaireResponses(null);
+
+    const supabase = createClient();
+
+    // First get the questionnaire for this customer
+    const { data: questionnaire } = await supabase
+      .from("questionnaires")
+      .select("id, status, sent_at, completed_at")
+      .eq("customer_id", customerId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (questionnaire) {
+      // Then get the responses
+      const { data: responses } = await supabase
+        .from("questionnaire_responses")
+        .select("*")
+        .eq("questionnaire_id", questionnaire.id)
+        .single();
+
+      setQuestionnaireResponses({
+        ...responses,
+        questionnaire_status: questionnaire.status,
+        sent_at: questionnaire.sent_at,
+        completed_at: questionnaire.completed_at,
+      });
+    }
+
+    setLoadingResponses(false);
   };
 
   // Filter customers by status
@@ -126,6 +177,11 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
   // Check if customer has reminder today
   const hasTodayReminder = (customerId: string) => {
     return reminders.some((r) => r.customer_id === customerId && !r.is_completed && r.reminder_date === today);
+  };
+
+  // Check if customer has a questionnaire sent
+  const hasQuestionnaire = (customerId: string) => {
+    return questionnaires.some((q) => q.customer_id === customerId);
   };
 
   const handleUpdateCustomerBoolean = async (customerId: string, field: string, value: boolean) => {
@@ -464,6 +520,18 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
                       </svg>
                       {sendingQuestionnaire === customer.id ? "Skickar..." : "Skicka formulär"}
+                    </button>
+                  )}
+                  {hasQuestionnaire(customer.id) && (
+                    <button
+                      onClick={() => handleViewResponses(customer.id)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Se formulärsvar
                     </button>
                   )}
                 </div>
@@ -875,6 +943,186 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
             >
               Okej
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Questionnaire Responses Popup */}
+      {showResponsesPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            onClick={() => setShowResponsesPopup(null)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                </svg>
+                Formulärsvar
+              </h2>
+              <button
+                onClick={() => setShowResponsesPopup(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+              {loadingResponses ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                </div>
+              ) : !questionnaireResponses ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900">Inga svar ännu</h3>
+                  <p className="text-gray-500 mt-1">Kunden har inte svarat på formuläret.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Status */}
+                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      questionnaireResponses.questionnaire_status === "completed"
+                        ? "bg-green-100 text-green-700"
+                        : questionnaireResponses.questionnaire_status === "opened"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-blue-100 text-blue-700"
+                    }`}>
+                      {questionnaireResponses.questionnaire_status === "completed" ? "Besvarad" :
+                       questionnaireResponses.questionnaire_status === "opened" ? "Öppnad" : "Skickad"}
+                    </div>
+                    {questionnaireResponses.sent_at && (
+                      <span className="text-sm text-gray-500">
+                        Skickad: {new Date(questionnaireResponses.sent_at as string).toLocaleDateString("sv-SE")}
+                      </span>
+                    )}
+                    {questionnaireResponses.completed_at && (
+                      <span className="text-sm text-gray-500">
+                        Besvarad: {new Date(questionnaireResponses.completed_at as string).toLocaleDateString("sv-SE")}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Response Details */}
+                  <div className="grid gap-4">
+                    {questionnaireResponses.industry && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Bransch</span>
+                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.industry as string}</p>
+                      </div>
+                    )}
+
+                    <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Domän</span>
+                      <p className="text-gray-900 font-medium mt-1">
+                        {questionnaireResponses.has_domain
+                          ? `Ja: ${questionnaireResponses.domain_name || "Har domän"}`
+                          : questionnaireResponses.wants_domain_help
+                          ? "Behöver hjälp"
+                          : "Fixar själv"}
+                      </p>
+                      {questionnaireResponses.domain_suggestions && (
+                        <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">
+                          Förslag: {questionnaireResponses.domain_suggestions as string}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Underhåll</span>
+                      <p className="text-gray-900 font-medium mt-1">
+                        {questionnaireResponses.wants_maintenance ? "Ja" : "Sköter själv"}
+                      </p>
+                    </div>
+
+                    {questionnaireResponses.page_count && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Antal sidor</span>
+                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.page_count as string}</p>
+                      </div>
+                    )}
+
+                    <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Innehåll</span>
+                      <p className="text-gray-900 font-medium mt-1">
+                        {questionnaireResponses.has_content
+                          ? "Har bilder & texter"
+                          : questionnaireResponses.content_help_needed === "all"
+                          ? "Behöver hjälp med allt"
+                          : "Behöver lite hjälp"}
+                      </p>
+                    </div>
+
+                    {(questionnaireResponses.features as string[])?.length > 0 && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Funktioner</span>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {(questionnaireResponses.features as string[]).map((feature) => (
+                            <span key={feature} className="px-2 py-1 bg-indigo-50 text-indigo-700 text-sm rounded-lg">
+                              {feature}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {questionnaireResponses.other_features && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Övriga funktioner</span>
+                        <p className="text-gray-900 mt-1">{questionnaireResponses.other_features as string}</p>
+                      </div>
+                    )}
+
+                    {questionnaireResponses.design_preferences && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Designönskemål</span>
+                        <p className="text-gray-900 mt-1">{questionnaireResponses.design_preferences as string}</p>
+                      </div>
+                    )}
+
+                    {questionnaireResponses.reference_sites && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Referenssidor</span>
+                        <p className="text-gray-900 mt-1">{questionnaireResponses.reference_sites as string}</p>
+                      </div>
+                    )}
+
+                    {questionnaireResponses.timeline && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tidslinje</span>
+                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.timeline as string}</p>
+                      </div>
+                    )}
+
+                    {questionnaireResponses.additional_info && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Övrigt</span>
+                        <p className="text-gray-900 mt-1">{questionnaireResponses.additional_info as string}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-100 px-6 py-4 bg-gray-50 rounded-b-2xl">
+              <button
+                onClick={() => setShowResponsesPopup(null)}
+                className="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              >
+                Stäng
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -26,11 +26,18 @@ export default async function SalesPage() {
     .select("*")
     .order("created_at", { ascending: false });
 
+  // Hämta alla formulär
+  const { data: questionnaires } = await supabase
+    .from("questionnaires")
+    .select("id, customer_id, status")
+    .order("created_at", { ascending: false });
+
   return (
     <SalesClient
       customers={customers || []}
       reminders={reminders || []}
       interactions={interactions || []}
+      questionnaires={questionnaires || []}
       error={error?.message}
     />
   );
