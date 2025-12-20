@@ -150,6 +150,13 @@ export async function POST(req: Request) {
       );
     }
 
+    // Log the activity
+    await supabase.from("customer_interactions").insert({
+      customer_id: customerId,
+      type: "email",
+      description: `Frågeformulär skickat till ${customer.email}`,
+    });
+
     console.log(`Questionnaire sent to ${customer.email}, ID: ${questionnaire.id}`);
 
     return NextResponse.json({ ok: true, questionnaireId: questionnaire.id });
