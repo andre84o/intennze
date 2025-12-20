@@ -132,12 +132,16 @@ CREATE POLICY "Allow authenticated users to delete purchases" ON purchases FOR D
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Trigger to auto-update updated_at
 CREATE TRIGGER update_customers_updated_at
@@ -306,10 +310,10 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
 
 -- Users can only access their own preferences
-CREATE POLICY "Users can read own preferences" ON user_preferences FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own preferences" ON user_preferences FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own preferences" ON user_preferences FOR UPDATE TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own preferences" ON user_preferences FOR DELETE TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can read own preferences" ON user_preferences FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can insert own preferences" ON user_preferences FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY "Users can update own preferences" ON user_preferences FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can delete own preferences" ON user_preferences FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
 
 -- Trigger to auto-update updated_at for user_preferences
 CREATE TRIGGER update_user_preferences_updated_at

@@ -13,11 +13,11 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 -- Enable RLS
 ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
 
--- Users can only access their own preferences
-CREATE POLICY "Users can read own preferences" ON user_preferences FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own preferences" ON user_preferences FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own preferences" ON user_preferences FOR UPDATE TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own preferences" ON user_preferences FOR DELETE TO authenticated USING (auth.uid() = user_id);
+-- Users can only access their own preferences (using select for better performance)
+CREATE POLICY "Users can read own preferences" ON user_preferences FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can insert own preferences" ON user_preferences FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY "Users can update own preferences" ON user_preferences FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can delete own preferences" ON user_preferences FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
 
 -- Trigger to auto-update updated_at for user_preferences
 CREATE TRIGGER update_user_preferences_updated_at
