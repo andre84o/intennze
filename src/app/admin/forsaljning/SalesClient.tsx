@@ -1028,56 +1028,92 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                       </div>
                     )}
 
-                    <div className="p-4 bg-white border border-gray-200 rounded-xl">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Domän</span>
-                      <p className="text-gray-900 font-medium mt-1">
-                        {questionnaireResponses.has_domain
-                          ? `Ja: ${questionnaireResponses.domain_name || "Har domän"}`
-                          : questionnaireResponses.wants_domain_help
-                          ? "Behöver hjälp"
-                          : "Fixar själv"}
-                      </p>
-                      {typeof questionnaireResponses.domain_suggestions === "string" && questionnaireResponses.domain_suggestions && (
-                        <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">
-                          Förslag: {questionnaireResponses.domain_suggestions}
+                    {(questionnaireResponses.has_domain !== null || questionnaireResponses.domain_name || questionnaireResponses.wants_domain_help !== null) && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Domän</span>
+                        <p className="text-gray-900 font-medium mt-1">
+                          {questionnaireResponses.has_domain === true
+                            ? `Ja: ${questionnaireResponses.domain_name || "Har domän"}`
+                            : questionnaireResponses.has_domain === false
+                            ? questionnaireResponses.wants_domain_help
+                              ? "Nej, behöver hjälp att skaffa"
+                              : "Nej, fixar själv"
+                            : "Ej besvarat"}
                         </p>
-                      )}
-                    </div>
+                        {typeof questionnaireResponses.domain_suggestions === "string" && questionnaireResponses.domain_suggestions && (
+                          <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">
+                            <span className="font-medium">Förslag:</span> {questionnaireResponses.domain_suggestions}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
-                    <div className="p-4 bg-white border border-gray-200 rounded-xl">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Underhåll</span>
-                      <p className="text-gray-900 font-medium mt-1">
-                        {questionnaireResponses.wants_maintenance ? "Ja" : "Sköter själv"}
-                      </p>
-                    </div>
+                    {questionnaireResponses.wants_maintenance !== null && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Underhåll</span>
+                        <p className="text-gray-900 font-medium mt-1">
+                          {questionnaireResponses.wants_maintenance === true ? "Ja, vill ha underhåll" : "Nej, sköter själv"}
+                        </p>
+                      </div>
+                    )}
 
                     {typeof questionnaireResponses.page_count === "string" && questionnaireResponses.page_count && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Antal sidor</span>
-                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.page_count}</p>
+                        <p className="text-gray-900 font-medium mt-1">
+                          {(() => {
+                            const pageLabels: Record<string, string> = {
+                              "1-3": "1-3 sidor (Enkel)",
+                              "4-7": "4-7 sidor (Standard)",
+                              "8-15": "8-15 sidor (Större)",
+                              "15+": "Fler än 15 sidor",
+                            };
+                            return pageLabels[questionnaireResponses.page_count as string] || questionnaireResponses.page_count;
+                          })()}
+                        </p>
                       </div>
                     )}
 
-                    <div className="p-4 bg-white border border-gray-200 rounded-xl">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Innehåll</span>
-                      <p className="text-gray-900 font-medium mt-1">
-                        {questionnaireResponses.has_content
-                          ? "Har bilder & texter"
-                          : questionnaireResponses.content_help_needed === "all"
-                          ? "Behöver hjälp med allt"
-                          : "Behöver lite hjälp"}
-                      </p>
-                    </div>
+                    {(questionnaireResponses.has_content !== null || questionnaireResponses.content_help_needed) && (
+                      <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Innehåll</span>
+                        <p className="text-gray-900 font-medium mt-1">
+                          {questionnaireResponses.has_content === true
+                            ? "Ja, har bilder & texter klara"
+                            : questionnaireResponses.has_content === false
+                            ? questionnaireResponses.content_help_needed === "all"
+                              ? "Nej, behöver hjälp med allt"
+                              : "Delvis, behöver lite hjälp"
+                            : "Ej besvarat"}
+                        </p>
+                      </div>
+                    )}
 
                     {Array.isArray(questionnaireResponses.features) && questionnaireResponses.features.length > 0 && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Funktioner</span>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {(questionnaireResponses.features as string[]).map((feature) => (
-                            <span key={feature} className="px-2 py-1 bg-indigo-50 text-indigo-700 text-sm rounded-lg">
-                              {feature}
-                            </span>
-                          ))}
+                          {(questionnaireResponses.features as string[]).map((feature) => {
+                            const featureLabels: Record<string, string> = {
+                              contact_form: "Kontaktformulär",
+                              booking: "Bokningssystem",
+                              webshop: "Webshop / E-handel",
+                              blog: "Blogg / Nyheter",
+                              gallery: "Bildgalleri / Portfolio",
+                              social_feed: "Sociala medier-flöde",
+                              newsletter: "Nyhetsbrev-registrering",
+                              chat: "Chatt / Support",
+                              map: "Karta / Hitta hit",
+                              video: "Videor",
+                              testimonials: "Kundrecensioner",
+                              faq: "Vanliga frågor (FAQ)",
+                            };
+                            return (
+                              <span key={feature} className="px-2 py-1 bg-indigo-50 text-indigo-700 text-sm rounded-lg">
+                                {featureLabels[feature] || feature}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -1106,7 +1142,18 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                     {typeof questionnaireResponses.timeline === "string" && questionnaireResponses.timeline && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tidslinje</span>
-                        <p className="text-gray-900 font-medium mt-1">{questionnaireResponses.timeline}</p>
+                        <p className="text-gray-900 font-medium mt-1">
+                          {(() => {
+                            const timelineLabels: Record<string, string> = {
+                              asap: "Så snart som möjligt",
+                              "1-2weeks": "1-2 veckor",
+                              "1month": "Inom 1 månad",
+                              "2-3months": "2-3 månader",
+                              flexible: "Flexibel / Inget bråttom",
+                            };
+                            return timelineLabels[questionnaireResponses.timeline as string] || questionnaireResponses.timeline;
+                          })()}
+                        </p>
                       </div>
                     )}
 

@@ -1,10 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
 
 // Facebook Lead Ads Webhook
 // Dokumentation: https://developers.facebook.com/docs/marketing-api/guides/lead-ads/
 
 const VERIFY_TOKEN = process.env.FACEBOOK_VERIFY_TOKEN || "intenzze_leads_verify_token";
+const APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+
+// Validera Facebook webhook-signatur
+function validateSignature(payload: string, signature: string | null): boolean {
+  if (!APP_SECRET) {
+    console.warn("⚠️ FACEBOOK_APP_SECRET inte konfigurerad - hoppar över signaturvalidering");
+    return true; // Tillåt om secret inte är konfigurerad (för utveckling)
+  }
+
+  if (!signature) {
+    console.error("❌ Ingen X-Hub-Signature-256 header");
+    return false;
+  }
+
+  const expectedSignature = "sha256=" + crypto
+    .createHmac("sha256", APP_SECRET)
+    .update(payload)
+    .digest("hex");
+
+  const isValid = crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
+
+  if (!isValid) {
+    console.error("❌ Ogiltig signatur från Facebook");
+    console.error("   Mottagen:", signature);
+    console.error("   Förväntad:", expectedSignature);
+  }
+
+  return isValid;
+}
 
 // Supabase admin-klient för att kringgå RLS
 const supabaseAdmin = createClient(
@@ -27,6 +60,7 @@ export async function GET(request: NextRequest) {
       endpoint: "/api/facebook/leads",
       verify_token_configured: !!VERIFY_TOKEN,
       access_token_configured: !!process.env.FACEBOOK_ACCESS_TOKEN,
+      app_secret_configured: !!APP_SECRET,
       service_role_configured: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
     });
   }
@@ -47,7 +81,16 @@ export async function POST(request: NextRequest) {
   console.log("Tidpunkt:", new Date().toLocaleString("sv-SE"));
 
   try {
-    const body = await request.json();
+    // Läs raw body för signaturvalidering
+    const rawBody = await request.text();
+    const signature = request.headers.get("x-hub-signature-256");
+
+    // Validera signatur från Meta
+    if (!validateSignature(rawBody, signature)) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+
+    const body = JSON.parse(rawBody);
 
     console.log("📥 Mottagen data från Facebook:");
     console.log(JSON.stringify(body, null, 2));
