@@ -92,7 +92,10 @@ export async function POST() {
         if (existing) continue;
 
         const fromAddress = parsed.from?.value?.[0];
-        const toAddress = parsed.to?.value?.[0];
+        const toField = parsed.to;
+        const toAddress = Array.isArray(toField)
+          ? toField[0]?.value?.[0]
+          : toField?.value?.[0];
 
         newEmails.push({
           message_id: messageId,
