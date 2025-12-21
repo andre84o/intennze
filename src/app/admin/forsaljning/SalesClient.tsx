@@ -1074,7 +1074,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                       </div>
                     )}
 
-                    {(questionnaireResponses.has_content !== null || questionnaireResponses.content_help_needed) && (
+                    {(questionnaireResponses.has_content !== null || typeof questionnaireResponses.content_help_needed === "string") && (
                       <div className="p-4 bg-white border border-gray-200 rounded-xl">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Innehåll</span>
                         <p className="text-gray-900 font-medium mt-1">
