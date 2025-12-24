@@ -126,32 +126,40 @@ export async function POST(request: NextRequest) {
 
         console.log("📝 Lead metadata:", { leadgenId, formId, adId, adgroupId, pageId });
 
-        // Hämta lead-data från Facebook Graph API
-        console.log("🔄 Hämtar lead-data från Facebook Graph API...");
+        const metadata = {
+          leadgen_id: leadgenId,
+          form_id: formId,
+          ad_id: adId,
+          adgroup_id: adgroupId,
+          page_id: pageId,
+        };
+
+        // Steg 1: Spara basdata direkt (så vi inte förlorar leaden)
+        console.log("💾 Sparar basdata från webhook...");
+        const customerId = await saveBasicLead(metadata);
+
+        if (!customerId) {
+          console.log("⚠️ Lead finns redan eller kunde inte sparas");
+          continue;
+        }
+
+        console.log(`✅ Basdata sparad! Kund-ID: ${customerId}`);
+        processedLeads.push(leadgenId);
+
+        // Steg 2: Försök hämta fullständig data från Facebook API
+        console.log("🔄 Hämtar fullständig lead-data från Facebook Graph API...");
         const leadData = await fetchLeadData(leadgenId);
 
         if (leadData) {
           console.log("✅ Lead-data hämtad från Facebook");
           console.log("📄 Lead field_data:", JSON.stringify(leadData.field_data, null, 2));
 
-          // Spara lead i databasen
-          console.log("💾 Sparar lead i databasen...");
-          const saved = await saveLeadToDatabase(leadData, {
-            leadgen_id: leadgenId,
-            form_id: formId,
-            ad_id: adId,
-            adgroup_id: adgroupId,
-            page_id: pageId,
-          });
-
-          if (saved) {
-            console.log("✅ Lead sparad!");
-            processedLeads.push(leadgenId);
-          } else {
-            console.log("⚠️ Lead kunde inte sparas (kanske duplikat)");
-          }
+          // Uppdatera lead med kontaktinfo
+          console.log("📝 Uppdaterar lead med kontaktinfo...");
+          await updateLeadWithContactInfo(customerId, leadData);
+          console.log("✅ Lead uppdaterad med fullständig info!");
         } else {
-          console.log("❌ Kunde inte hämta lead-data från Facebook");
+          console.log("⚠️ Kunde inte hämta kontaktinfo - basdata sparad ändå");
         }
       }
     }
@@ -222,7 +230,132 @@ async function fetchLeadData(leadgenId: string) {
   }
 }
 
-// Spara lead till databasen
+// Spara basdata från webhook (innan vi försöker hämta från API)
+async function saveBasicLead(metadata: {
+  leadgen_id: string;
+  form_id: string;
+  ad_id: string;
+  adgroup_id: string;
+  page_id: string;
+}): Promise<string | null> {
+  try {
+    // Kolla om lead redan finns
+    const { data: existing } = await supabaseAdmin
+      .from("customers")
+      .select("id")
+      .eq("facebook_lead_id", metadata.leadgen_id)
+      .single();
+
+    if (existing) {
+      console.log(`⚠️ Lead med facebook_lead_id ${metadata.leadgen_id} finns redan`);
+      return null;
+    }
+
+    // Skapa lead med basdata
+    const { data, error } = await supabaseAdmin.from("customers").insert({
+      first_name: "Facebook",
+      last_name: "Lead",
+      status: "lead",
+      source: "facebook_ads",
+      facebook_lead_id: metadata.leadgen_id,
+      notes: `Facebook Lead Ad (väntar på kontaktinfo)
+Lead ID: ${metadata.leadgen_id}
+Form ID: ${metadata.form_id}
+Ad ID: ${metadata.ad_id}
+Mottagen: ${new Date().toLocaleString("sv-SE")}`,
+    }).select("id").single();
+
+    if (error) {
+      console.error("❌ Kunde inte spara basdata:", error.message);
+      return null;
+    }
+
+    // Skapa påminnelse
+    await supabaseAdmin.from("reminders").insert({
+      customer_id: data.id,
+      title: "Ny Facebook-lead",
+      description: `Ny lead från Facebook annons. Lead ID: ${metadata.leadgen_id}`,
+      reminder_date: new Date().toISOString().split("T")[0],
+      type: "follow_up",
+    });
+
+    return data.id;
+  } catch (error) {
+    console.error("❌ Fel i saveBasicLead:", error);
+    return null;
+  }
+}
+
+// Uppdatera lead med kontaktinfo från Facebook API
+async function updateLeadWithContactInfo(customerId: string, leadData: any) {
+  try {
+    const fieldData = leadData.field_data || [];
+    const fields: Record<string, string> = {};
+
+    for (const field of fieldData) {
+      const name = field.name?.toLowerCase();
+      const value = field.values?.[0] || "";
+      fields[name] = value;
+    }
+
+    // Mappa Facebook-fält
+    const firstName = fields.first_name || fields.förnamn || fields.full_name?.split(" ")[0] || null;
+    const lastName = fields.last_name || fields.efternamn || fields.full_name?.split(" ").slice(1).join(" ") || null;
+    const email = fields.email || fields['e-post'] || null;
+    const phone = fields.phone_number || fields.phone || fields.telefon || null;
+    const companyName = fields.company_name || fields.company || fields.företag || null;
+    const city = fields.city || fields.stad || null;
+
+    // Samla egna formulärsvar
+    const standardFields = ['first_name', 'last_name', 'full_name', 'email', 'phone_number', 'phone', 'company_name', 'company', 'city', 'förnamn', 'efternamn', 'e-post', 'telefon', 'företag', 'stad'];
+    const customAnswers: string[] = [];
+
+    for (const field of fieldData) {
+      const name = field.name?.toLowerCase();
+      const value = field.values?.[0] || "";
+      if (standardFields.includes(name) || !value) continue;
+      const label = field.name?.replace(/_/g, ' ').replace(/^\w/, (c: string) => c.toUpperCase()) || name;
+      customAnswers.push(`${label}: ${value}`);
+    }
+
+    const wishes = customAnswers.length > 0 ? customAnswers.join('\n') : null;
+
+    // Uppdatera kund med kontaktinfo
+    const updateData: Record<string, any> = {};
+    if (firstName) updateData.first_name = firstName;
+    if (lastName) updateData.last_name = lastName;
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    if (companyName) updateData.company_name = companyName;
+    if (city) updateData.city = city;
+    if (wishes) updateData.wishes = wishes;
+
+    // Uppdatera notes för att visa att kontaktinfo hämtades
+    const { data: currentCustomer } = await supabaseAdmin
+      .from("customers")
+      .select("notes")
+      .eq("id", customerId)
+      .single();
+
+    updateData.notes = (currentCustomer?.notes || "").replace(
+      "(väntar på kontaktinfo)",
+      `(kontaktinfo hämtad ${new Date().toLocaleString("sv-SE")})`
+    );
+
+    const { error } = await supabaseAdmin
+      .from("customers")
+      .update(updateData)
+      .eq("id", customerId);
+
+    if (error) {
+      console.error("❌ Kunde inte uppdatera kontaktinfo:", error.message);
+    }
+  } catch (error) {
+    console.error("❌ Fel i updateLeadWithContactInfo:", error);
+  }
+}
+
+// Spara lead till databasen (legacy - behålls för bakåtkompatibilitet)
 async function saveLeadToDatabase(
   leadData: any,
   metadata: {

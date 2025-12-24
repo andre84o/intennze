@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Customer,
   CustomerStatus,
@@ -12,6 +13,13 @@ import {
   InteractionType,
   interactionTypeLabels,
 } from "@/types/database";
+
+// Facebook-ikon SVG
+const FacebookIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
 import { createClient } from "@/utils/supabase/client";
 
 interface Questionnaire {
@@ -748,6 +756,73 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           {error}
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Totalt</p>
+          <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
+        </div>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Leads</p>
+          <p className="text-2xl font-bold text-blue-600">{customers.filter((c) => c.status === "lead").length}</p>
+        </div>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Kunder</p>
+          <p className="text-2xl font-bold text-green-600">{customers.filter((c) => c.status === "customer").length}</p>
+        </div>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <p className="text-gray-500 text-sm">Serviceavtal</p>
+          <p className="text-2xl font-bold text-purple-600">{customers.filter((c) => c.has_service_agreement).length}</p>
+        </div>
+        <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="flex items-center gap-2 text-gray-500 text-sm">
+            <FacebookIcon />
+            <span>Facebook Ads</span>
+          </div>
+          <p className="text-2xl font-bold text-blue-600">{customers.filter((c) => c.source === "facebook_ads").length}</p>
+        </div>
+      </div>
+
+      {/* Upcoming reminders */}
+      {reminders.filter((r) => !r.is_completed && r.reminder_date >= today).length > 0 && (
+        <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <h3 className="text-amber-700 font-semibold mb-3 flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Kommande påminnelser
+          </h3>
+          <div className="space-y-2">
+            {reminders
+              .filter((r) => !r.is_completed && r.reminder_date >= today)
+              .sort((a, b) => a.reminder_date.localeCompare(b.reminder_date))
+              .slice(0, 5)
+              .map((reminder) => {
+                const customer = customers.find((c) => c.id === reminder.customer_id);
+                return (
+                  <div key={reminder.id} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700">
+                      {reminder.title}
+                      {customer && (
+                        <span className="text-gray-500 ml-2">
+                          - {customer.first_name} {customer.last_name}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-amber-600 font-medium">{reminder.reminder_date}</span>
+                  </div>
+                );
+              })}
+          </div>
+          <Link
+            href="/admin/paminnelser"
+            className="inline-block mt-3 text-sm text-amber-600 hover:text-amber-700 font-medium"
+          >
+            Visa alla →
+          </Link>
         </div>
       )}
 

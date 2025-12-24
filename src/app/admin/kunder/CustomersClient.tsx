@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Customer, Reminder, customerStatusLabels, CustomerStatus, LeadSource, leadSourceLabels, leadSourceColors } from "@/types/database";
+import { Customer, customerStatusLabels, CustomerStatus, LeadSource, leadSourceLabels, leadSourceColors } from "@/types/database";
 import CustomerModal from "./CustomerModal";
 import { createClient } from "@/utils/supabase/client";
 
 interface Props {
   initialCustomers: Customer[];
-  upcomingReminders: Reminder[];
   error?: string;
 }
 
@@ -85,7 +84,6 @@ const getLeadSourceIcon = (source: string | null) => {
 
 export default function CustomersClient({
   initialCustomers,
-  upcomingReminders,
   error,
 }: Props) {
   const [customers, setCustomers] = useState(initialCustomers);
@@ -138,14 +136,6 @@ export default function CustomersClient({
     setCustomerToDelete(null);
   };
 
-  const stats = {
-    total: customers.length,
-    leads: customers.filter((c) => c.status === "lead").length,
-    customers: customers.filter((c) => c.status === "customer").length,
-    withService: customers.filter((c) => c.has_service_agreement).length,
-    fromFacebook: customers.filter((c) => c.source === "facebook_ads").length,
-  };
-
   return (
     <div className="text-gray-900">
       {/* Header */}
@@ -177,61 +167,28 @@ export default function CustomersClient({
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <p className="text-gray-500 text-sm">Totalt</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
         </div>
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <p className="text-gray-500 text-sm">Leads</p>
-          <p className="text-2xl font-bold text-blue-600">{stats.leads}</p>
+          <p className="text-2xl font-bold text-blue-600">{customers.filter((c) => c.status === "lead").length}</p>
         </div>
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <p className="text-gray-500 text-sm">Kunder</p>
-          <p className="text-2xl font-bold text-green-600">{stats.customers}</p>
+          <p className="text-2xl font-bold text-green-600">{customers.filter((c) => c.status === "customer").length}</p>
         </div>
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <p className="text-gray-500 text-sm">Serviceavtal</p>
-          <p className="text-2xl font-bold text-purple-600">{stats.withService}</p>
+          <p className="text-2xl font-bold text-purple-600">{customers.filter((c) => c.has_service_agreement).length}</p>
         </div>
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <div className="flex items-center gap-2 text-gray-500 text-sm">
             <FacebookIcon />
             <span>Facebook Ads</span>
           </div>
-          <p className="text-2xl font-bold text-blue-600">{stats.fromFacebook}</p>
+          <p className="text-2xl font-bold text-blue-600">{customers.filter((c) => c.source === "facebook_ads").length}</p>
         </div>
       </div>
-
-      {/* Upcoming reminders */}
-      {upcomingReminders.length > 0 && (
-        <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <h3 className="text-amber-700 font-semibold mb-3 flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Kommande påminnelser
-          </h3>
-          <div className="space-y-2">
-            {upcomingReminders.slice(0, 5).map((reminder) => (
-              <div key={reminder.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">
-                  {reminder.title}
-                  {reminder.customer && (
-                    <span className="text-gray-500 ml-2">
-                      - {reminder.customer.first_name} {reminder.customer.last_name}
-                    </span>
-                  )}
-                </span>
-                <span className="text-amber-600 font-medium">{reminder.reminder_date}</span>
-              </div>
-            ))}
-          </div>
-          <Link
-            href="/admin/paminnelser"
-            className="inline-block mt-3 text-sm text-amber-600 hover:text-amber-700 font-medium"
-          >
-            Visa alla →
-          </Link>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">

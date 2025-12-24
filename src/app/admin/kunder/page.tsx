@@ -13,18 +13,9 @@ export default async function CustomersPage() {
     .select("*")
     .order("created_at", { ascending: false });
 
-  const { data: reminders } = await supabase
-    .from("reminders")
-    .select("*, customer:customers(*)")
-    .eq("is_completed", false)
-    .gte("reminder_date", new Date().toISOString().split("T")[0])
-    .order("reminder_date", { ascending: true })
-    .limit(10);
-
   return (
     <CustomersClient
       initialCustomers={customers || []}
-      upcomingReminders={reminders || []}
       error={error?.message}
     />
   );
