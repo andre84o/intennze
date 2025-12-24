@@ -82,6 +82,18 @@ const getLeadSourceIcon = (source: string | null) => {
   }
 };
 
+// Check if service agreement has expired
+const isServiceExpired = (customer: Customer) => {
+  if (!customer.has_service_agreement || !customer.service_renewal_date) {
+    return false;
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const renewalDate = new Date(customer.service_renewal_date);
+  renewalDate.setHours(0, 0, 0, 0);
+  return renewalDate < today;
+};
+
 export default function CustomersClient({
   initialCustomers,
   error,
@@ -164,7 +176,7 @@ export default function CustomersClient({
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <p className="text-gray-500 text-sm">Totalt</p>
           <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
@@ -181,6 +193,12 @@ export default function CustomersClient({
           <p className="text-gray-500 text-sm">Serviceavtal</p>
           <p className="text-2xl font-bold text-purple-600">{customers.filter((c) => c.has_service_agreement).length}</p>
         </div>
+        {customers.filter((c) => isServiceExpired(c)).length > 0 && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm">
+            <p className="text-red-600 text-sm">Utgångna avtal</p>
+            <p className="text-2xl font-bold text-red-600">{customers.filter((c) => isServiceExpired(c)).length}</p>
+          </div>
+        )}
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <div className="flex items-center gap-2 text-gray-500 text-sm">
             <FacebookIcon />
@@ -237,12 +255,14 @@ export default function CustomersClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
+                {filteredCustomers.map((customer) => {
+                  const expired = isServiceExpired(customer);
+                  return (
+                  <tr key={customer.id} className={`transition-colors ${expired ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}`}>
                     <td className="px-4 py-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900">
+                          <p className={`font-medium ${expired ? "text-red-900" : "text-gray-900"}`}>
                             {customer.first_name} {customer.last_name}
                           </p>
                           {customer.source && (
@@ -256,8 +276,13 @@ export default function CustomersClient({
                           )}
                         </div>
                         {customer.has_service_agreement && (
-                          <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded">
-                            Serviceavtal
+                          <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-xs rounded ${expired ? "bg-red-200 text-red-800" : "bg-purple-100 text-purple-700"}`}>
+                            {expired && (
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                            )}
+                            {expired ? `Utgånget ${customer.service_renewal_date}` : "Serviceavtal"}
                           </span>
                         )}
                       </div>
@@ -324,7 +349,8 @@ export default function CustomersClient({
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

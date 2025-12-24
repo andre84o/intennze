@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `"intenzze.webbstudio" <${email}>`;
+    const from = `Intenzze <${email}>`;
 
     // Generate public token
     const publicToken = generateToken();
@@ -97,12 +97,16 @@ export async function POST(req: Request) {
 
     const html = `
       <!DOCTYPE html>
-      <html lang="sv">
+      <html lang="sv" xml:lang="sv">
       <head>
         <meta charset="utf-8">
+        <meta http-equiv="Content-Language" content="sv">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="display:none; font-size:0; line-height:0; max-height:0; mso-hide:all;">
+          Här kommer ett frågeformulär från Intenzze Webbstudio. Vi behöver lite information om ditt projekt.
+        </div>
         <div style="background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%); padding: 40px 30px; border-radius: 16px 16px 0 0; text-align: center;">
           <h2 style="color: white; margin: 0 0 16px 0; font-size: 32px; font-weight: 800; letter-spacing: -1px;">intenzze</h2>
           <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 500; opacity: 0.95;">Berätta om ert projekt</h1>
@@ -150,6 +154,9 @@ export async function POST(req: Request) {
       subject: `${customerName} - Berätta om ert webbprojekt`,
       html,
       attachments,
+      headers: {
+        "Content-Language": "sv",
+      },
     });
 
     // Create questionnaire record

@@ -142,6 +142,7 @@ export default function AdminSidebar() {
                 src="/favicon20.png"
                 alt="Intenzze Logo"
                 fill
+                sizes="40px"
                 className="object-contain"
               />
             </div>

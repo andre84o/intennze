@@ -41,7 +41,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `"intenzze.webbstudio" <${email}>`;
+    const fromName = "Intenzze";
+    const from = `${fromName} <${email}>`;
 
     const supabase = await createClient();
 
@@ -83,12 +84,17 @@ export async function POST(req: Request) {
 
     const html = `
       <!DOCTYPE html>
-      <html lang="sv">
+      <html lang="sv" xml:lang="sv">
       <head>
         <meta charset="utf-8">
+        <meta http-equiv="Content-Language" content="sv">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="display:none; font-size:0; line-height:0; max-height:0; mso-hide:all;">
+          Detta är ett meddelande från Intenzze Webbstudio. Vi bygger skräddarsydda webbplatser.
+        </div>
         <div style="white-space: pre-wrap;">${body}</div>
         ${signatureHtml}
       </body>
@@ -103,6 +109,9 @@ export async function POST(req: Request) {
       text: body + (signature ? `\n\n---\n${signature.replace(/<[^>]*>/g, "")}` : ""),
       html,
       attachments: mailAttachments,
+      headers: {
+        "Content-Language": "sv",
+      },
     };
 
     // Om det är ett svar, lägg till In-Reply-To header
@@ -117,8 +126,8 @@ export async function POST(req: Request) {
     const { error: dbError } = await supabase.from("emails").insert({
       message_id: info.messageId,
       direction: "outbound",
-      from_email: from,
-      from_name: "Intenzze",
+      from_email: email,
+      from_name: fromName,
       to_email: to,
       subject,
       body_text: body,

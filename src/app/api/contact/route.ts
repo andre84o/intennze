@@ -59,22 +59,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `"intenzze.webbstudio" <${emailConfig}>`;
+    const from = `Intenzze <${emailConfig}>`;
 
     const info = await transporter.sendMail({
-      from, 
-      to, 
-      replyTo: email, 
+      from,
+      to,
+      replyTo: email,
       subject: `Nytt kontaktmeddelande från ${name}`,
       text: `Namn: ${name}\nE-post: ${email}\nTelefon: ${phone}\n\nMeddelande:\n${message}`,
+      headers: {
+        "Content-Language": "sv",
+      },
       html: `
         <!DOCTYPE html>
-        <html lang="sv">
+        <html lang="sv" xml:lang="sv">
         <head>
           <meta charset="utf-8">
+          <meta http-equiv="Content-Language" content="sv">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
         <body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; padding:20px;">
+          <div style="display:none; font-size:0; line-height:0; max-height:0; mso-hide:all;">
+            Detta är ett kontaktmeddelande från Intenzze Webbstudio. Vi bygger skräddarsydda webbplatser.
+          </div>
           <div style="max-width: 600px; margin: 0 auto;">
             <h2 style="margin:0 0 8px">Nytt kontaktmeddelande</h2>
             <p><strong>Namn:</strong> ${name}</p>

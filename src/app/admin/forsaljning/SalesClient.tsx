@@ -68,6 +68,18 @@ const interactionIcons: Record<InteractionType, string> = {
   other: "M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
 };
 
+// Check if service agreement has expired
+const isServiceExpired = (customer: Customer) => {
+  if (!customer.has_service_agreement || !customer.service_renewal_date) {
+    return false;
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const renewalDate = new Date(customer.service_renewal_date);
+  renewalDate.setHours(0, 0, 0, 0);
+  return renewalDate < today;
+};
+
 export default function SalesClient({ customers: initialCustomers, reminders: initialReminders, interactions: initialInteractions, questionnaires: initialQuestionnaires, error }: Props) {
   const [customers, setCustomers] = useState(initialCustomers);
   const [reminders, setReminders] = useState(initialReminders);
@@ -339,15 +351,22 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
     });
   };
 
-  // Sort customers: overdue first, then today, then by status
+  // Sort customers: expired service first, then overdue reminders, then today
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
+    const aExpired = isServiceExpired(a);
+    const bExpired = isServiceExpired(b);
     const aOverdue = hasOverdueReminder(a.id);
     const bOverdue = hasOverdueReminder(b.id);
     const aToday = hasTodayReminder(a.id);
     const bToday = hasTodayReminder(b.id);
 
+    // Expired service agreements first
+    if (aExpired && !bExpired) return -1;
+    if (!aExpired && bExpired) return 1;
+    // Then overdue reminders
     if (aOverdue && !bOverdue) return -1;
     if (!aOverdue && bOverdue) return 1;
+    // Then today's reminders
     if (aToday && !bToday) return -1;
     if (!aToday && bToday) return 1;
     return 0;
@@ -360,11 +379,14 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
     const nextReminder = getNextReminder(customer.id);
     const isOverdue = hasOverdueReminder(customer.id);
     const isToday = hasTodayReminder(customer.id);
+    const serviceExpired = isServiceExpired(customer);
 
     return (
       <div
         className={`bg-white border rounded-xl transition-all shadow-sm hover:shadow-md ${
-          isOverdue
+          serviceExpired
+            ? "border-red-300 bg-red-50 ring-2 ring-red-200"
+            : isOverdue
             ? "border-red-200 bg-red-50"
             : isToday
             ? "border-amber-200 bg-amber-50"
@@ -388,12 +410,20 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                   <span className={`w-1.5 h-1.5 rounded-full ${statusColors[customer.status].split(' ')[0]}`} />
                   {customerStatusLabels[customer.status]}
                 </span>
-                {isOverdue && (
+                {serviceExpired && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Utgånget avtal
+                  </span>
+                )}
+                {isOverdue && !serviceExpired && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
                     Försenad
                   </span>
                 )}
-                {isToday && !isOverdue && (
+                {isToday && !isOverdue && !serviceExpired && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
                     Idag
                   </span>
@@ -747,6 +777,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
   };
 
   // Count customers with issues
+  const expiredServiceCount = customers.filter((c) => isServiceExpired(c)).length;
   const overdueCount = customers.filter((c) => hasOverdueReminder(c.id)).length;
   const todayCount = customers.filter((c) => hasTodayReminder(c.id) && !hasOverdueReminder(c.id)).length;
 
@@ -761,6 +792,14 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
           <p className="text-gray-500 mt-1 text-lg">Hantera leads och kunduppföljning</p>
         </div>
         <div className="flex items-center gap-3">
+          {expiredServiceCount > 0 && (
+            <span className="px-4 py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-full text-sm font-medium shadow-sm flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              {expiredServiceCount} utgångna avtal
+            </span>
+          )}
           {overdueCount > 0 && (
             <span className="px-4 py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-full text-sm font-medium shadow-sm">
               {overdueCount} försenade
@@ -784,7 +823,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <p className="text-gray-500 text-sm">Totalt</p>
           <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
@@ -801,6 +840,12 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
           <p className="text-gray-500 text-sm">Serviceavtal</p>
           <p className="text-2xl font-bold text-purple-600">{customers.filter((c) => c.has_service_agreement).length}</p>
         </div>
+        {customers.filter((c) => isServiceExpired(c)).length > 0 && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm">
+            <p className="text-red-600 text-sm">Utgångna avtal</p>
+            <p className="text-2xl font-bold text-red-600">{customers.filter((c) => isServiceExpired(c)).length}</p>
+          </div>
+        )}
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <div className="flex items-center gap-2 text-gray-500 text-sm">
             <FacebookIcon />
