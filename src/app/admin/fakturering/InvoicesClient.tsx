@@ -765,116 +765,142 @@ export default function InvoicesClient({
 
       {/* One-Time Invoice Modal */}
       {showOneTimeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
           <div
-            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => setShowOneTimeModal(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-            <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">
-                Skapa engångsfaktura
-              </h2>
+          <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex-none px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white z-10">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Skapa engångsfaktura
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Skapa en faktura för engångsjobb eller extra tjänster
+                </p>
+              </div>
               <button
                 onClick={() => setShowOneTimeModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6">
               {/* Customer select */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="group">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">
                   Kund <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={oneTimeForm.customer_id}
-                  onChange={(e) => setOneTimeForm((prev) => ({ ...prev, customer_id: e.target.value }))}
-                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Välj kund...</option>
-                  {allCustomers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.first_name} {customer.last_name}
-                      {customer.company_name && ` - ${customer.company_name}`}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={oneTimeForm.customer_id}
+                    onChange={(e) => setOneTimeForm((prev) => ({ ...prev, customer_id: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                  >
+                    <option value="">Välj kund...</option>
+                    {allCustomers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.first_name} {customer.last_name}
+                        {customer.company_name && ` - ${customer.company_name}`}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+                </div>
               </div>
 
               {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="group">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">
                   Beskrivning <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={oneTimeForm.description}
                   onChange={(e) => setOneTimeForm((prev) => ({ ...prev, description: e.target.value }))}
                   placeholder="T.ex. Webbdesign, Konsultation, etc."
-                  rows={3}
-                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  rows={4}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 resize-none"
                 />
               </div>
 
-              {/* Amount */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Belopp exkl. moms (SEK) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={oneTimeForm.amount}
-                  onChange={(e) => setOneTimeForm((prev) => ({ ...prev, amount: e.target.value }))}
-                  placeholder="0"
-                  min="0"
-                  step="1"
-                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {oneTimeForm.amount && parseFloat(oneTimeForm.amount) > 0 && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Totalt inkl. moms (25%): {formatCurrency(parseFloat(oneTimeForm.amount) * 1.25)}
-                  </p>
-                )}
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Amount */}
+                <div className="group">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">
+                    Belopp exkl. moms <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={oneTimeForm.amount}
+                      onChange={(e) => setOneTimeForm((prev) => ({ ...prev, amount: e.target.value }))}
+                      placeholder="0"
+                      min="0"
+                      step="1"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500 font-medium">
+                      SEK
+                    </div>
+                  </div>
+                  {oneTimeForm.amount && parseFloat(oneTimeForm.amount) > 0 && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 inline-block">
+                      <span className="font-medium text-blue-700">Totalt inkl. moms:</span>
+                      <span>{formatCurrency(parseFloat(oneTimeForm.amount) * 1.25)}</span>
+                    </div>
+                  )}
+                </div>
 
-              {/* Due days */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Betalningsvillkor (dagar)
-                </label>
-                <select
-                  value={oneTimeForm.due_days}
-                  onChange={(e) => setOneTimeForm((prev) => ({ ...prev, due_days: e.target.value }))}
-                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="10">10 dagar</option>
-                  <option value="14">14 dagar</option>
-                  <option value="30">30 dagar</option>
-                  <option value="45">45 dagar</option>
-                  <option value="60">60 dagar</option>
-                </select>
+                {/* Due days */}
+                <div className="group">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">
+                    Betalningsvillkor
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={oneTimeForm.due_days}
+                      onChange={(e) => setOneTimeForm((prev) => ({ ...prev, due_days: e.target.value }))}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                    >
+                      <option value="10">10 dagar</option>
+                      <option value="14">14 dagar</option>
+                      <option value="30">30 dagar</option>
+                      <option value="45">45 dagar</option>
+                      <option value="60">60 dagar</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="border-t border-gray-100 px-6 py-4 bg-gray-50 flex justify-end gap-3">
+            {/* Footer */}
+            <div className="flex-none px-6 py-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 z-10">
               <button
                 onClick={() => setShowOneTimeModal(false)}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+                className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-xl transition-colors duration-200"
               >
                 Avbryt
               </button>
               <button
                 onClick={handleCreateOneTimeInvoice}
                 disabled={creatingOneTime || !oneTimeForm.customer_id || !oneTimeForm.description || !oneTimeForm.amount}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2"
               >
                 {creatingOneTime ? (
                   <>
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
