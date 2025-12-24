@@ -21,6 +21,14 @@ export default async function CustomerDetailPage({
     notFound();
   }
 
+  // Markera som läst om den inte redan är det
+  if (!customer.is_read) {
+    await supabase
+      .from("customers")
+      .update({ is_read: true })
+      .eq("id", id);
+  }
+
   // Fetch interactions
   const { data: interactions } = await supabase
     .from("customer_interactions")

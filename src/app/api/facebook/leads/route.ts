@@ -267,6 +267,7 @@ async function saveBasicLead(metadata: {
       status: "lead",
       source: "facebook_ads",
       facebook_lead_id: metadata.leadgen_id,
+      is_read: false, // Markera som oläst för notifikation
       notes: `Facebook Lead Ad (väntar på kontaktinfo)
 Lead ID: ${metadata.leadgen_id}
 Form ID: ${metadata.form_id}

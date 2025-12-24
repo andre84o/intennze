@@ -54,6 +54,8 @@ export interface Customer {
   fbclid: string | null;
   // Facebook Lead Ads
   facebook_lead_id: string | null;
+  // Notification tracking
+  is_read: boolean;
 }
 
 export interface Reminder {

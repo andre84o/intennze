@@ -14,24 +14,36 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
   const router = useRouter();
   const [notificationCount, setNotificationCount] = useState(0);
 
-  // Hämta antal nya leads och obesvarade formulär
+  // Hämta antal olästa notifikationer
   useEffect(() => {
     const fetchNotifications = async () => {
       const supabase = createClient();
 
-      // Hämta nya leads (status = 'lead')
-      const { count: leadsCount } = await supabase
+      // Hämta olästa leads (nya som inte öppnats)
+      const { count: unreadLeadsCount } = await supabase
         .from("customers")
         .select("*", { count: "exact", head: true })
-        .eq("status", "lead");
+        .eq("is_read", false);
 
-      // Hämta besvarade formulär (status = 'completed')
-      const { count: questionnairesCount } = await supabase
+      // Hämta besvarade formulär som inte granskats
+      const { count: unreadQuestionnairesCount } = await supabase
         .from("questionnaires")
         .select("*", { count: "exact", head: true })
-        .eq("status", "completed");
+        .eq("status", "completed")
+        .eq("response_read", false);
 
-      setNotificationCount((leadsCount || 0) + (questionnairesCount || 0));
+      // Hämta besvarade offerter som inte granskats
+      const { count: unreadQuotesCount } = await supabase
+        .from("quotes")
+        .select("*", { count: "exact", head: true })
+        .in("status", ["accepted", "declined"])
+        .eq("response_read", false);
+
+      setNotificationCount(
+        (unreadLeadsCount || 0) +
+        (unreadQuestionnairesCount || 0) +
+        (unreadQuotesCount || 0)
+      );
     };
 
     fetchNotifications();
