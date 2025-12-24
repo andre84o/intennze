@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `intenzze.webbstudio <${emailConfig}>`;
+    const from = `"intenzze.webbstudio" <${emailConfig}>`;
 
     const info = await transporter.sendMail({
       from, 
@@ -68,14 +68,23 @@ export async function POST(req: Request) {
       subject: `Nytt kontaktmeddelande från ${name}`,
       text: `Namn: ${name}\nE-post: ${email}\nTelefon: ${phone}\n\nMeddelande:\n${message}`,
       html: `
-        <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">
-          <h2 style="margin:0 0 8px">Nytt kontaktmeddelande</h2>
-          <p><strong>Namn:</strong> ${name}</p>
-          <p><strong>E-post:</strong> ${email}</p>
-          <p><strong>Telefon:</strong> ${phone}</p>
-          <p><strong>Meddelande:</strong></p>
-          <p style="white-space:pre-line">${message}</p>
-        </div>
+        <!DOCTYPE html>
+        <html lang="sv">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; padding:20px;">
+          <div style="max-width: 600px; margin: 0 auto;">
+            <h2 style="margin:0 0 8px">Nytt kontaktmeddelande</h2>
+            <p><strong>Namn:</strong> ${name}</p>
+            <p><strong>E-post:</strong> ${email}</p>
+            <p><strong>Telefon:</strong> ${phone}</p>
+            <p><strong>Meddelande:</strong></p>
+            <p style="white-space:pre-line">${message}</p>
+          </div>
+        </body>
+        </html>
       `,
     });
 

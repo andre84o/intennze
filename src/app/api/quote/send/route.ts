@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import path from "path";
+import fs from "fs";
 import { createClient } from "@/utils/supabase/server";
 
 // Generate a secure random token
@@ -70,7 +72,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `intenzze.webbstudio <${email}>`;
+    const from = `"intenzze.webbstudio" <${email}>`;
 
     // Build items HTML
     const itemsHtml = (quote.items || [])
@@ -97,9 +99,27 @@ export async function POST(req: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://intenzze.com";
     const quoteUrl = `${baseUrl}/offert/${publicToken}`;
 
+    // Prepare attachments (Logo)
+    const attachments = [];
+    let hasLogo = false;
+    
+    try {
+      const logoPath = path.join(process.cwd(), "public", "logosignatur.png");
+      if (fs.existsSync(logoPath)) {
+        attachments.push({
+          filename: 'logosignatur.png',
+          path: logoPath,
+          cid: 'logo-signature'
+        });
+        hasLogo = true;
+      }
+    } catch (logoError) {
+      console.error("Kunde inte läsa logon:", logoError);
+    }
+
     const html = `
       <!DOCTYPE html>
-      <html>
+      <html lang="sv">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -176,6 +196,7 @@ export async function POST(req: Request) {
         </div>
 
         <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 14px;">
+          ${hasLogo ? `<img src="cid:logo-signature" alt="Intenzze" style="height: 32px; width: auto; margin-bottom: 12px;" />` : ""}
           <p style="margin: 0;">Intenzze Webbstudio</p>
           <p style="margin: 4px 0 0 0;">Stockholm, Sverige</p>
         </div>
@@ -189,6 +210,7 @@ export async function POST(req: Request) {
       to: quote.customer.email,
       subject: `Offert #${quote.quote_number} - ${quote.title}`,
       html,
+      attachments,
     });
 
     // Update quote status and save token

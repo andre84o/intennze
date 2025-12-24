@@ -41,17 +41,31 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `intenzze.webbstudio <${email}>`;
+    const from = `"intenzze.webbstudio" <${email}>`;
 
     const supabase = await createClient();
 
-    // Bygg HTML-version av mailet med logo (base64 för att undvika bilaga)
+    // Förbered bilagor
+    const mailAttachments: any[] = (attachments || []).map((att: EmailAttachment) => ({
+      filename: att.filename,
+      content: Buffer.from(att.content, "base64"),
+      contentType: att.contentType,
+    }));
+
+    // Lägg till logotyp som CID-bilaga om den ska visas
     const logoAlign = logoPosition === "center" ? "center" : logoPosition === "right" ? "right" : "left";
-    let logoBase64 = "";
+    let hasLogo = false;
+    
     try {
       const logoPath = path.join(process.cwd(), "public", "logosignatur.png");
-      const logoBuffer = fs.readFileSync(logoPath);
-      logoBase64 = logoBuffer.toString("base64");
+      if (fs.existsSync(logoPath)) {
+        mailAttachments.push({
+          filename: 'logosignatur.png',
+          path: logoPath,
+          cid: 'logo-signature'
+        });
+        hasLogo = true;
+      }
     } catch (logoError) {
       console.error("Kunde inte läsa logon:", logoError);
     }
@@ -61,15 +75,15 @@ export async function POST(req: Request) {
     const signatureHtml = signature
       ? `<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
           <div style="white-space: pre-wrap;">${formattedSignature}</div>
-          ${logoBase64 ? `<div style="margin-top: 15px; text-align: ${logoAlign};">
-            <img src="data:image/png;base64,${logoBase64}" alt="Logo" style="height: ${logoHeight}px; width: auto;" />
+          ${hasLogo ? `<div style="margin-top: 15px; text-align: ${logoAlign};">
+            <img src="cid:logo-signature" alt="Logo" style="height: ${logoHeight}px; width: auto;" />
           </div>` : ""}
         </div>`
       : "";
 
     const html = `
       <!DOCTYPE html>
-      <html>
+      <html lang="sv">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -80,13 +94,6 @@ export async function POST(req: Request) {
       </body>
       </html>
     `;
-
-    // Förbered bilagor (endast användarens bilagor, logon är base64-inbäddad)
-    const mailAttachments: any[] = (attachments || []).map((att: EmailAttachment) => ({
-      filename: att.filename,
-      content: Buffer.from(att.content, "base64"),
-      contentType: att.contentType,
-    }));
 
     // Skicka mailet
     const mailOptions: nodemailer.SendMailOptions = {
