@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import { createClient } from "@/utils/supabase/client";
+
+// Sanitize HTML to prevent XSS attacks
+const sanitizeHtml = (html: string) => {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["br", "p", "strong", "em", "a", "span", "div"],
+    ALLOWED_ATTR: ["href", "target", "rel", "class", "style"],
+  });
+};
 
 interface Email {
   id: string;
@@ -658,7 +667,7 @@ export default function MessagesPage() {
                   <div className="text-sm text-gray-600 border-t border-gray-200 pt-2">
                     <div
                       className="whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{ __html: signature.replace(/\n/g, "<br>") }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(signature.replace(/\n/g, "<br>")) }}
                     />
                     <div className={`mt-3 ${logoPosition === "center" ? "text-center" : logoPosition === "right" ? "text-right" : "text-left"}`}>
                       <img src="/logosignatur.png" alt="Logo" style={{ height: `${logoHeight}px` }} className="w-auto inline-block" />
@@ -840,7 +849,7 @@ export default function MessagesPage() {
                     <>
                       <div
                         className="whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: signature.replace(/\n/g, "<br>") }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(signature.replace(/\n/g, "<br>")) }}
                       />
                       <div className={`mt-3 ${logoPosition === "center" ? "text-center" : logoPosition === "right" ? "text-right" : "text-left"}`}>
                         <img src="/logosignatur.png" alt="Logo" style={{ height: `${logoHeight}px` }} className="w-auto inline-block" />

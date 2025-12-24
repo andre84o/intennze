@@ -11,8 +11,8 @@ const APP_SECRET = process.env.FACEBOOK_APP_SECRET;
 // Validera Facebook webhook-signatur
 function validateSignature(payload: string, signature: string | null): boolean {
   if (!APP_SECRET) {
-    console.warn("⚠️ FACEBOOK_APP_SECRET inte konfigurerad - hoppar över signaturvalidering");
-    return true; // Tillåt om secret inte är konfigurerad (för utveckling)
+    console.error("❌ FACEBOOK_APP_SECRET inte konfigurerad - avvisar request");
+    return false; // SÄKERHET: Avvisa alltid om secret saknas
   }
 
   if (!signature) {
@@ -20,23 +20,32 @@ function validateSignature(payload: string, signature: string | null): boolean {
     return false;
   }
 
-  const expectedSignature = "sha256=" + crypto
-    .createHmac("sha256", APP_SECRET)
-    .update(payload)
-    .digest("hex");
+  try {
+    const expectedSignature = "sha256=" + crypto
+      .createHmac("sha256", APP_SECRET)
+      .update(payload)
+      .digest("hex");
 
-  const isValid = crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+    // Kontrollera att längderna matchar innan timingSafeEqual
+    const sigBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expectedSignature);
 
-  if (!isValid) {
-    console.error("❌ Ogiltig signatur från Facebook");
-    console.error("   Mottagen:", signature);
-    console.error("   Förväntad:", expectedSignature);
+    if (sigBuffer.length !== expectedBuffer.length) {
+      console.error("❌ Signaturer har olika längd");
+      return false;
+    }
+
+    const isValid = crypto.timingSafeEqual(sigBuffer, expectedBuffer);
+
+    if (!isValid) {
+      console.error("❌ Ogiltig signatur från Facebook");
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error("❌ Fel vid signaturvalidering:", error);
+    return false;
   }
-
-  return isValid;
 }
 
 // Supabase admin-klient för att kringgå RLS

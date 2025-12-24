@@ -6,10 +6,10 @@ export const metadata = {
   title: "Offert | intenzze",
 };
 
-// Use service role for public access (no auth required)
+// Use anon key with RLS policies for public access (secure)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 export default async function PublicQuotePage({
