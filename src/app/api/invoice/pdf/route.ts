@@ -301,6 +301,29 @@ export async function POST(req: Request) {
       doc.text(`Vid frågor, kontakta oss på ${company.email}`, pageWidth / 2, y, { align: "center" });
     }
 
+    // Add MAKULERAD watermark if invoice is cancelled
+    if (invoice.status === "cancelled") {
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Create a graphics state with transparency
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const GState = (doc as any).GState;
+      const gState = new GState({ opacity: 0.3 });
+      doc.setGState(gState);
+
+      // Draw large red MAKULERAD text in center of page
+      doc.setFontSize(70);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(220, 38, 38); // Red-600
+
+      // Draw text with rotation using jsPDF's text rotation option
+      doc.text("MAKULERAD", pageWidth / 2, pageHeight / 2, {
+        align: "center",
+        angle: 45,
+      });
+
+    }
+
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(doc.output("arraybuffer"));
 

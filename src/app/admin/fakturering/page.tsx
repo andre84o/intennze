@@ -26,10 +26,17 @@ export default async function InvoicesPage() {
     .eq("has_service_agreement", true)
     .not("service_price", "is", null);
 
+  // Fetch all customers for one-time invoices
+  const { data: allCustomers } = await supabase
+    .from("customers")
+    .select("*")
+    .order("first_name", { ascending: true });
+
   return (
     <InvoicesClient
       initialInvoices={invoices || []}
       customersWithService={customersWithService || []}
+      allCustomers={allCustomers || []}
       error={invoicesError?.message || customersError?.message}
     />
   );

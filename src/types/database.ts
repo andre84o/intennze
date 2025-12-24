@@ -305,6 +305,9 @@ export interface Invoice {
   paid_at: string | null;
   service_type: string | null;
   created_by: string | null;
+  // Credit note fields
+  is_credit_note: boolean;
+  original_invoice_id: string | null;
   // Joined data
   customer?: Customer;
 }
