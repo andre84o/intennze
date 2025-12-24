@@ -280,15 +280,6 @@ Mottagen: ${new Date().toLocaleString("sv-SE")}`,
       return null;
     }
 
-    // Skapa påminnelse
-    await supabaseAdmin.from("reminders").insert({
-      customer_id: data.id,
-      title: "Ny Facebook-lead",
-      description: `Ny lead från Facebook annons. Lead ID: ${metadata.leadgen_id}`,
-      reminder_date: new Date().toISOString().split("T")[0],
-      type: "follow_up",
-    });
-
     return data.id;
   } catch (error) {
     console.error("❌ Fel i saveBasicLead:", error);
