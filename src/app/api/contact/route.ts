@@ -51,13 +51,15 @@ export async function POST(req: Request) {
     }
 
     const to = process.env.CONTACT_TO;
-    const from = process.env.FROM_EMAIL || process.env.ZOHO_USER || "";
-    if (!to || !from) {
+    const emailConfig = process.env.FROM_EMAIL || process.env.ZOHO_USER || "";
+    if (!to || !emailConfig) {
       return NextResponse.json(
         { ok: false, error: "Servern saknar e-postkonfiguration" },
         { status: 500 }
       );
     }
+
+    const from = `intenzze.webbstudio <${emailConfig}>`;
 
     const info = await transporter.sendMail({
       from, 

@@ -812,41 +812,71 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
 
       {/* Upcoming reminders */}
       {reminders.filter((r) => !r.is_completed && r.reminder_date >= today).length > 0 && (
-        <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <h3 className="text-amber-700 font-semibold mb-3 flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Kommande påminnelser
-          </h3>
-          <div className="space-y-2">
+        <div className="mb-8 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Kommande påminnelser
+            </h3>
+            <button
+              onClick={() => setShowAllRemindersPopup(true)}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
+            >
+              Visa alla
+            </button>
+          </div>
+          <div className="divide-y divide-gray-100">
             {reminders
               .filter((r) => !r.is_completed && r.reminder_date >= today)
               .sort((a, b) => a.reminder_date.localeCompare(b.reminder_date))
               .slice(0, 5)
               .map((reminder) => {
                 const customer = customers.find((c) => c.id === reminder.customer_id);
+                const isToday = reminder.reminder_date === today;
+                
                 return (
-                  <div key={reminder.id} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700">
-                      {reminder.title}
-                      {customer && (
-                        <span className="text-gray-500 ml-2">
-                          - {customer.first_name} {customer.last_name}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-amber-600 font-medium">{reminder.reminder_date}</span>
+                  <div 
+                    key={reminder.id} 
+                    className={`p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group ${
+                      isToday ? "bg-amber-50/30" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${typeColors[reminder.type]}`} />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                          {reminder.title}
+                        </p>
+                        {customer && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {customer.first_name} {customer.last_name} • {customer.company_name || "Privatperson"}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className={`text-sm font-medium ${
+                        isToday ? "text-amber-600" : "text-gray-500"
+                      }`}>
+                        {isToday ? "Idag" : formatDate(reminder.reminder_date)}
+                        {reminder.reminder_time && <span className="text-gray-400 font-normal ml-1">kl {reminder.reminder_time}</span>}
+                      </div>
+                      <button
+                        onClick={() => handleCompleteReminder(reminder.id)}
+                        className="p-1.5 text-gray-300 hover:text-green-600 hover:bg-green-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                        title="Markera som klar"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 );
               })}
           </div>
-          <button
-            onClick={() => setShowAllRemindersPopup(true)}
-            className="mt-3 text-sm text-amber-600 hover:text-amber-700 font-medium"
-          >
-            Visa alla →
-          </button>
         </div>
       )}
 
@@ -1286,8 +1316,8 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
             className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
             onClick={() => setShowAllRemindersPopup(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-            <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between bg-gray-50/50">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1304,7 +1334,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+            <div className="p-0 overflow-y-auto flex-1">
               {reminders.filter((r) => !r.is_completed).length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1316,7 +1346,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                   <p className="text-gray-500 mt-1">Du har inga aktiva påminnelser.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="divide-y divide-gray-100">
                   {reminders
                     .filter((r) => !r.is_completed)
                     .sort((a, b) => a.reminder_date.localeCompare(b.reminder_date))
@@ -1324,52 +1354,52 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
                       const customer = customers.find((c) => c.id === reminder.customer_id);
                       const isOverdue = reminder.reminder_date < today;
                       const isToday = reminder.reminder_date === today;
+                      
                       return (
                         <div
                           key={reminder.id}
-                          className={`flex items-center justify-between p-4 rounded-xl border ${
-                            isOverdue
-                              ? "bg-red-50 border-red-200"
-                              : isToday
-                              ? "bg-amber-50 border-amber-200"
-                              : "bg-white border-gray-200"
+                          className={`p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group ${
+                            isOverdue ? "bg-red-50/30" : isToday ? "bg-amber-50/30" : ""
                           }`}
                         >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`w-2 h-2 rounded-full ${typeColors[reminder.type]}`} />
-                              <span className="font-medium text-gray-900">{reminder.title}</span>
-                              {isOverdue && (
-                                <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">
-                                  Försenad
-                                </span>
-                              )}
-                              {isToday && !isOverdue && (
-                                <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
-                                  Idag
-                                </span>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${typeColors[reminder.type]}`} />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                                  {reminder.title}
+                                </p>
+                                {isOverdue && (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded uppercase tracking-wide">
+                                    Försenad
+                                  </span>
+                                )}
+                              </div>
+                              {customer && (
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {customer.first_name} {customer.last_name} • {customer.company_name || "Privatperson"}
+                                </p>
                               )}
                             </div>
-                            {customer && (
-                              <p className="text-sm text-gray-500">
-                                {customer.first_name} {customer.last_name}
-                                {customer.company_name && ` - ${customer.company_name}`}
-                              </p>
-                            )}
-                            <p className="text-sm text-gray-400 mt-1">
-                              {formatDate(reminder.reminder_date)}
-                              {reminder.reminder_time && ` kl ${reminder.reminder_time}`}
-                            </p>
                           </div>
-                          <button
-                            onClick={() => handleCompleteReminder(reminder.id)}
-                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Markera som klar"
-                          >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </button>
+                          
+                          <div className="flex items-center gap-4">
+                            <div className={`text-sm font-medium text-right ${
+                              isOverdue ? "text-red-600" : isToday ? "text-amber-600" : "text-gray-500"
+                            }`}>
+                              {isToday ? "Idag" : formatDate(reminder.reminder_date)}
+                              {reminder.reminder_time && <span className="text-gray-400 font-normal ml-1 block text-xs">kl {reminder.reminder_time}</span>}
+                            </div>
+                            <button
+                              onClick={() => handleCompleteReminder(reminder.id)}
+                              className="p-1.5 text-gray-300 hover:text-green-600 hover:bg-green-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                              title="Markera som klar"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -1380,7 +1410,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
             <div className="border-t border-gray-100 px-6 py-4 bg-gray-50 rounded-b-2xl">
               <button
                 onClick={() => setShowAllRemindersPopup(false)}
-                className="w-full px-4 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+                className="w-full px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
                 Stäng
               </button>

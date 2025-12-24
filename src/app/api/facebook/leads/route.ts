@@ -2,21 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-// Facebook Lead Ads Webhook
-// Dokumentation: https://developers.facebook.com/docs/marketing-api/guides/lead-ads/
-
 const VERIFY_TOKEN = process.env.FACEBOOK_VERIFY_TOKEN || "intenzze_leads_verify_token";
 const APP_SECRET = process.env.FACEBOOK_APP_SECRET;
 
 // Validera Facebook webhook-signatur
 function validateSignature(payload: string, signature: string | null): boolean {
   if (!APP_SECRET) {
-    console.error("❌ FACEBOOK_APP_SECRET inte konfigurerad - avvisar request");
-    return false; // SÄKERHET: Avvisa alltid om secret saknas
+    return false;
   }
 
   if (!signature) {
-    console.error("❌ Ingen X-Hub-Signature-256 header");
     return false;
   }
 
@@ -26,29 +21,20 @@ function validateSignature(payload: string, signature: string | null): boolean {
       .update(payload)
       .digest("hex");
 
-    // Kontrollera att längderna matchar innan timingSafeEqual
     const sigBuffer = Buffer.from(signature);
     const expectedBuffer = Buffer.from(expectedSignature);
 
     if (sigBuffer.length !== expectedBuffer.length) {
-      console.error("❌ Signaturer har olika längd");
       return false;
     }
 
-    const isValid = crypto.timingSafeEqual(sigBuffer, expectedBuffer);
-
-    if (!isValid) {
-      console.error("❌ Ogiltig signatur från Facebook");
-    }
-
-    return isValid;
-  } catch (error) {
-    console.error("❌ Fel vid signaturvalidering:", error);
+    return crypto.timingSafeEqual(sigBuffer, expectedBuffer);
+  } catch {
     return false;
   }
 }
 
-// Supabase admin-klient för att kringgå RLS
+// Supabase admin-klient
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -62,126 +48,75 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
-  // Om inga parametrar - visa status
   if (!mode && !token && !challenge) {
     return NextResponse.json({
       status: "Facebook Lead Ads Webhook Active",
       endpoint: "/api/facebook/leads",
-      verify_token_configured: !!VERIFY_TOKEN,
-      access_token_configured: !!process.env.FACEBOOK_ACCESS_TOKEN,
-      app_secret_configured: !!APP_SECRET,
-      service_role_configured: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
     });
   }
 
-  // Verifiera att det är en subscription-förfrågan
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    console.log("Facebook webhook verified successfully");
     return new NextResponse(challenge, { status: 200 });
   }
 
-  console.log("Facebook webhook verification failed", { mode, token, expected: VERIFY_TOKEN });
   return NextResponse.json({ error: "Verification failed" }, { status: 403 });
 }
 
 // POST - Ta emot leads från Facebook
 export async function POST(request: NextRequest) {
-  console.log("=== FACEBOOK LEAD WEBHOOK START ===");
-  console.log("Tidpunkt:", new Date().toLocaleString("sv-SE"));
-
   try {
-    // Läs raw body för signaturvalidering
     const rawBody = await request.text();
     const signature = request.headers.get("x-hub-signature-256");
 
-    // Validera signatur från Meta
     if (!validateSignature(rawBody, signature)) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     const body = JSON.parse(rawBody);
 
-    console.log("📥 Mottagen data från Facebook:");
-    console.log(JSON.stringify(body, null, 2));
-
-    // Facebook skickar data i entry-array
     if (!body.entry || !Array.isArray(body.entry)) {
-      console.log("❌ Ogiltig payload - saknar entry array");
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
-
-    console.log(`📋 Antal entries: ${body.entry.length}`);
 
     const processedLeads: string[] = [];
 
     for (const entry of body.entry) {
-      // Varje entry kan ha flera changes
       const changes = entry.changes || [];
-      console.log(`📋 Antal changes i entry: ${changes.length}`);
 
       for (const change of changes) {
-        console.log(`🔍 Change field: ${change.field}`);
-
         if (change.field !== "leadgen") {
-          console.log("⏭️ Hoppar över - inte leadgen");
           continue;
         }
 
-        const leadgenId = change.value?.leadgen_id;
-        const formId = change.value?.form_id;
-        const adId = change.value?.ad_id;
-        const adgroupId = change.value?.adgroup_id;
-        const pageId = change.value?.page_id;
-
-        console.log("📝 Lead metadata:", { leadgenId, formId, adId, adgroupId, pageId });
-
         const metadata = {
-          leadgen_id: leadgenId,
-          form_id: formId,
-          ad_id: adId,
-          adgroup_id: adgroupId,
-          page_id: pageId,
+          leadgen_id: change.value?.leadgen_id,
+          form_id: change.value?.form_id,
+          ad_id: change.value?.ad_id,
+          adgroup_id: change.value?.adgroup_id,
+          page_id: change.value?.page_id,
         };
 
-        // Steg 1: Spara basdata direkt (så vi inte förlorar leaden)
-        console.log("💾 Sparar basdata från webhook...");
         const customerId = await saveBasicLead(metadata);
 
         if (!customerId) {
-          console.log("⚠️ Lead finns redan eller kunde inte sparas");
           continue;
         }
 
-        console.log(`✅ Basdata sparad! Kund-ID: ${customerId}`);
-        processedLeads.push(leadgenId);
+        processedLeads.push(metadata.leadgen_id);
 
-        // Steg 2: Försök hämta fullständig data från Facebook API
-        console.log("🔄 Hämtar fullständig lead-data från Facebook Graph API...");
-        const leadData = await fetchLeadData(leadgenId);
+        const leadData = await fetchLeadData(metadata.leadgen_id);
 
         if (leadData) {
-          console.log("✅ Lead-data hämtad från Facebook");
-          console.log("📄 Lead field_data:", JSON.stringify(leadData.field_data, null, 2));
-
-          // Uppdatera lead med kontaktinfo
-          console.log("📝 Uppdaterar lead med kontaktinfo...");
           await updateLeadWithContactInfo(customerId, leadData);
-          console.log("✅ Lead uppdaterad med fullständig info!");
-        } else {
-          console.log("⚠️ Kunde inte hämta kontaktinfo - basdata sparad ändå");
         }
       }
     }
 
-    console.log(`=== FACEBOOK LEAD WEBHOOK KLAR - ${processedLeads.length} leads processade ===`);
-
     return NextResponse.json({
       success: true,
       processed: processedLeads.length,
-      leads: processedLeads,
     });
-  } catch (error) {
-    console.error("❌ FEL vid processning av Facebook lead:", error);
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -189,10 +124,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Generera appsecret_proof för säkra server-till-server anrop
+// Generera appsecret_proof
 function generateAppSecretProof(accessToken: string): string | null {
   if (!APP_SECRET) {
-    console.warn("⚠️ FACEBOOK_APP_SECRET inte konfigurerad - kan inte generera appsecret_proof");
     return null;
   }
   return crypto.createHmac("sha256", APP_SECRET).update(accessToken).digest("hex");
@@ -203,19 +137,12 @@ async function fetchLeadData(leadgenId: string) {
   const accessToken = process.env.FACEBOOK_ACCESS_TOKEN;
 
   if (!accessToken) {
-    console.error("❌ FACEBOOK_ACCESS_TOKEN är inte konfigurerad!");
-    console.error("Lägg till FACEBOOK_ACCESS_TOKEN i Vercel miljövariabler");
     return null;
   }
 
-  console.log(`🔗 Anropar Facebook Graph API för lead ${leadgenId}`);
-
-  // Generera appsecret_proof för säkra server-anrop
   const appSecretProof = generateAppSecretProof(accessToken);
 
   if (!appSecretProof) {
-    console.error("❌ FACEBOOK_APP_SECRET är inte konfigurerad!");
-    console.error("Lägg till FACEBOOK_APP_SECRET i Vercel miljövariabler");
     return null;
   }
 
@@ -225,21 +152,16 @@ async function fetchLeadData(leadgenId: string) {
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Facebook API-fel:", response.status, errorText);
       return null;
     }
 
-    const data = await response.json();
-    console.log("✅ Facebook API svarade OK");
-    return data;
-  } catch (error) {
-    console.error("❌ Nätverksfel vid anrop till Facebook:", error);
+    return await response.json();
+  } catch {
     return null;
   }
 }
 
-// Spara basdata från webhook (innan vi försöker hämta från API)
+// Spara basdata från webhook
 async function saveBasicLead(metadata: {
   leadgen_id: string;
   form_id: string;
@@ -248,7 +170,6 @@ async function saveBasicLead(metadata: {
   page_id: string;
 }): Promise<string | null> {
   try {
-    // Kolla om lead redan finns
     const { data: existing } = await supabaseAdmin
       .from("customers")
       .select("id")
@@ -256,19 +177,17 @@ async function saveBasicLead(metadata: {
       .single();
 
     if (existing) {
-      console.log(`⚠️ Lead med facebook_lead_id ${metadata.leadgen_id} finns redan`);
       return null;
     }
 
-    // Skapa lead med basdata
     const { data, error } = await supabaseAdmin.from("customers").insert({
       first_name: "Facebook",
       last_name: "Lead",
       status: "lead",
       source: "facebook_ads",
       facebook_lead_id: metadata.leadgen_id,
-      is_read: false, // Markera som oläst för notifikation
-      notes: `Facebook Lead Ad (väntar på kontaktinfo)
+      is_read: false,
+      notes: `Facebook Lead Ad
 Lead ID: ${metadata.leadgen_id}
 Form ID: ${metadata.form_id}
 Ad ID: ${metadata.ad_id}
@@ -276,13 +195,11 @@ Mottagen: ${new Date().toLocaleString("sv-SE")}`,
     }).select("id").single();
 
     if (error) {
-      console.error("❌ Kunde inte spara basdata:", error.message);
       return null;
     }
 
     return data.id;
-  } catch (error) {
-    console.error("❌ Fel i saveBasicLead:", error);
+  } catch {
     return null;
   }
 }
@@ -299,7 +216,6 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
       fields[name] = value;
     }
 
-    // Mappa Facebook-fält
     const firstName = fields.first_name || fields.förnamn || fields.full_name?.split(" ")[0] || null;
     const lastName = fields.last_name || fields.efternamn || fields.full_name?.split(" ").slice(1).join(" ") || null;
     const email = fields.email || fields['e-post'] || null;
@@ -307,7 +223,6 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
     const companyName = fields.company_name || fields.company || fields.företag || null;
     const city = fields.city || fields.stad || null;
 
-    // Samla egna formulärsvar
     const standardFields = ['first_name', 'last_name', 'full_name', 'email', 'phone_number', 'phone', 'company_name', 'company', 'city', 'förnamn', 'efternamn', 'e-post', 'telefon', 'företag', 'stad'];
     const customAnswers: string[] = [];
 
@@ -321,7 +236,6 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
 
     const wishes = customAnswers.length > 0 ? customAnswers.join('\n') : null;
 
-    // Uppdatera kund med kontaktinfo
     const updateData: Record<string, any> = {};
     if (firstName) updateData.first_name = firstName;
     if (lastName) updateData.last_name = lastName;
@@ -331,7 +245,6 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
     if (city) updateData.city = city;
     if (wishes) updateData.wishes = wishes;
 
-    // Uppdatera notes för att visa att kontaktinfo hämtades
     const { data: currentCustomer } = await supabaseAdmin
       .from("customers")
       .select("notes")
@@ -343,156 +256,11 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
       `(kontaktinfo hämtad ${new Date().toLocaleString("sv-SE")})`
     );
 
-    const { error } = await supabaseAdmin
+    await supabaseAdmin
       .from("customers")
       .update(updateData)
       .eq("id", customerId);
-
-    if (error) {
-      console.error("❌ Kunde inte uppdatera kontaktinfo:", error.message);
-    }
-  } catch (error) {
-    console.error("❌ Fel i updateLeadWithContactInfo:", error);
-  }
-}
-
-// Spara lead till databasen (legacy - behålls för bakåtkompatibilitet)
-async function saveLeadToDatabase(
-  leadData: any,
-  metadata: {
-    leadgen_id: string;
-    form_id: string;
-    ad_id: string;
-    adgroup_id: string;
-    page_id: string;
-  }
-) {
-  try {
-    // Extrahera fält från Facebook lead data
-    const fieldData = leadData.field_data || [];
-    const fields: Record<string, string> = {};
-
-    console.log("📋 Extraherar fält från lead...");
-
-    for (const field of fieldData) {
-      const name = field.name?.toLowerCase();
-      const value = field.values?.[0] || "";
-      fields[name] = value;
-      console.log(`   - ${field.name}: ${value}`);
-    }
-
-    // Mappa Facebook-fält till våra fält
-    // Vanliga Facebook lead-fält: email, phone_number, full_name, first_name, last_name, company_name, etc.
-    // Stöd för både engelska och svenska fältnamn
-    const firstName = fields.first_name || fields.förnamn || fields.full_name?.split(" ")[0] || "Facebook";
-    const lastName = fields.last_name || fields.efternamn || fields.full_name?.split(" ").slice(1).join(" ") || "Lead";
-    const email = fields.email || fields['e-post'] || null;
-    const phone = fields.phone_number || fields.phone || fields.telefon || null;
-    const companyName = fields.company_name || fields.company || fields.företag || null;
-    const city = fields.city || fields.stad || null;
-
-    console.log("👤 Mappade kundfält:");
-    console.log(`   Namn: ${firstName} ${lastName}`);
-    console.log(`   E-post: ${email || '(saknas)'}`);
-    console.log(`   Telefon: ${phone || '(saknas)'}`);
-    console.log(`   Företag: ${companyName || '(saknas)'}`);
-    console.log(`   Stad: ${city || '(saknas)'}`);
-
-    // Samla alla formulärsvar (inkl. egna frågor) för Önskemål / Behov
-    const standardFields = ['first_name', 'last_name', 'full_name', 'email', 'phone_number', 'phone', 'company_name', 'company', 'city', 'förnamn', 'efternamn', 'e-post', 'telefon', 'företag', 'stad'];
-    const customAnswers: string[] = [];
-
-    for (const field of fieldData) {
-      const name = field.name?.toLowerCase();
-      const value = field.values?.[0] || "";
-
-      // Hoppa över standardfält som redan mappas
-      if (standardFields.includes(name) || !value) continue;
-
-      // Formatera fältnamn snyggt (t.ex. "budget_range" → "Budget range")
-      const label = field.name?.replace(/_/g, ' ').replace(/^\w/, (c: string) => c.toUpperCase()) || name;
-      customAnswers.push(`${label}: ${value}`);
-    }
-
-    const wishes = customAnswers.length > 0 ? customAnswers.join('\n') : null;
-
-    if (wishes) {
-      console.log("📝 Önskemål/Behov:");
-      console.log(wishes);
-    }
-
-    // Kolla om lead redan finns (via facebook_lead_id först, sedan email)
-    const { data: existingByLeadId } = await supabaseAdmin
-      .from("customers")
-      .select("id")
-      .eq("facebook_lead_id", metadata.leadgen_id)
-      .single();
-
-    if (existingByLeadId) {
-      console.log(`⚠️ Lead med facebook_lead_id ${metadata.leadgen_id} finns redan - hoppar över`);
-      return false;
-    }
-
-    if (email) {
-      const { data: existingByEmail } = await supabaseAdmin
-        .from("customers")
-        .select("id")
-        .eq("email", email)
-        .single();
-
-      if (existingByEmail) {
-        console.log(`⚠️ Lead med e-post ${email} finns redan - hoppar över`);
-        return false;
-      }
-    }
-
-    // Skapa lead i databasen
-    console.log("💾 Skapar kund i databasen...");
-    const { data, error } = await supabaseAdmin.from("customers").insert({
-      first_name: firstName,
-      last_name: lastName,
-      email,
-      phone,
-      company_name: companyName,
-      city,
-      wishes,
-      status: "lead",
-      source: "facebook_ads",
-      facebook_lead_id: metadata.leadgen_id,
-      notes: `Facebook Lead Ad
-Form ID: ${metadata.form_id}
-Ad ID: ${metadata.ad_id}
-Skapad: ${new Date().toLocaleString("sv-SE")}`,
-    }).select().single();
-
-    if (error) {
-      console.error("❌ Databasfel vid sparande:", error.message);
-      console.error("   Kod:", error.code);
-      console.error("   Detaljer:", error.details);
-      return false;
-    }
-
-    console.log(`✅ Kund skapad! ID: ${data.id}`);
-
-    // Skapa automatisk påminnelse för uppföljning
-    console.log("⏰ Skapar påminnelse för uppföljning...");
-    const { error: reminderError } = await supabaseAdmin.from("reminders").insert({
-      customer_id: data.id,
-      title: "Följ upp Facebook-lead",
-      description: `Ny lead från Facebook annons. Kontakta ${firstName} ${lastName} snarast.`,
-      reminder_date: new Date().toISOString().split("T")[0],
-      type: "follow_up",
-    });
-
-    if (reminderError) {
-      console.error("⚠️ Kunde inte skapa påminnelse:", reminderError.message);
-    } else {
-      console.log("✅ Påminnelse skapad");
-    }
-
-    return true;
-  } catch (error) {
-    console.error("❌ Oväntat fel i saveLeadToDatabase:", error);
-    return false;
+  } catch {
+    // Silently fail
   }
 }

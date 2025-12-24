@@ -33,13 +33,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = process.env.FROM_EMAIL || process.env.ZOHO_USER || "";
-    if (!from) {
+    const email = process.env.FROM_EMAIL || process.env.ZOHO_USER || "";
+    if (!email) {
       return NextResponse.json(
         { error: "E-postkonfiguration saknas" },
         { status: 500 }
       );
     }
+
+    const from = `intenzze.webbstudio <${email}>`;
 
     const supabase = await createClient();
 

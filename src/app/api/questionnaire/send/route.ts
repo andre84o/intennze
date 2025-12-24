@@ -54,13 +54,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = process.env.FROM_EMAIL || process.env.ZOHO_USER || "";
-    if (!from) {
+    const email = process.env.FROM_EMAIL || process.env.ZOHO_USER || "";
+    if (!email) {
       return NextResponse.json(
         { ok: false, error: "E-postkonfiguration saknas" },
         { status: 500 }
       );
     }
+
+    const from = `intenzze.webbstudio <${email}>`;
 
     // Generate public token
     const publicToken = generateToken();
