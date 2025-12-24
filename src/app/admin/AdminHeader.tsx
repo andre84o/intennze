@@ -39,10 +39,17 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
         .in("status", ["accepted", "declined"])
         .eq("response_read", false);
 
+      // Hämta fakturor som väntar på att skickas
+      const { count: pendingInvoicesCount } = await supabase
+        .from("invoices")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
+
       setNotificationCount(
         (unreadLeadsCount || 0) +
         (unreadQuestionnairesCount || 0) +
-        (unreadQuotesCount || 0)
+        (unreadQuotesCount || 0) +
+        (pendingInvoicesCount || 0)
       );
     };
 

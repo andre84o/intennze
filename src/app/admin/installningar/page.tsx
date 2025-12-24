@@ -3,28 +3,105 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 
+interface CompanySettings {
+  company_name: string;
+  org_number: string;
+  vat_number: string;
+  address: string;
+  postal_code: string;
+  city: string;
+  country: string;
+  email: string;
+  phone: string;
+  website: string;
+  bankgiro: string;
+  plusgiro: string;
+  swish: string;
+  bank_name: string;
+  bank_account: string;
+  iban: string;
+  bic: string;
+}
+
+const defaultCompanySettings: CompanySettings = {
+  company_name: "",
+  org_number: "",
+  vat_number: "",
+  address: "",
+  postal_code: "",
+  city: "",
+  country: "Sverige",
+  email: "",
+  phone: "",
+  website: "",
+  bankgiro: "",
+  plusgiro: "",
+  swish: "",
+  bank_name: "",
+  bank_account: "",
+  iban: "",
+  bic: "",
+};
+
 export default function SettingsPage() {
   const [user, setUser] = useState<{ email: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingCompany, setSavingCompany] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [companyMessage, setCompanyMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Password change
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Company settings
+  const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
+
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser({ email: user.email || "" });
       }
+
+      // Fetch company settings
+      try {
+        const response = await fetch("/api/settings/company");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.settings) {
+            setCompanySettings({
+              company_name: data.settings.company_name || "",
+              org_number: data.settings.org_number || "",
+              vat_number: data.settings.vat_number || "",
+              address: data.settings.address || "",
+              postal_code: data.settings.postal_code || "",
+              city: data.settings.city || "",
+              country: data.settings.country || "Sverige",
+              email: data.settings.email || "",
+              phone: data.settings.phone || "",
+              website: data.settings.website || "",
+              bankgiro: data.settings.bankgiro || "",
+              plusgiro: data.settings.plusgiro || "",
+              swish: data.settings.swish || "",
+              bank_name: data.settings.bank_name || "",
+              bank_account: data.settings.bank_account || "",
+              iban: data.settings.iban || "",
+              bic: data.settings.bic || "",
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch company settings:", err);
+      }
+
       setLoading(false);
     };
 
-    fetchUser();
+    fetchData();
   }, []);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -66,6 +143,39 @@ export default function SettingsPage() {
     window.location.href = "/login";
   };
 
+  const handleSaveCompanySettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCompanyMessage(null);
+    setSavingCompany(true);
+
+    try {
+      const response = await fetch("/api/settings/company", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(companySettings),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Kunde inte spara");
+      }
+
+      setCompanyMessage({ type: "success", text: "Företagsinformation har sparats" });
+    } catch (err) {
+      setCompanyMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Kunde inte spara företagsinformation"
+      });
+    } finally {
+      setSavingCompany(false);
+    }
+  };
+
+  const updateCompanyField = (field: keyof CompanySettings, value: string) => {
+    setCompanySettings(prev => ({ ...prev, [field]: value }));
+  };
+
   if (loading) {
     return <div className="text-gray-500">Laddar...</div>;
   }
@@ -88,6 +198,266 @@ export default function SettingsPage() {
             <p className="text-gray-900">{user?.email}</p>
           </div>
         </div>
+      </div>
+
+      {/* Company info */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Företagsinformation</h2>
+        <p className="text-gray-500 text-sm mb-6">Denna information visas på fakturor och offerter</p>
+
+        {companyMessage && (
+          <div
+            className={`p-3 rounded-lg mb-4 ${
+              companyMessage.type === "success"
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-red-50 text-red-700 border border-red-200"
+            }`}
+          >
+            {companyMessage.text}
+          </div>
+        )}
+
+        <form onSubmit={handleSaveCompanySettings} className="space-y-6">
+          {/* Basic info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-700 mb-1 font-medium">
+                Företagsnamn
+              </label>
+              <input
+                type="text"
+                value={companySettings.company_name}
+                onChange={(e) => updateCompanyField("company_name", e.target.value)}
+                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ditt Företag AB"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1 font-medium">
+                Organisationsnummer
+              </label>
+              <input
+                type="text"
+                value={companySettings.org_number}
+                onChange={(e) => updateCompanyField("org_number", e.target.value)}
+                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="556123-4567"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1 font-medium">
+              Momsregistreringsnummer (VAT)
+            </label>
+            <input
+              type="text"
+              value={companySettings.vat_number}
+              onChange={(e) => updateCompanyField("vat_number", e.target.value)}
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="SE556123456701"
+            />
+          </div>
+
+          {/* Address */}
+          <div className="border-t border-gray-100 pt-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Adress</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  Gatuadress
+                </label>
+                <input
+                  type="text"
+                  value={companySettings.address}
+                  onChange={(e) => updateCompanyField("address", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Exempelgatan 123"
+                />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1 font-medium">
+                    Postnummer
+                  </label>
+                  <input
+                    type="text"
+                    value={companySettings.postal_code}
+                    onChange={(e) => updateCompanyField("postal_code", e.target.value)}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="123 45"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1 font-medium">
+                    Ort
+                  </label>
+                  <input
+                    type="text"
+                    value={companySettings.city}
+                    onChange={(e) => updateCompanyField("city", e.target.value)}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Stockholm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1 font-medium">
+                    Land
+                  </label>
+                  <input
+                    type="text"
+                    value={companySettings.country}
+                    onChange={(e) => updateCompanyField("country", e.target.value)}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Sverige"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div className="border-t border-gray-100 pt-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Kontakt</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  E-post
+                </label>
+                <input
+                  type="email"
+                  value={companySettings.email}
+                  onChange={(e) => updateCompanyField("email", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="info@foretag.se"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  Telefon
+                </label>
+                <input
+                  type="tel"
+                  value={companySettings.phone}
+                  onChange={(e) => updateCompanyField("phone", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="08-123 456 78"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  Webbplats
+                </label>
+                <input
+                  type="url"
+                  value={companySettings.website}
+                  onChange={(e) => updateCompanyField("website", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://www.foretag.se"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Payment info */}
+          <div className="border-t border-gray-100 pt-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Betalningsinformation</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  Bankgiro
+                </label>
+                <input
+                  type="text"
+                  value={companySettings.bankgiro}
+                  onChange={(e) => updateCompanyField("bankgiro", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="123-4567"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  Plusgiro
+                </label>
+                <input
+                  type="text"
+                  value={companySettings.plusgiro}
+                  onChange={(e) => updateCompanyField("plusgiro", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="12 34 56-7"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  Swish
+                </label>
+                <input
+                  type="text"
+                  value={companySettings.swish}
+                  onChange={(e) => updateCompanyField("swish", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="123 456 78 90"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  Banknamn
+                </label>
+                <input
+                  type="text"
+                  value={companySettings.bank_name}
+                  onChange={(e) => updateCompanyField("bank_name", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nordea"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  Bankkontonummer
+                </label>
+                <input
+                  type="text"
+                  value={companySettings.bank_account}
+                  onChange={(e) => updateCompanyField("bank_account", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="1234 12 34567"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  IBAN
+                </label>
+                <input
+                  type="text"
+                  value={companySettings.iban}
+                  onChange={(e) => updateCompanyField("iban", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="SE12 3456 7890 1234 5678 9012"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1 font-medium">
+                  BIC/SWIFT
+                </label>
+                <input
+                  type="text"
+                  value={companySettings.bic}
+                  onChange={(e) => updateCompanyField("bic", e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="NDEASESS"
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={savingCompany}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors font-medium shadow-sm"
+          >
+            {savingCompany ? "Sparar..." : "Spara företagsinformation"}
+          </button>
+        </form>
       </div>
 
       {/* Change password */}

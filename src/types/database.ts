@@ -281,3 +281,46 @@ export const questionnaireStatusLabels: Record<QuestionnaireStatus, string> = {
   completed: 'Besvarad',
   expired: 'Utgången',
 };
+
+// Invoice types
+export type InvoiceStatus = 'pending' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+
+export interface Invoice {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  customer_id: string;
+  invoice_number: number;
+  invoice_date: string;
+  due_date: string;
+  period_start: string;
+  period_end: string;
+  amount: number;
+  vat_rate: number;
+  vat_amount: number;
+  total: number;
+  description: string | null;
+  status: InvoiceStatus;
+  sent_at: string | null;
+  paid_at: string | null;
+  service_type: string | null;
+  created_by: string | null;
+  // Joined data
+  customer?: Customer;
+}
+
+export const invoiceStatusLabels: Record<InvoiceStatus, string> = {
+  pending: 'Ej skickad',
+  sent: 'Skickad',
+  paid: 'Betald',
+  overdue: 'Förfallen',
+  cancelled: 'Makulerad',
+};
+
+export const invoiceStatusColors: Record<InvoiceStatus, string> = {
+  pending: 'bg-amber-100 text-amber-700 border-amber-200',
+  sent: 'bg-blue-100 text-blue-700 border-blue-200',
+  paid: 'bg-green-100 text-green-700 border-green-200',
+  overdue: 'bg-red-100 text-red-700 border-red-200',
+  cancelled: 'bg-gray-100 text-gray-500 border-gray-200',
+};
