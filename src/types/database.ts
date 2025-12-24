@@ -45,6 +45,7 @@ export interface Customer {
   has_purchased: boolean;
   has_service_agreement: boolean;
   service_type: string | null;
+  service_price: number | null;
   service_start_date: string | null;
   service_renewal_date: string | null;
   source: string | null;
@@ -160,6 +161,7 @@ export interface CustomerFormData {
   has_purchased: boolean;
   has_service_agreement: boolean;
   service_type: string;
+  service_price: string;
   service_start_date: string;
   service_renewal_date: string;
   source: string;

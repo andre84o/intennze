@@ -106,17 +106,26 @@ export default function CustomersClient({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
 
-  const filteredCustomers = customers.filter((customer) => {
-    const matchesSearch =
-      search === "" ||
-      `${customer.first_name} ${customer.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
-      customer.email?.toLowerCase().includes(search.toLowerCase()) ||
-      customer.company_name?.toLowerCase().includes(search.toLowerCase());
+  const filteredCustomers = customers
+    .filter((customer) => {
+      const matchesSearch =
+        search === "" ||
+        `${customer.first_name} ${customer.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
+        customer.email?.toLowerCase().includes(search.toLowerCase()) ||
+        customer.company_name?.toLowerCase().includes(search.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || customer.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || customer.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      // Expired service agreements first
+      const aExpired = isServiceExpired(a);
+      const bExpired = isServiceExpired(b);
+      if (aExpired && !bExpired) return -1;
+      if (!aExpired && bExpired) return 1;
+      return 0;
+    });
 
   const handleSave = async (savedCustomer: Customer) => {
     if (editingCustomer) {
