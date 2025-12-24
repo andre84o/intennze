@@ -287,15 +287,26 @@ async function saveLeadToDatabase(
       console.log(wishes);
     }
 
-    // Kolla om lead redan finns (via email eller facebook_lead_id)
+    // Kolla om lead redan finns (via facebook_lead_id först, sedan email)
+    const { data: existingByLeadId } = await supabaseAdmin
+      .from("customers")
+      .select("id")
+      .eq("facebook_lead_id", metadata.leadgen_id)
+      .single();
+
+    if (existingByLeadId) {
+      console.log(`⚠️ Lead med facebook_lead_id ${metadata.leadgen_id} finns redan - hoppar över`);
+      return false;
+    }
+
     if (email) {
-      const { data: existing } = await supabaseAdmin
+      const { data: existingByEmail } = await supabaseAdmin
         .from("customers")
         .select("id")
         .eq("email", email)
         .single();
 
-      if (existing) {
+      if (existingByEmail) {
         console.log(`⚠️ Lead med e-post ${email} finns redan - hoppar över`);
         return false;
       }
@@ -313,8 +324,8 @@ async function saveLeadToDatabase(
       wishes,
       status: "lead",
       source: "facebook_ads",
+      facebook_lead_id: metadata.leadgen_id,
       notes: `Facebook Lead Ad
-Lead ID: ${metadata.leadgen_id}
 Form ID: ${metadata.form_id}
 Ad ID: ${metadata.ad_id}
 Skapad: ${new Date().toLocaleString("sv-SE")}`,

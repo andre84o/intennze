@@ -42,7 +42,10 @@ CREATE TABLE IF NOT EXISTS customers (
 
   -- Meta Conversions API
   meta_lead_id TEXT,
-  fbclid TEXT
+  fbclid TEXT,
+
+  -- Facebook Lead Ads
+  facebook_lead_id TEXT UNIQUE
 );
 
 -- Reminders table

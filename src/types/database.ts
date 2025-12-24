@@ -52,6 +52,8 @@ export interface Customer {
   // Meta Conversions API
   meta_lead_id: string | null;
   fbclid: string | null;
+  // Facebook Lead Ads
+  facebook_lead_id: string | null;
 }
 
 export interface Reminder {
