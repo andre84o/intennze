@@ -172,6 +172,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Generera appsecret_proof för säkra server-till-server anrop
+function generateAppSecretProof(accessToken: string): string | null {
+  if (!APP_SECRET) {
+    console.warn("⚠️ FACEBOOK_APP_SECRET inte konfigurerad - kan inte generera appsecret_proof");
+    return null;
+  }
+  return crypto.createHmac("sha256", APP_SECRET).update(accessToken).digest("hex");
+}
+
 // Hämta lead-data från Facebook Graph API
 async function fetchLeadData(leadgenId: string) {
   const accessToken = process.env.FACEBOOK_ACCESS_TOKEN;
@@ -184,9 +193,18 @@ async function fetchLeadData(leadgenId: string) {
 
   console.log(`🔗 Anropar Facebook Graph API för lead ${leadgenId}`);
 
+  // Generera appsecret_proof för säkra server-anrop
+  const appSecretProof = generateAppSecretProof(accessToken);
+
+  if (!appSecretProof) {
+    console.error("❌ FACEBOOK_APP_SECRET är inte konfigurerad!");
+    console.error("Lägg till FACEBOOK_APP_SECRET i Vercel miljövariabler");
+    return null;
+  }
+
   try {
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${leadgenId}?access_token=${accessToken}`
+      `https://graph.facebook.com/v18.0/${leadgenId}?access_token=${accessToken}&appsecret_proof=${appSecretProof}`
     );
 
     if (!response.ok) {
