@@ -9,6 +9,16 @@ interface Props {
 }
 
 interface FormData {
+  // Företagsuppgifter
+  company_name: string;
+  org_number: string;
+  contact_person: string;
+  position: string;
+  // Adressuppgifter
+  address: string;
+  postal_code: string;
+  city: string;
+  // Projektinfo
   industry: string;
   has_domain: boolean | null;
   domain_name: string;
@@ -61,6 +71,16 @@ export default function QuestionnaireClient({ token, customerName, companyName }
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState<FormData>({
+    // Företagsuppgifter
+    company_name: companyName || "",
+    org_number: "",
+    contact_person: "",
+    position: "",
+    // Adressuppgifter
+    address: "",
+    postal_code: "",
+    city: "",
+    // Projektinfo
     industry: "",
     has_domain: null,
     domain_name: "",
@@ -180,12 +200,109 @@ export default function QuestionnaireClient({ token, customerName, companyName }
 
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          {/* Step 1: Bransch & Domän */}
+          {/* Step 1: Företagsinfo & Adress */}
           {step === 1 && (
             <div className="p-8">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Om er verksamhet</h2>
 
               <div className="space-y-6">
+                {/* Företagsuppgifter */}
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Företagsuppgifter
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Företagsnamn</label>
+                      <input
+                        type="text"
+                        value={formData.company_name}
+                        onChange={(e) => updateField("company_name", e.target.value)}
+                        placeholder="Företag AB"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Org.nummer</label>
+                      <input
+                        type="text"
+                        value={formData.org_number}
+                        onChange={(e) => updateField("org_number", e.target.value)}
+                        placeholder="556677-8899"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Kontaktperson</label>
+                      <input
+                        type="text"
+                        value={formData.contact_person}
+                        onChange={(e) => updateField("contact_person", e.target.value)}
+                        placeholder="Anna Andersson"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Befattning</label>
+                      <input
+                        type="text"
+                        value={formData.position}
+                        onChange={(e) => updateField("position", e.target.value)}
+                        placeholder="VD"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Adressuppgifter */}
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Adressuppgifter
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Gatuadress</label>
+                      <input
+                        type="text"
+                        value={formData.address}
+                        onChange={(e) => updateField("address", e.target.value)}
+                        placeholder="Gatan 123"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Postnummer</label>
+                        <input
+                          type="text"
+                          value={formData.postal_code}
+                          onChange={(e) => updateField("postal_code", e.target.value)}
+                          placeholder="123 45"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Ort</label>
+                        <input
+                          type="text"
+                          value={formData.city}
+                          onChange={(e) => updateField("city", e.target.value)}
+                          placeholder="Stockholm"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Vilken bransch är ni verksamma inom?

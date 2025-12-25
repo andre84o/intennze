@@ -21,6 +21,8 @@ const initialFormData: CustomerFormData = {
   country: "Sverige",
   company_name: "",
   org_number: "",
+  contact_person: "",
+  position: "",
   budget: "",
   wishes: "",
   notes: "",
@@ -48,6 +50,8 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
           country: customer.country || "Sverige",
           company_name: customer.company_name || "",
           org_number: customer.org_number || "",
+          contact_person: customer.contact_person || "",
+          position: customer.position || "",
           budget: customer.budget?.toString() || "",
           wishes: customer.wishes || "",
           notes: customer.notes || "",
@@ -83,6 +87,8 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
       country: formData.country || null,
       company_name: formData.company_name || null,
       org_number: formData.org_number || null,
+      contact_person: formData.contact_person || null,
+      position: formData.position || null,
       wishes: formData.wishes || null,
       notes: formData.notes || null,
       service_type: formData.service_type || null,
@@ -253,6 +259,28 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
                         onChange={(e) => setFormData({ ...formData, org_number: e.target.value })}
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
                         placeholder="556677-8899"
+                      />
+                    </div>
+
+                    <div className="group">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">Kontaktperson</label>
+                      <input
+                        type="text"
+                        value={formData.contact_person}
+                        onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                        placeholder="Anna Andersson"
+                      />
+                    </div>
+
+                    <div className="group">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">Befattning</label>
+                      <input
+                        type="text"
+                        value={formData.position}
+                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                        placeholder="VD"
                       />
                     </div>
 

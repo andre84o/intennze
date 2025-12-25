@@ -88,11 +88,11 @@ export async function POST(request: NextRequest) {
     // Build wishes summary for customer record
     const wishesSummary = buildWishesSummary(responses);
 
-    // Update customer with summary in wishes field
+    // Update customer with summary in wishes field and company/address info
     if (questionnaire.customer_id) {
       const { data: customer } = await supabase
         .from("customers")
-        .select("wishes")
+        .select("wishes, company_name, org_number, contact_person, position, address, postal_code, city")
         .eq("id", questionnaire.customer_id)
         .single();
 
@@ -101,9 +101,37 @@ export async function POST(request: NextRequest) {
         ? `${existingWishes}\n\n--- Formulärsvar ${new Date().toLocaleDateString("sv-SE")} ---\n${wishesSummary}`
         : wishesSummary;
 
+      // Build update object - only update fields that are empty in customer and provided in response
+      const customerUpdate: Record<string, string> = { wishes: newWishes };
+
+      // Update company info if provided and customer doesn't have it
+      if (responses.company_name && !customer?.company_name) {
+        customerUpdate.company_name = responses.company_name as string;
+      }
+      if (responses.org_number && !customer?.org_number) {
+        customerUpdate.org_number = responses.org_number as string;
+      }
+      if (responses.contact_person && !customer?.contact_person) {
+        customerUpdate.contact_person = responses.contact_person as string;
+      }
+      if (responses.position && !customer?.position) {
+        customerUpdate.position = responses.position as string;
+      }
+
+      // Update address info if provided and customer doesn't have it
+      if (responses.address && !customer?.address) {
+        customerUpdate.address = responses.address as string;
+      }
+      if (responses.postal_code && !customer?.postal_code) {
+        customerUpdate.postal_code = responses.postal_code as string;
+      }
+      if (responses.city && !customer?.city) {
+        customerUpdate.city = responses.city as string;
+      }
+
       await supabase
         .from("customers")
-        .update({ wishes: newWishes })
+        .update(customerUpdate)
         .eq("id", questionnaire.customer_id);
     }
 

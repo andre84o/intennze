@@ -38,6 +38,8 @@ export interface Customer {
   country: string | null;
   company_name: string | null;
   org_number: string | null;
+  contact_person: string | null;
+  position: string | null;
   budget: number | null;
   wishes: string | null;
   notes: string | null;
@@ -154,6 +156,8 @@ export interface CustomerFormData {
   country: string;
   company_name: string;
   org_number: string;
+  contact_person: string;
+  position: string;
   budget: string;
   wishes: string;
   notes: string;

@@ -200,6 +200,18 @@ export default function CustomerDetailClient({
                   <p className="text-gray-900">{customer.org_number}</p>
                 </div>
               )}
+              {customer.contact_person && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">Kontaktperson</label>
+                  <p className="text-gray-900">{customer.contact_person}</p>
+                </div>
+              )}
+              {customer.position && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">Befattning</label>
+                  <p className="text-gray-900">{customer.position}</p>
+                </div>
+              )}
             </div>
 
             {/* Quick actions */}
