@@ -17,11 +17,18 @@ interface Props {
   error?: string;
 }
 
+interface InvoiceLineItem {
+  id: string;
+  title: string;
+  description: string;
+  price: string;
+  discount: string;
+}
+
 interface OneTimeInvoiceForm {
   customer_id: string;
-  description: string;
-  amount: string;
   due_days: string;
+  items: InvoiceLineItem[];
 }
 
 const VAT_RATE = 25;
@@ -43,16 +50,57 @@ export default function InvoicesClient({
   const [creatingOneTime, setCreatingOneTime] = useState(false);
   const [sendingInvoice, setSendingInvoice] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [notification, setNotification] = useState<{ type: "success" | "error"; title: string; message: string } | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [oneTimeForm, setOneTimeForm] = useState<OneTimeInvoiceForm>({
     customer_id: "",
-    description: "",
-    amount: "",
     due_days: "30",
+    items: [{ id: crypto.randomUUID(), title: "", description: "", price: "", discount: "" }],
   });
+
+  // Helper functions for line items
+  const addLineItem = () => {
+    setOneTimeForm((prev) => ({
+      ...prev,
+      items: [...prev.items, { id: crypto.randomUUID(), title: "", description: "", price: "", discount: "" }],
+    }));
+  };
+
+  const removeLineItem = (id: string) => {
+    if (oneTimeForm.items.length <= 1) return;
+    setOneTimeForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((item) => item.id !== id),
+    }));
+  };
+
+  const updateLineItem = (id: string, field: keyof InvoiceLineItem, value: string) => {
+    setOneTimeForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    }));
+  };
+
+  const calculateLineTotal = (price: string, discount: string) => {
+    const priceNum = parseFloat(price) || 0;
+    const discountNum = parseFloat(discount) || 0;
+    return priceNum * (1 - discountNum / 100);
+  };
+
+  const calculateSubtotal = () => {
+    return oneTimeForm.items.reduce((sum, item) => sum + calculateLineTotal(item.price, item.discount), 0);
+  };
+
+  const showNotification = (type: "success" | "error", title: string, message: string) => {
+    setNotification({ type, title, message });
+  };
+
+  const closeNotification = () => {
+    setNotification(null);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("sv-SE", {
@@ -202,7 +250,7 @@ export default function InvoicesClient({
       document.body.removeChild(a);
     } catch (err) {
       console.error("PDF download error:", err);
-      alert("Kunde inte ladda ner PDF");
+      showNotification("error", "Fel", "Kunde inte ladda ner PDF");
     } finally {
       setDownloadingPdf(false);
     }
@@ -211,7 +259,7 @@ export default function InvoicesClient({
   // Send invoice via email
   const handleSendInvoice = async (invoiceId: string) => {
     if (!selectedInvoice?.customer?.email) {
-      alert("Kunden har ingen e-postadress");
+      showNotification("error", "Saknar e-post", "Kunden har ingen e-postadress");
       return;
     }
 
@@ -241,10 +289,10 @@ export default function InvoicesClient({
         setSelectedInvoice({ ...selectedInvoice, status: "sent", sent_at: now });
       }
 
-      alert("Fakturan har skickats!");
+      showNotification("success", "Skickad!", "Fakturan har skickats till kunden");
     } catch (err) {
       console.error("Send invoice error:", err);
-      alert(err instanceof Error ? err.message : "Kunde inte skicka fakturan");
+      showNotification("error", "Fel", err instanceof Error ? err.message : "Kunde inte skicka fakturan");
     } finally {
       setSendingInvoice(false);
     }
@@ -307,10 +355,10 @@ export default function InvoicesClient({
 
       setShowCancelConfirm(false);
       setSelectedInvoice(null);
-      alert(`Faktura #${invoice.invoice_number} har makulerats och kreditfaktura #${newCreditNote.invoice_number} har skapats.`);
+      showNotification("success", "Makulerad", `Faktura #${invoice.invoice_number} har makulerats och kreditfaktura #${newCreditNote.invoice_number} har skapats.`);
     } catch (err) {
       console.error("Cancel invoice error:", err);
-      alert(err instanceof Error ? err.message : "Kunde inte makulera fakturan");
+      showNotification("error", "Fel", err instanceof Error ? err.message : "Kunde inte makulera fakturan");
     } finally {
       setCancelling(false);
     }
@@ -318,8 +366,9 @@ export default function InvoicesClient({
 
   // Create one-time invoice
   const handleCreateOneTimeInvoice = async () => {
-    if (!oneTimeForm.customer_id || !oneTimeForm.description || !oneTimeForm.amount) {
-      alert("Fyll i alla obligatoriska fält");
+    const validItems = oneTimeForm.items.filter((item) => item.title && parseFloat(item.price) > 0);
+    if (!oneTimeForm.customer_id || validItems.length === 0) {
+      showNotification("error", "Ofullständig faktura", "Välj kund och lägg till minst en rad med titel och pris");
       return;
     }
 
@@ -327,13 +376,31 @@ export default function InvoicesClient({
     const supabase = createClient();
 
     try {
-      const amount = parseFloat(oneTimeForm.amount);
+      const amount = calculateSubtotal();
       if (isNaN(amount) || amount <= 0) {
         throw new Error("Ogiltigt belopp");
       }
 
       const vatAmount = Math.round(amount * (VAT_RATE / 100));
       const total = amount + vatAmount;
+
+      // Build description from line items with original price, discount, and final price
+      const description = validItems
+        .map((item) => {
+          const originalPrice = parseFloat(item.price) || 0;
+          const discountPercent = parseFloat(item.discount) || 0;
+          const lineTotal = calculateLineTotal(item.price, item.discount);
+          const titleDesc = `${item.title}${item.description ? `: ${item.description}` : ""}`;
+
+          if (discountPercent > 0) {
+            // Format: "Title: Desc | 1000 kr | -20% | 800 kr"
+            return `${titleDesc} | ${formatCurrency(originalPrice)} | -${discountPercent}% | ${formatCurrency(lineTotal)}`;
+          } else {
+            // Format: "Title: Desc | 1000 kr"
+            return `${titleDesc} | ${formatCurrency(originalPrice)}`;
+          }
+        })
+        .join("\n");
 
       const now = new Date();
       const dueDate = new Date();
@@ -349,7 +416,7 @@ export default function InvoicesClient({
         vat_rate: VAT_RATE,
         vat_amount: vatAmount,
         total,
-        description: oneTimeForm.description,
+        description,
         status: "pending" as InvoiceStatus,
         sent_at: null,
         paid_at: null,
@@ -373,14 +440,13 @@ export default function InvoicesClient({
       setShowOneTimeModal(false);
       setOneTimeForm({
         customer_id: "",
-        description: "",
-        amount: "",
         due_days: "30",
+        items: [{ id: crypto.randomUUID(), title: "", description: "", price: "", discount: "" }],
       });
-      alert(`Faktura #${data.invoice_number} har skapats!`);
+      showNotification("success", "Faktura skapad!", `Faktura #${data.invoice_number} har skapats och är redo att skickas.`);
     } catch (err) {
       console.error("Create invoice error:", err);
-      alert(err instanceof Error ? err.message : "Kunde inte skapa fakturan");
+      showNotification("error", "Fel", err instanceof Error ? err.message : "Kunde inte skapa fakturan");
     } finally {
       setCreatingOneTime(false);
     }
@@ -770,7 +836,7 @@ export default function InvoicesClient({
             className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => setShowOneTimeModal(false)}
           />
-          <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             {/* Header */}
             <div className="flex-none px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white z-10">
               <div>
@@ -778,7 +844,7 @@ export default function InvoicesClient({
                   Skapa engångsfaktura
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Skapa en faktura för engångsjobb eller extra tjänster
+                  Lägg till rader med tjänster eller produkter
                 </p>
               </div>
               <button
@@ -792,84 +858,41 @@ export default function InvoicesClient({
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6">
-              {/* Customer select */}
-              <div className="group">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">
-                  Kund <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={oneTimeForm.customer_id}
-                    onChange={(e) => setOneTimeForm((prev) => ({ ...prev, customer_id: e.target.value }))}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
-                  >
-                    <option value="">Välj kund...</option>
-                    {allCustomers.map((customer) => (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.first_name} {customer.last_name}
-                        {customer.company_name && ` - ${customer.company_name}`}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="group">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">
-                  Beskrivning <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={oneTimeForm.description}
-                  onChange={(e) => setOneTimeForm((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="T.ex. Webbdesign, Konsultation, etc."
-                  rows={4}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Amount */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+              {/* Customer & Due Days */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="group">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">
-                    Belopp exkl. moms <span className="text-red-500">*</span>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Kund <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <input
-                      type="number"
-                      value={oneTimeForm.amount}
-                      onChange={(e) => setOneTimeForm((prev) => ({ ...prev, amount: e.target.value }))}
-                      placeholder="0"
-                      min="0"
-                      step="1"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500 font-medium">
-                      SEK
+                    <select
+                      value={oneTimeForm.customer_id}
+                      onChange={(e) => setOneTimeForm((prev) => ({ ...prev, customer_id: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                    >
+                      <option value="">Välj kund...</option>
+                      {allCustomers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.first_name} {customer.last_name}
+                          {customer.company_name && ` - ${customer.company_name}`}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
-                  {oneTimeForm.amount && parseFloat(oneTimeForm.amount) > 0 && (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 inline-block">
-                      <span className="font-medium text-blue-700">Totalt inkl. moms:</span>
-                      <span>{formatCurrency(parseFloat(oneTimeForm.amount) * 1.25)}</span>
-                    </div>
-                  )}
                 </div>
-
-                {/* Due days */}
                 <div className="group">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Betalningsvillkor
                   </label>
                   <div className="relative">
                     <select
                       value={oneTimeForm.due_days}
                       onChange={(e) => setOneTimeForm((prev) => ({ ...prev, due_days: e.target.value }))}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
                     >
                       <option value="10">10 dagar</option>
                       <option value="14">14 dagar</option>
@@ -883,33 +906,189 @@ export default function InvoicesClient({
                   </div>
                 </div>
               </div>
+
+              {/* Line Items */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Fakturarader
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addLineItem}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Lägg till rad
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {oneTimeForm.items.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className="bg-gray-50 border border-gray-200 rounded-xl p-4 relative group hover:border-gray-300 transition-colors"
+                    >
+                      {oneTimeForm.items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeLineItem(item.id)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="flex-none w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
+                          {index + 1}
+                        </span>
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={(e) => updateLineItem(item.id, "title", e.target.value)}
+                            placeholder="Titel *"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 font-medium placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                          />
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => updateLineItem(item.id, "description", e.target.value)}
+                            placeholder="Beskrivning (valfri)"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 ml-9">
+                        <div className="flex-1">
+                          <div className="relative">
+                            <input
+                              type="number"
+                              value={item.price}
+                              onChange={(e) => updateLineItem(item.id, "price", e.target.value)}
+                              placeholder="Pris"
+                              min="0"
+                              className="w-full px-3 py-2 pr-12 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">kr</span>
+                          </div>
+                        </div>
+                        <div className="w-24">
+                          <div className="relative">
+                            <input
+                              type="number"
+                              value={item.discount}
+                              onChange={(e) => updateLineItem(item.id, "discount", e.target.value)}
+                              placeholder="Rabatt"
+                              min="0"
+                              max="100"
+                              className="w-full px-3 py-2 pr-8 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                          </div>
+                        </div>
+                        <div className="w-36 text-right">
+                          {parseFloat(item.discount) > 0 && parseFloat(item.price) > 0 ? (
+                            <div className="space-y-0.5">
+                              <div className="text-xs text-gray-400 line-through">
+                                {formatCurrency(parseFloat(item.price) || 0)}
+                              </div>
+                              <div className="text-xs text-green-600 font-medium">
+                                -{formatCurrency((parseFloat(item.price) || 0) * (parseFloat(item.discount) / 100))}
+                              </div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                {formatCurrency(calculateLineTotal(item.price, item.discount))}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-semibold text-gray-900">
+                              {formatCurrency(calculateLineTotal(item.price, item.discount))}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Totals */}
+              {calculateSubtotal() > 0 && (() => {
+                const originalTotal = oneTimeForm.items.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+                const totalDiscount = originalTotal - calculateSubtotal();
+                const hasDiscount = totalDiscount > 0;
+
+                return (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5">
+                    <div className="space-y-2">
+                      {hasDiscount && (
+                        <>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Ordinarie pris</span>
+                            <span className="font-medium text-gray-400 line-through">{formatCurrency(originalTotal)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-green-600 font-medium">Rabatt</span>
+                            <span className="font-medium text-green-600">-{formatCurrency(totalDiscount)}</span>
+                          </div>
+                        </>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Summa exkl. moms</span>
+                        <span className="font-medium text-gray-900">{formatCurrency(calculateSubtotal())}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Moms (25%)</span>
+                        <span className="font-medium text-gray-900">{formatCurrency(calculateSubtotal() * 0.25)}</span>
+                      </div>
+                      <div className="border-t border-blue-200 pt-2 mt-2">
+                        <div className="flex justify-between">
+                          <span className="text-base font-semibold text-gray-900">Totalt att betala</span>
+                          <span className="text-xl font-bold text-blue-600">{formatCurrency(calculateSubtotal() * 1.25)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Footer */}
-            <div className="flex-none px-6 py-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 z-10">
-              <button
-                onClick={() => setShowOneTimeModal(false)}
-                className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-xl transition-colors duration-200"
-              >
-                Avbryt
-              </button>
-              <button
-                onClick={handleCreateOneTimeInvoice}
-                disabled={creatingOneTime || !oneTimeForm.customer_id || !oneTimeForm.description || !oneTimeForm.amount}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2"
-              >
-                {creatingOneTime ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Skapar...
-                  </>
-                ) : (
-                  "Skapa faktura"
-                )}
-              </button>
+            <div className="flex-none px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center z-10">
+              <div className="text-sm text-gray-500">
+                {oneTimeForm.items.filter((i) => i.title && parseFloat(i.price) > 0).length} rad(er)
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowOneTimeModal(false)}
+                  className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-xl transition-colors duration-200"
+                >
+                  Avbryt
+                </button>
+                <button
+                  onClick={handleCreateOneTimeInvoice}
+                  disabled={creatingOneTime || !oneTimeForm.customer_id || oneTimeForm.items.filter((i) => i.title && parseFloat(i.price) > 0).length === 0}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2"
+                >
+                  {creatingOneTime ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Skapar...
+                    </>
+                  ) : (
+                    "Skapa faktura"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1229,6 +1408,51 @@ export default function InvoicesClient({
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Popup */}
+      {notification && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            onClick={closeNotification}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+            {/* Icon & Content */}
+            <div className="p-6 text-center">
+              {notification.type === "success" ? (
+                <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              )}
+              <h3 className={`text-xl font-bold mb-2 ${notification.type === "success" ? "text-green-700" : "text-red-700"}`}>
+                {notification.title}
+              </h3>
+              <p className="text-gray-600">{notification.message}</p>
+            </div>
+            {/* Button */}
+            <div className="px-6 pb-6">
+              <button
+                onClick={closeNotification}
+                className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 ${
+                  notification.type === "success"
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : "bg-red-600 hover:bg-red-700 text-white"
+                }`}
+              >
+                OK
+              </button>
             </div>
           </div>
         </div>

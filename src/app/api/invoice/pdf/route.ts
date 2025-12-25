@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { jsPDF } from "jspdf";
 import { createClient } from "@/utils/supabase/server";
+import * as fs from "fs";
+import * as path from "path";
 
 interface CompanySettings {
   company_name: string | null;
@@ -89,17 +91,27 @@ export async function POST(req: Request) {
     const contentWidth = pageWidth - margin * 2;
     let y = margin;
 
-    // Header - Company name
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(59, 130, 246); // Blue
-    doc.text((company.company_name || "FÖRETAG").toUpperCase(), margin, y);
+    // Header - Company logo
+    try {
+      const logoPath = path.join(process.cwd(), "public", "logosignatur.png");
+      const logoData = fs.readFileSync(logoPath);
+      const logoBase64 = logoData.toString("base64");
+      // Add logo - width 50mm, height auto (approximately 15mm based on aspect ratio)
+      doc.addImage(`data:image/png;base64,${logoBase64}`, "PNG", margin, y - 5, 50, 15);
+    } catch {
+      // Fallback to text if logo not found
+      doc.setFontSize(24);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(59, 130, 246);
+      doc.text((company.company_name || "FÖRETAG").toUpperCase(), margin, y);
+    }
 
     // Invoice title
     doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(31, 41, 55); // Gray-800
-    doc.text("FAKTURA", pageWidth - margin, y, { align: "right" });
-    y += 15;
+    doc.text("FAKTURA", pageWidth - margin, y + 5, { align: "right" });
+    y += 18;
 
     // Divider line
     doc.setDrawColor(229, 231, 235); // Gray-200
@@ -209,27 +221,151 @@ export async function POST(req: Request) {
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
     doc.text("Beskrivning", margin + 5, y + 7);
+    doc.text("Ord. pris", pageWidth - margin - 55, y + 7, { align: "right" });
+    doc.text("Rabatt", pageWidth - margin - 30, y + 7, { align: "right" });
     doc.text("Belopp", pageWidth - margin - 5, y + 7, { align: "right" });
     y += 15;
 
-    // Item row
+    // Parse and display line items
     doc.setFont("helvetica", "normal");
     doc.setTextColor(31, 41, 55);
     doc.setFontSize(10);
 
     const description = invoice.description || `Serviceavtal ${invoice.service_type || "Webbhotell"} - ${periodMonth}`;
-    doc.text(description, margin + 5, y);
-    doc.text(formatCurrency(invoice.amount), pageWidth - margin - 5, y, { align: "right" });
+    const lines = description.split("\n");
 
-    y += 10;
+    let totalOriginalPrice = 0;
+    let totalDiscount = 0;
+
+    // Check if lines contain the new format with | separator
+    const hasLineItems = lines.some(line => line.includes(" | "));
+
+    if (hasLineItems) {
+      lines.forEach((line, index) => {
+        // Parse line formats:
+        // With discount: "Title: Desc | 1 000 kr | -20% | 800 kr"
+        // Without discount: "Title: Desc | 1 000 kr"
+        const parts = line.split(" | ");
+
+        // First part is always the title/description
+        const titleDescPart = parts[0]?.trim() || line;
+        let originalPrice = 0;
+        let discountPercent = 0;
+        let finalPrice = 0;
+
+        if (parts.length >= 4) {
+          // Has discount: Title | OrigPrice | -X% | FinalPrice
+          // Parse original price - remove all non-digits except spaces, then parse
+          const origPriceStr = parts[1]?.replace(/[^\d\s]/g, "").trim() || "0";
+          originalPrice = parseFloat(origPriceStr.replace(/\s/g, "")) || 0;
+
+          // Parse discount percentage
+          const discountMatch = parts[2]?.match(/([\d]+)/);
+          discountPercent = discountMatch ? parseFloat(discountMatch[1]) : 0;
+
+          // Parse final price
+          const finalPriceStr = parts[3]?.replace(/[^\d\s]/g, "").trim() || "0";
+          finalPrice = parseFloat(finalPriceStr.replace(/\s/g, "")) || 0;
+        } else if (parts.length >= 2) {
+          // No discount: Title | Price
+          const priceStr = parts[1]?.replace(/[^\d\s]/g, "").trim() || "0";
+          originalPrice = parseFloat(priceStr.replace(/\s/g, "")) || 0;
+          finalPrice = originalPrice;
+        }
+
+        const discountAmount = originalPrice - finalPrice;
+        totalOriginalPrice += originalPrice;
+        totalDiscount += discountAmount;
+
+        // Draw row background for alternating rows
+        if (index % 2 === 0) {
+          doc.setFillColor(249, 250, 251);
+          doc.rect(margin, y - 4, contentWidth, 8, "F");
+        }
+
+        doc.setTextColor(31, 41, 55);
+        doc.setFont("helvetica", "normal");
+
+        // Title/Description ONLY (truncate if too long)
+        const maxDescWidth = contentWidth - 95;
+        let displayText = titleDescPart;
+        while (doc.getTextWidth(displayText) > maxDescWidth && displayText.length > 0) {
+          displayText = displayText.slice(0, -1);
+        }
+        if (displayText !== titleDescPart) displayText += "...";
+        doc.text(displayText, margin + 5, y);
+
+        // Original price column
+        if (discountPercent > 0 && originalPrice > 0) {
+          doc.setTextColor(156, 163, 175); // Gray
+          doc.text(formatCurrency(originalPrice), pageWidth - margin - 55, y, { align: "right" });
+
+          // Discount column
+          doc.setTextColor(22, 163, 74); // Green
+          doc.text(`-${discountPercent}%`, pageWidth - margin - 30, y, { align: "right" });
+        } else {
+          doc.setTextColor(156, 163, 175);
+          doc.text("-", pageWidth - margin - 55, y, { align: "right" });
+          doc.text("-", pageWidth - margin - 30, y, { align: "right" });
+        }
+
+        // Final price column (Belopp)
+        doc.setTextColor(31, 41, 55);
+        doc.setFont("helvetica", "bold");
+        doc.text(formatCurrency(finalPrice), pageWidth - margin - 5, y, { align: "right" });
+
+        y += 8;
+      });
+    } else {
+      // Simple description without line items (old format or service invoices)
+      // Truncate description if too long
+      const maxDescWidth = contentWidth - 95;
+      let displayDesc = description;
+      while (doc.getTextWidth(displayDesc) > maxDescWidth && displayDesc.length > 0) {
+        displayDesc = displayDesc.slice(0, -1);
+      }
+      if (displayDesc !== description) displayDesc += "...";
+
+      doc.text(displayDesc, margin + 5, y);
+      doc.setTextColor(156, 163, 175);
+      doc.text("-", pageWidth - margin - 55, y, { align: "right" });
+      doc.text("-", pageWidth - margin - 30, y, { align: "right" });
+      doc.setTextColor(31, 41, 55);
+      doc.setFont("helvetica", "bold");
+      doc.text(formatCurrency(invoice.amount), pageWidth - margin - 5, y, { align: "right" });
+      y += 8;
+      totalOriginalPrice = invoice.amount;
+    }
+
+    y += 5;
 
     // Divider
     doc.setDrawColor(229, 231, 235);
     doc.line(margin, y, pageWidth - margin, y);
-    y += 15;
+    y += 10;
 
     // Totals section
     const totalsX = pageWidth - margin - 80;
+
+    // Show original total and discount if there was a discount
+    if (totalDiscount > 0) {
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(156, 163, 175);
+      doc.text("Ordinarie pris", totalsX, y);
+      doc.text(formatCurrency(totalOriginalPrice), pageWidth - margin - 5, y, { align: "right" });
+      y += 7;
+
+      doc.setTextColor(22, 163, 74); // Green
+      doc.setFont("helvetica", "bold");
+      doc.text("Rabatt", totalsX, y);
+      doc.text(`-${formatCurrency(totalDiscount)}`, pageWidth - margin - 5, y, { align: "right" });
+      y += 7;
+
+      // Divider line
+      doc.setDrawColor(229, 231, 235);
+      doc.line(totalsX, y, pageWidth - margin, y);
+      y += 7;
+    }
 
     doc.setFont("helvetica", "normal");
     doc.setTextColor(107, 114, 128);
