@@ -56,6 +56,13 @@ export default function HomeContent() {
       desc: sv ? "Aptitretande webbupplevelse" : "Appetizing web experience",
       gradient: "from-amber-500/50 to-amber-500/20",
       border: "hover:border-amber-500/50"
+    },
+    {
+      url: "https://demo-health-red.vercel.app/",
+      title: sv ? "Hälsa" : "Health",
+      desc: sv ? "Fräsch design för hälsobranschen" : "Fresh design for health industry",
+      gradient: "from-emerald-500/50 to-emerald-500/20",
+      border: "hover:border-emerald-500/50"
     }
   ];
 
@@ -238,43 +245,51 @@ export default function HomeContent() {
             </h2>
           </div>
 
-          {/* Grid - 4 columns centered */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Grid - Flex for better centering of 5 items */}
+          <div className="flex flex-wrap justify-center gap-6">
             {demos.map((demo, i) => (
               <a
                 key={i}
                 href={demo.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`group relative bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden transition-all duration-500 ${demo.border} hover:scale-[1.02]`}
+                className={`group relative w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-3xl overflow-hidden transition-all duration-500 ${demo.border} hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1`}
               >
-                {/* Screenshot - Wide rectangle */}
+                {/* Screenshot */}
                 <div className="relative aspect-[16/10] overflow-hidden">
-                  <div className={`absolute inset-0 bg-gradient-to-t ${demo.gradient} opacity-0 group-hover:opacity-60 transition-opacity duration-500 z-10`} />
+                  <div className={`absolute inset-0 bg-gradient-to-t ${demo.gradient} opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-10`} />
                   <img
                     src={`https://api.microlink.io/?url=${encodeURIComponent(demo.url)}&screenshot=true&meta=false&embed=screenshot.url`}
                     alt={demo.title}
-                    className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
                   />
-                  {/* Hover overlay with link icon */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20">
-                    <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                  
+                  {/* Modern overlay button */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-slate-950/30 backdrop-blur-[2px]">
+                    <div className="px-6 py-3 bg-white text-slate-950 rounded-full font-bold text-sm transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 flex items-center gap-2 shadow-xl">
+                      {sv ? "Besök sida" : "Visit site"}
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
                       </svg>
                     </div>
                   </div>
                 </div>
+
                 {/* Content */}
-                <div className="p-5">
-                  <div className="flex items-center justify-between">
+                <div className="p-6 relative">
+                  {/* Gradient line top */}
+                  <div className={`absolute top-0 left-6 right-6 h-px bg-gradient-to-r ${demo.gradient} opacity-20`} />
+                  
+                  <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-bold mb-1">{demo.title}</h3>
-                      <p className="text-sm text-slate-400">{demo.desc}</p>
+                      <h3 className="text-xl font-bold mb-2 text-slate-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-slate-300 transition-all">
+                        {demo.title}
+                      </h3>
+                      <p className="text-sm text-slate-400 leading-relaxed">{demo.desc}</p>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-gradient-to-r group-hover:from-cyan-500 group-hover:to-purple-500 transition-all duration-500">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400 group-hover:text-white transition-colors -rotate-45 group-hover:rotate-0 duration-500">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border border-slate-700/50 group-hover:border-slate-600 transition-colors`}>
+                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500 group-hover:text-white transition-colors">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                       </svg>
                     </div>
