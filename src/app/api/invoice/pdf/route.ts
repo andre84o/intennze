@@ -238,10 +238,10 @@ export async function POST(req: Request) {
     let totalDiscount = 0;
 
     // Check if lines contain the new format with | separator
-    const hasLineItems = lines.some(line => line.includes(" | "));
+    const hasLineItems = lines.some((line: string) => line.includes(" | "));
 
     if (hasLineItems) {
-      lines.forEach((line, index) => {
+      lines.forEach((line: string, index: number) => {
         // Parse line formats:
         // With discount: "Title: Desc | 1 000 kr | -20% | 800 kr"
         // Without discount: "Title: Desc | 1 000 kr"
