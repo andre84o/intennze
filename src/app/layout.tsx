@@ -41,15 +41,6 @@ export const metadata: Metadata = {
       "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
     url: "https://intenzze.com",
     siteName: "intenzze",
-    images: [
-      {
-        url: "/logony22.png",
-        width: 1200,
-        height: 630,
-        alt: "intenzze webbstudio",
-        type: "image/png",
-      },
-    ],
     locale: "sv_SE",
     type: "website",
   },
@@ -58,12 +49,6 @@ export const metadata: Metadata = {
     title: "intenzze webbstudio",
     description:
       "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
-    images: [
-      {
-        url: "/logony22.png",
-        alt: "intenzze webbstudio",
-      },
-    ],
     creator: "@intenzze",
   },
 };
