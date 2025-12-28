@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
-
-export const runtime = "edge";
+import { readFile } from "fs/promises";
+import { join } from "path";
 
 export const alt = "intenzze webbstudio";
 export const size = {
@@ -10,6 +10,10 @@ export const size = {
 export const contentType = "image/png";
 
 export default async function Image() {
+  const logoPath = join(process.cwd(), "public", "logony22.png");
+  const logoData = await readFile(logoPath);
+  const logoBase64 = `data:image/png;base64,${logoData.toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
@@ -18,33 +22,19 @@ export default async function Image() {
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          fontFamily: "system-ui, sans-serif",
         }}
       >
-        <div
+        <img
+          src={logoBase64}
+          alt="intenzze"
           style={{
-            fontSize: 120,
-            fontWeight: 700,
-            background: "linear-gradient(90deg, #22d3ee 0%, #818cf8 50%, #c084fc 100%)",
-            backgroundClip: "text",
-            color: "transparent",
-            marginBottom: 20,
+            maxWidth: "80%",
+            maxHeight: "70%",
+            objectFit: "contain",
           }}
-        >
-          intenzze
-        </div>
-        <div
-          style={{
-            fontSize: 48,
-            color: "#a78bfa",
-            fontWeight: 500,
-          }}
-        >
-          webbstudio
-        </div>
+        />
       </div>
     ),
     {
