@@ -36,28 +36,34 @@ export const metadata: Metadata = {
     apple: "/favicon20.png",
   },
   openGraph: {
-    title: "We build digital experiences that drive growth",
+    title: "intenzze webbstudio",
     description:
-      "Fast, accessible and tailored websites that drive business value.",
+      "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
     url: "https://intenzze.com",
     siteName: "intenzze",
     images: [
       {
-        url: "https://intenzze.com/logony22.png",
+        url: "/logony22.png",
         width: 1200,
         height: 630,
-        alt: "intenzze - web development",
+        alt: "intenzze webbstudio",
+        type: "image/png",
       },
     ],
-    locale: "en_US",
+    locale: "sv_SE",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "We build digital experiences that drive growth",
+    title: "intenzze webbstudio",
     description:
-      "Fast, accessible and tailored websites that drive business value.",
-    images: ["https://intenzze.com/logony22.png"],
+      "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
+    images: [
+      {
+        url: "/logony22.png",
+        alt: "intenzze webbstudio",
+      },
+    ],
     creator: "@intenzze",
   },
 };
