@@ -68,6 +68,492 @@ const interactionIcons: Record<InteractionType, string> = {
   other: "M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
 };
 
+// Props interface for CustomerCard - moved outside to prevent focus loss
+interface CustomerCardProps {
+  customer: Customer;
+  expandedCustomer: string | null;
+  setExpandedCustomer: (id: string | null) => void;
+  savingCustomer: string | null;
+  newInteraction: { customerId: string; type: InteractionType; description: string } | null;
+  setNewInteraction: (value: { customerId: string; type: InteractionType; description: string } | null) => void;
+  showReminderForm: string | null;
+  setShowReminderForm: (id: string | null) => void;
+  reminderForm: { title: string; date: string; time: string; type: ReminderType };
+  setReminderForm: (form: { title: string; date: string; time: string; type: ReminderType }) => void;
+  sendingQuestionnaire: string | null;
+  today: string;
+  getCustomerReminders: (customerId: string) => Reminder[];
+  getCustomerInteractions: (customerId: string) => CustomerInteraction[];
+  getNextReminder: (customerId: string) => Reminder | null;
+  hasOverdueReminder: (customerId: string) => boolean;
+  hasTodayReminder: (customerId: string) => boolean;
+  hasQuestionnaire: (customerId: string) => boolean;
+  handleUpdateCustomer: (customerId: string, field: string, value: string) => void;
+  handleUpdateCustomerBoolean: (customerId: string, field: string, value: boolean) => void;
+  markCustomerAsRead: (customerId: string) => void;
+  handleAddInteraction: () => void;
+  handleAddReminder: (customerId: string) => void;
+  handleCompleteReminder: (reminderId: string) => void;
+  handleSendQuestionnaire: (customerId: string) => void;
+  handleViewResponses: (customerId: string) => void;
+  formatDate: (dateString: string) => string;
+  formatDateTime: (dateString: string) => string;
+}
+
+// CustomerCard component - defined outside to prevent focus loss on re-render
+const CustomerCard = ({
+  customer,
+  expandedCustomer,
+  setExpandedCustomer,
+  savingCustomer,
+  newInteraction,
+  setNewInteraction,
+  showReminderForm,
+  setShowReminderForm,
+  reminderForm,
+  setReminderForm,
+  sendingQuestionnaire,
+  today,
+  getCustomerReminders,
+  getCustomerInteractions,
+  getNextReminder,
+  hasOverdueReminder,
+  hasTodayReminder,
+  hasQuestionnaire,
+  handleUpdateCustomer,
+  handleUpdateCustomerBoolean,
+  markCustomerAsRead,
+  handleAddInteraction,
+  handleAddReminder,
+  handleCompleteReminder,
+  handleSendQuestionnaire,
+  handleViewResponses,
+  formatDate,
+  formatDateTime,
+}: CustomerCardProps) => {
+  const isExpanded = expandedCustomer === customer.id;
+  const customerReminders = getCustomerReminders(customer.id);
+  const customerInteractions = getCustomerInteractions(customer.id);
+  const nextReminder = getNextReminder(customer.id);
+  const isOverdue = hasOverdueReminder(customer.id);
+  const isToday = hasTodayReminder(customer.id);
+  const serviceExpired = isServiceExpired(customer);
+
+  // Local state for wishes textarea to prevent focus loss on each keystroke
+  const [localWishes, setLocalWishes] = useState(customer.wishes || "");
+
+  return (
+    <div
+      className={`bg-white border rounded-xl transition-all shadow-sm hover:shadow-md ${
+        serviceExpired
+          ? "border-red-300 bg-red-50 ring-2 ring-red-200"
+          : isOverdue
+          ? "border-red-200 bg-red-50"
+          : isToday
+          ? "border-amber-200 bg-amber-50"
+          : "border-gray-200 hover:border-gray-300"
+      }`}
+    >
+      {/* Header - Always visible */}
+      <div
+        className="p-4 cursor-pointer"
+        onClick={() => {
+          if (!isExpanded) {
+            markCustomerAsRead(customer.id);
+          }
+          setExpandedCustomer(isExpanded ? null : customer.id);
+        }}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusBadges[customer.status]}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusColors[customer.status].split(' ')[0]}`} />
+                {customerStatusLabels[customer.status]}
+              </span>
+              {serviceExpired && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Utgånget avtal
+                </span>
+              )}
+              {isOverdue && !serviceExpired && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                  Försenad
+                </span>
+              )}
+              {isToday && !isOverdue && !serviceExpired && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                  Idag
+                </span>
+              )}
+            </div>
+            <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
+              {customer.first_name} {customer.last_name}
+              {!customer.is_read && (
+                <span className="w-2 h-2 bg-blue-500 rounded-full" title="Ny lead" />
+              )}
+            </h3>
+            {customer.company_name && (
+              <p className="text-sm text-gray-500">{customer.company_name}</p>
+            )}
+            {nextReminder && (
+              <p className="text-sm text-blue-600 mt-2 flex items-center gap-1.5 font-medium">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {nextReminder.title} - {formatDate(nextReminder.reminder_date)}
+                {nextReminder.reminder_time && ` kl ${nextReminder.reminder_time}`}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpandedCustomer(isExpanded ? null : customer.id);
+              }}
+              className={`p-2 rounded-lg transition-colors ${
+                isExpanded
+                  ? "text-blue-600 bg-blue-50"
+                  : "text-gray-400 hover:text-blue-600 hover:bg-gray-100"
+              }`}
+              title="Visa detaljer"
+            >
+              <svg className={`w-5 h-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div className="border-t border-gray-100 p-4 space-y-6 bg-gray-50/50 rounded-b-xl">
+          {/* Contact Info + Status */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  </svg>
+                  Kontaktuppgifter
+                </h4>
+                <select
+                  value={customer.status}
+                  onChange={(e) => handleUpdateCustomer(customer.id, "status", e.target.value)}
+                  disabled={savingCustomer === customer.id}
+                  className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 shadow-sm"
+                >
+                  {Object.entries(customerStatusLabels).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Förnamn</span>
+                  <p className="text-gray-900 font-medium">{customer.first_name}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Efternamn</span>
+                  <p className="text-gray-900 font-medium">{customer.last_name}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">E-post</span>
+                  {customer.email ? (
+                    <a href={`mailto:${customer.email}`} className="text-gray-900 text-sm break-all hover:text-blue-600 hover:underline">
+                      {customer.email}
+                    </a>
+                  ) : (
+                    <p className="text-gray-900 text-sm">-</p>
+                  )}
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</span>
+                  {customer.phone ? (
+                    <a href={`tel:${customer.phone}`} className="text-gray-900 hover:text-blue-600 hover:underline">
+                      {customer.phone}
+                    </a>
+                  ) : (
+                    <p className="text-gray-900">-</p>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={customer.has_service_agreement}
+                    onChange={(e) => handleUpdateCustomerBoolean(customer.id, "has_service_agreement", e.target.checked)}
+                    disabled={savingCustomer === customer.id}
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Har serviceavtal</span>
+                  {customer.has_service_agreement && (
+                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">Aktiv</span>
+                  )}
+                </label>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="lg:w-56 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Snabbåtgärder</h4>
+              <div className="space-y-2.5">
+                {customer.phone && (
+                  <a
+                    href={`tel:${customer.phone}`}
+                    className="flex items-center gap-2.5 px-3 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d={interactionIcons.call} />
+                    </svg>
+                    Ring
+                  </a>
+                )}
+                <button
+                  onClick={() => setShowReminderForm(customer.id)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                  </svg>
+                  Påminnelse
+                </button>
+                {customer.email && (
+                  <a
+                    href={`mailto:${customer.email}`}
+                    className="flex items-center gap-2.5 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d={interactionIcons.email} />
+                    </svg>
+                    Maila
+                  </a>
+                )}
+                <button
+                  onClick={() => setNewInteraction({ customerId: customer.id, type: "note", description: "" })}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  Logga aktivitet
+                </button>
+                {customer.email && (
+                  <button
+                    onClick={() => handleSendQuestionnaire(customer.id)}
+                    disabled={sendingQuestionnaire === customer.id}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-lg hover:bg-cyan-100 transition-colors text-sm font-medium disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                    </svg>
+                    {sendingQuestionnaire === customer.id ? "Skickar..." : "Skicka formulär"}
+                  </button>
+                )}
+                {hasQuestionnaire(customer.id) && (
+                  <button
+                    onClick={() => handleViewResponses(customer.id)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Se formulärsvar
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Önskemål */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Önskemål</label>
+            <textarea
+              rows={2}
+              value={localWishes}
+              onChange={(e) => setLocalWishes(e.target.value)}
+              onBlur={(e) => {
+                if (e.target.value !== customer.wishes) {
+                  handleUpdateCustomer(customer.id, "wishes", e.target.value);
+                }
+              }}
+              disabled={savingCustomer === customer.id}
+              placeholder="Vad vill kunden ha?"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 text-sm shadow-sm"
+            />
+          </div>
+
+          {/* New Interaction Form */}
+          {newInteraction && newInteraction.customerId === customer.id && (
+            <div className="p-5 bg-purple-50 border border-purple-200 rounded-xl shadow-sm">
+              <h4 className="text-sm font-semibold text-purple-900 mb-3">Logga ny aktivitet</h4>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <select
+                  value={newInteraction.type}
+                  onChange={(e) => setNewInteraction({ ...newInteraction, type: e.target.value as InteractionType })}
+                  className="px-3 py-2 bg-white border border-purple-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                >
+                  {Object.entries(interactionTypeLabels).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={newInteraction.description}
+                  onChange={(e) => setNewInteraction({ ...newInteraction, description: e.target.value })}
+                  placeholder="Beskriv aktiviteten..."
+                  className="flex-1 px-3 py-2 bg-white border border-purple-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddInteraction}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium shadow-sm"
+                  >
+                    Spara
+                  </button>
+                  <button
+                    onClick={() => setNewInteraction(null)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-900 bg-white border border-gray-300 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    Avbryt
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reminders Section */}
+          {customerReminders.length > 0 && (
+          <div className="p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4">
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+              </svg>
+              Påminnelser ({customerReminders.length})
+            </h4>
+
+            {/* Reminder List */}
+            <div className="space-y-2">
+              {customerReminders.map((reminder) => {
+                const isReminderOverdue = reminder.reminder_date < today;
+                const isReminderToday = reminder.reminder_date === today;
+                return (
+                  <div
+                    key={reminder.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${
+                      isReminderOverdue
+                        ? "bg-red-50 border-red-100"
+                        : isReminderToday
+                        ? "bg-amber-50 border-amber-100"
+                        : "bg-gray-50 border-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`w-2.5 h-2.5 rounded-full ${typeColors[reminder.type]}`} />
+                      <span className="text-sm font-medium text-gray-900">{reminder.title}</span>
+                      <span className="text-xs text-gray-500">
+                        {formatDate(reminder.reminder_date)}
+                        {reminder.reminder_time && ` ${reminder.reminder_time}`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleCompleteReminder(reminder.id)}
+                      className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                      title="Markera som klar"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          )}
+
+          {/* Activity History */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Senaste aktiviteter
+            </h4>
+            {customerInteractions.length > 0 ? (
+              <div className="space-y-3">
+                {customerInteractions.map((interaction) => (
+                  <div
+                    key={interaction.id}
+                    className="flex items-start gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm"
+                  >
+                    <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full flex-shrink-0 text-gray-500">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d={interactionIcons[interaction.type]} />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          {interactionTypeLabels[interaction.type]}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {formatDateTime(interaction.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 leading-relaxed">{interaction.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">Ingen aktivitetshistorik ännu.</p>
+            )}
+          </div>
+
+          {/* Sales Tips */}
+          <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl">
+            <h4 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+              </svg>
+              Försäljningstips
+            </h4>
+            <ul className="text-sm text-blue-700 space-y-1.5 list-disc list-inside">
+              {customer.status === "lead" && (
+                <li>Första kontakt - presentera dig och förstå kundens behov</li>
+              )}
+              {customer.status === "contacted" && (
+                <li>Följ upp med mer information eller ett möte</li>
+              )}
+              {customer.status === "negotiating" && (
+                <li>Skicka en offert och diskutera villkor</li>
+              )}
+              {!customer.wishes && (
+                <li>Fråga om kundens önskemål och behov</li>
+              )}
+              {customerInteractions.length === 0 && (
+                <li>Logga din första kontakt för att spåra framsteg</li>
+              )}
+              {customerReminders.length === 0 && (
+                <li>Lägg till en påminnelse för uppföljning</li>
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Check if service agreement has expired
 const isServiceExpired = (customer: Customer) => {
   if (!customer.has_service_agreement || !customer.service_renewal_date) {
@@ -372,410 +858,6 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
     return 0;
   });
 
-  const CustomerCard = ({ customer }: { customer: Customer }) => {
-    const isExpanded = expandedCustomer === customer.id;
-    const customerReminders = getCustomerReminders(customer.id);
-    const customerInteractions = getCustomerInteractions(customer.id);
-    const nextReminder = getNextReminder(customer.id);
-    const isOverdue = hasOverdueReminder(customer.id);
-    const isToday = hasTodayReminder(customer.id);
-    const serviceExpired = isServiceExpired(customer);
-
-    return (
-      <div
-        className={`bg-white border rounded-xl transition-all shadow-sm hover:shadow-md ${
-          serviceExpired
-            ? "border-red-300 bg-red-50 ring-2 ring-red-200"
-            : isOverdue
-            ? "border-red-200 bg-red-50"
-            : isToday
-            ? "border-amber-200 bg-amber-50"
-            : "border-gray-200 hover:border-gray-300"
-        }`}
-      >
-        {/* Header - Always visible */}
-        <div
-          className="p-4 cursor-pointer"
-          onClick={() => {
-            if (!isExpanded) {
-              markCustomerAsRead(customer.id);
-            }
-            setExpandedCustomer(isExpanded ? null : customer.id);
-          }}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusBadges[customer.status]}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${statusColors[customer.status].split(' ')[0]}`} />
-                  {customerStatusLabels[customer.status]}
-                </span>
-                {serviceExpired && (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200 flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    Utgånget avtal
-                  </span>
-                )}
-                {isOverdue && !serviceExpired && (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
-                    Försenad
-                  </span>
-                )}
-                {isToday && !isOverdue && !serviceExpired && (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
-                    Idag
-                  </span>
-                )}
-              </div>
-              <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
-                {customer.first_name} {customer.last_name}
-                {!customer.is_read && (
-                  <span className="w-2 h-2 bg-blue-500 rounded-full" title="Ny lead" />
-                )}
-              </h3>
-              {customer.company_name && (
-                <p className="text-sm text-gray-500">{customer.company_name}</p>
-              )}
-              {nextReminder && (
-                <p className="text-sm text-blue-600 mt-2 flex items-center gap-1.5 font-medium">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {nextReminder.title} - {formatDate(nextReminder.reminder_date)}
-                  {nextReminder.reminder_time && ` kl ${nextReminder.reminder_time}`}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setExpandedCustomer(isExpanded ? null : customer.id);
-                }}
-                className={`p-2 rounded-lg transition-colors ${
-                  isExpanded
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-400 hover:text-blue-600 hover:bg-gray-100"
-                }`}
-                title="Visa detaljer"
-              >
-                <svg className={`w-5 h-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Expanded Content */}
-        {isExpanded && (
-          <div className="border-t border-gray-100 p-4 space-y-6 bg-gray-50/50 rounded-b-xl">
-            {/* Contact Info + Status */}
-            <div className="flex flex-col lg:flex-row gap-6">
-              <div className="flex-1 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                    </svg>
-                    Kontaktuppgifter
-                  </h4>
-                  <select
-                    value={customer.status}
-                    onChange={(e) => handleUpdateCustomer(customer.id, "status", e.target.value)}
-                    disabled={savingCustomer === customer.id}
-                    className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 shadow-sm"
-                  >
-                    {Object.entries(customerStatusLabels).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Förnamn</span>
-                    <p className="text-gray-900 font-medium">{customer.first_name}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Efternamn</span>
-                    <p className="text-gray-900 font-medium">{customer.last_name}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">E-post</span>
-                    <p className="text-gray-900 text-sm break-all">{customer.email || "-"}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</span>
-                    <p className="text-gray-900">{customer.phone || "-"}</p>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={customer.has_service_agreement}
-                      onChange={(e) => handleUpdateCustomerBoolean(customer.id, "has_service_agreement", e.target.checked)}
-                      disabled={savingCustomer === customer.id}
-                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Har serviceavtal</span>
-                    {customer.has_service_agreement && (
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">Aktiv</span>
-                    )}
-                  </label>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="lg:w-56 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
-                <h4 className="text-sm font-semibold text-gray-900 mb-4">Snabbåtgärder</h4>
-                <div className="space-y-2.5">
-                  {customer.phone && (
-                    <a
-                      href={`tel:${customer.phone}`}
-                      className="flex items-center gap-2.5 px-3 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d={interactionIcons.call} />
-                      </svg>
-                      Ring
-                    </a>
-                  )}
-                  <button
-                    onClick={() => setShowReminderForm(customer.id)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors text-sm font-medium"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                    </svg>
-                    Påminnelse
-                  </button>
-                  {customer.email && (
-                    <a
-                      href={`mailto:${customer.email}`}
-                      className="flex items-center gap-2.5 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d={interactionIcons.email} />
-                      </svg>
-                      Maila
-                    </a>
-                  )}
-                  <button
-                    onClick={() => setNewInteraction({ customerId: customer.id, type: "note", description: "" })}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Logga aktivitet
-                  </button>
-                  {customer.email && (
-                    <button
-                      onClick={() => handleSendQuestionnaire(customer.id)}
-                      disabled={sendingQuestionnaire === customer.id}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-lg hover:bg-cyan-100 transition-colors text-sm font-medium disabled:opacity-50"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-                      </svg>
-                      {sendingQuestionnaire === customer.id ? "Skickar..." : "Skicka formulär"}
-                    </button>
-                  )}
-                  {hasQuestionnaire(customer.id) && (
-                    <button
-                      onClick={() => handleViewResponses(customer.id)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      Se formulärsvar
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Önskemål */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Önskemål</label>
-              <textarea
-                rows={2}
-                value={customer.wishes || ""}
-                onChange={(e) => handleUpdateCustomer(customer.id, "wishes", e.target.value)}
-                disabled={savingCustomer === customer.id}
-                placeholder="Vad vill kunden ha?"
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 text-sm shadow-sm"
-              />
-            </div>
-
-            {/* New Interaction Form */}
-            {newInteraction && newInteraction.customerId === customer.id && (
-              <div className="p-5 bg-purple-50 border border-purple-200 rounded-xl shadow-sm">
-                <h4 className="text-sm font-semibold text-purple-900 mb-3">Logga ny aktivitet</h4>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <select
-                    value={newInteraction.type}
-                    onChange={(e) => setNewInteraction({ ...newInteraction, type: e.target.value as InteractionType })}
-                    className="px-3 py-2 bg-white border border-purple-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                  >
-                    {Object.entries(interactionTypeLabels).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={newInteraction.description}
-                    onChange={(e) => setNewInteraction({ ...newInteraction, description: e.target.value })}
-                    placeholder="Beskriv aktiviteten..."
-                    className="flex-1 px-3 py-2 bg-white border border-purple-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleAddInteraction}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium shadow-sm"
-                    >
-                      Spara
-                    </button>
-                    <button
-                      onClick={() => setNewInteraction(null)}
-                      className="px-4 py-2 text-gray-600 hover:text-gray-900 bg-white border border-gray-300 rounded-lg transition-colors text-sm font-medium"
-                    >
-                      Avbryt
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Reminders Section */}
-            {customerReminders.length > 0 && (
-            <div className="p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
-              <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                </svg>
-                Påminnelser ({customerReminders.length})
-              </h4>
-
-              {/* Reminder List */}
-              <div className="space-y-2">
-                {customerReminders.map((reminder) => {
-                  const isReminderOverdue = reminder.reminder_date < today;
-                  const isReminderToday = reminder.reminder_date === today;
-                  return (
-                    <div
-                      key={reminder.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        isReminderOverdue
-                          ? "bg-red-50 border-red-100"
-                          : isReminderToday
-                          ? "bg-amber-50 border-amber-100"
-                          : "bg-gray-50 border-gray-100"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`w-2.5 h-2.5 rounded-full ${typeColors[reminder.type]}`} />
-                        <span className="text-sm font-medium text-gray-900">{reminder.title}</span>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(reminder.reminder_date)}
-                          {reminder.reminder_time && ` ${reminder.reminder_time}`}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleCompleteReminder(reminder.id)}
-                        className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
-                        title="Markera som klar"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            )}
-
-            {/* Activity History */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Senaste aktiviteter
-              </h4>
-              {customerInteractions.length > 0 ? (
-                <div className="space-y-3">
-                  {customerInteractions.map((interaction) => (
-                    <div
-                      key={interaction.id}
-                      className="flex items-start gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm"
-                    >
-                      <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full flex-shrink-0 text-gray-500">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d={interactionIcons[interaction.type]} />
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {interactionTypeLabels[interaction.type]}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {formatDateTime(interaction.created_at)}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 leading-relaxed">{interaction.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 italic">Ingen aktivitetshistorik ännu.</p>
-              )}
-            </div>
-
-            {/* Sales Tips */}
-            <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl">
-              <h4 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-                </svg>
-                Försäljningstips
-              </h4>
-              <ul className="text-sm text-blue-700 space-y-1.5 list-disc list-inside">
-                {customer.status === "lead" && (
-                  <li>Första kontakt - presentera dig och förstå kundens behov</li>
-                )}
-                {customer.status === "contacted" && (
-                  <li>Följ upp med mer information eller ett möte</li>
-                )}
-                {customer.status === "negotiating" && (
-                  <li>Skicka en offert och diskutera villkor</li>
-                )}
-                {!customer.wishes && (
-                  <li>Fråga om kundens önskemål och behov</li>
-                )}
-                {customerInteractions.length === 0 && (
-                  <li>Logga din första kontakt för att spåra framsteg</li>
-                )}
-                {customerReminders.length === 0 && (
-                  <li>Lägg till en påminnelse för uppföljning</li>
-                )}
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // Count customers with issues
   const expiredServiceCount = customers.filter((c) => isServiceExpired(c)).length;
   const overdueCount = customers.filter((c) => hasOverdueReminder(c.id)).length;
@@ -959,7 +1041,37 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
       {/* Customer list */}
       <div className="space-y-4">
         {sortedCustomers.map((customer) => (
-          <CustomerCard key={customer.id} customer={customer} />
+          <CustomerCard
+            key={customer.id}
+            customer={customer}
+            expandedCustomer={expandedCustomer}
+            setExpandedCustomer={setExpandedCustomer}
+            savingCustomer={savingCustomer}
+            newInteraction={newInteraction}
+            setNewInteraction={setNewInteraction}
+            showReminderForm={showReminderForm}
+            setShowReminderForm={setShowReminderForm}
+            reminderForm={reminderForm}
+            setReminderForm={setReminderForm}
+            sendingQuestionnaire={sendingQuestionnaire}
+            today={today}
+            getCustomerReminders={getCustomerReminders}
+            getCustomerInteractions={getCustomerInteractions}
+            getNextReminder={getNextReminder}
+            hasOverdueReminder={hasOverdueReminder}
+            hasTodayReminder={hasTodayReminder}
+            hasQuestionnaire={hasQuestionnaire}
+            handleUpdateCustomer={handleUpdateCustomer}
+            handleUpdateCustomerBoolean={handleUpdateCustomerBoolean}
+            markCustomerAsRead={markCustomerAsRead}
+            handleAddInteraction={handleAddInteraction}
+            handleAddReminder={handleAddReminder}
+            handleCompleteReminder={handleCompleteReminder}
+            handleSendQuestionnaire={handleSendQuestionnaire}
+            handleViewResponses={handleViewResponses}
+            formatDate={formatDate}
+            formatDateTime={formatDateTime}
+          />
         ))}
       </div>
 
