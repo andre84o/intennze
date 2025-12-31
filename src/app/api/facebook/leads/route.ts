@@ -210,20 +210,41 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
     const fieldData = leadData.field_data || [];
     const fields: Record<string, string> = {};
 
+    // Logga all field_data för debugging
+    console.log(`[Facebook Lead] Customer ${customerId} - Mottagna fält:`, JSON.stringify(fieldData, null, 2));
+
     for (const field of fieldData) {
       const name = field.name?.toLowerCase();
       const value = field.values?.[0] || "";
       fields[name] = value;
     }
 
+    // Logga alla extraherade fält
+    console.log(`[Facebook Lead] Customer ${customerId} - Mappade fält:`, JSON.stringify(fields, null, 2));
+
     const firstName = fields.first_name || fields.förnamn || fields.full_name?.split(" ")[0] || null;
     const lastName = fields.last_name || fields.efternamn || fields.full_name?.split(" ").slice(1).join(" ") || null;
     const email = fields.email || fields['e-post'] || null;
-    const phone = fields.phone_number || fields.phone || fields.telefon || null;
+
+    // Utökad sökning för telefonnummer - Facebook kan använda olika fältnamn
+    const phone = fields.phone_number || fields.phone || fields.telefon ||
+                  fields.mobile_phone_number || fields.mobile || fields.mobiltelefon ||
+                  fields.tel || fields.telephone || fields.telefonnummer ||
+                  fields.cell_phone || fields.cellphone || null;
+
+    console.log(`[Facebook Lead] Customer ${customerId} - Extraherat telefon: "${phone || 'SAKNAS'}"`);
+
+    if (!phone) {
+      console.warn(`[Facebook Lead] Customer ${customerId} - VARNING: Inget telefonnummer hittades! Tillgängliga fält: ${Object.keys(fields).join(', ')}`);
+    }
     const companyName = fields.company_name || fields.company || fields.företag || null;
     const city = fields.city || fields.stad || null;
 
-    const standardFields = ['first_name', 'last_name', 'full_name', 'email', 'phone_number', 'phone', 'company_name', 'company', 'city', 'förnamn', 'efternamn', 'e-post', 'telefon', 'företag', 'stad'];
+    const standardFields = [
+      'first_name', 'last_name', 'full_name', 'email',
+      'phone_number', 'phone', 'telefon', 'mobile_phone_number', 'mobile', 'mobiltelefon', 'tel', 'telephone', 'telefonnummer', 'cell_phone', 'cellphone',
+      'company_name', 'company', 'city', 'förnamn', 'efternamn', 'e-post', 'företag', 'stad'
+    ];
     const customAnswers: string[] = [];
 
     for (const field of fieldData) {
@@ -256,11 +277,17 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
       `(kontaktinfo hämtad ${new Date().toLocaleString("sv-SE")})`
     );
 
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from("customers")
       .update(updateData)
       .eq("id", customerId);
-  } catch {
-    // Silently fail
+
+    if (updateError) {
+      console.error(`[Facebook Lead] Customer ${customerId} - Fel vid uppdatering:`, updateError);
+    } else {
+      console.log(`[Facebook Lead] Customer ${customerId} - Uppdaterad med:`, JSON.stringify(updateData, null, 2));
+    }
+  } catch (error) {
+    console.error(`[Facebook Lead] Customer ${customerId} - Oväntat fel:`, error);
   }
 }
