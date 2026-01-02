@@ -63,6 +63,13 @@ export default function HomeContent() {
       desc: sv ? "Fräsch design för hälsobranschen" : "Fresh design for health industry",
       gradient: "from-emerald-500/50 to-emerald-500/20",
       border: "hover:border-emerald-500/50"
+    },
+    {
+      url: "https://demo-law-jet.vercel.app/",
+      title: sv ? "Juristbyrå" : "Law Firm",
+      desc: sv ? "Professionell juridisk rådgivning" : "Professional legal advice",
+      gradient: "from-indigo-500/50 to-indigo-500/20",
+      border: "hover:border-indigo-500/50"
     }
   ];
 
