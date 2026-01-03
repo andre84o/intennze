@@ -2,6 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
+// Telegram notification
+async function sendTelegramNotification(message: string) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (!botToken || !chatId) {
+    console.log("[Telegram] Bot token eller chat ID saknas");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${botToken}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: "HTML",
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error("[Telegram] Kunde inte skicka meddelande:", await response.text());
+    }
+  } catch (error) {
+    console.error("[Telegram] Fel vid skickning:", error);
+  }
+}
+
 const VERIFY_TOKEN = process.env.FACEBOOK_VERIFY_TOKEN || "intenzze_leads_verify_token";
 const APP_SECRET = process.env.FACEBOOK_APP_SECRET;
 
@@ -108,6 +140,33 @@ export async function POST(request: NextRequest) {
 
         if (leadData) {
           await updateLeadWithContactInfo(customerId, leadData);
+
+          // Skicka Telegram-notifiering
+          const fields = leadData.field_data || [];
+          const fieldMap: Record<string, string> = {};
+          for (const f of fields) {
+            fieldMap[f.name?.toLowerCase()] = f.values?.[0] || "";
+          }
+
+          const name = fieldMap.first_name || fieldMap.förnamn || fieldMap.full_name || "Okänt namn";
+          const phone = fieldMap.phone_number || fieldMap.phone || fieldMap.telefon || "Ingen telefon";
+          const email = fieldMap.email || fieldMap['e-post'] || "Ingen e-post";
+
+          await sendTelegramNotification(
+            `🔔 <b>Ny lead från Facebook!</b>\n\n` +
+            `👤 <b>Namn:</b> ${name}\n` +
+            `📞 <b>Telefon:</b> ${phone}\n` +
+            `📧 <b>E-post:</b> ${email}\n\n` +
+            `🔗 <a href="https://intenzze.com/admin/forsaljning">Öppna CRM</a>`
+          );
+        } else {
+          // Skicka notifiering även om vi inte kunde hämta full data
+          await sendTelegramNotification(
+            `🔔 <b>Ny lead från Facebook!</b>\n\n` +
+            `Lead ID: ${metadata.leadgen_id}\n\n` +
+            `⚠️ Kunde inte hämta kontaktinfo.\n` +
+            `🔗 <a href="https://intenzze.com/admin/forsaljning">Öppna CRM</a>`
+          );
         }
       }
     }
