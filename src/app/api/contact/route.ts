@@ -3,6 +3,28 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
+// Telegram notification
+async function sendTelegramNotification(message: string) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (!botToken || !chatId) return;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: "HTML",
+      }),
+    });
+  } catch (error) {
+    console.error("[Telegram] Fel:", error);
+  }
+}
+
 
 const transporter = nodemailer.createTransport({
   host: "smtp.zoho.eu",
@@ -95,7 +117,16 @@ export async function POST(req: Request) {
       `,
     });
 
-    
+    // Skicka Telegram-notifiering
+    await sendTelegramNotification(
+      `📬 <b>Nytt kontaktmeddelande!</b>\n\n` +
+      `👤 <b>Namn:</b> ${name}\n` +
+      `📞 <b>Telefon:</b> ${phone}\n` +
+      `📧 <b>E-post:</b> ${email}\n\n` +
+      `💬 <b>Meddelande:</b>\n${message}\n\n` +
+      `🔗 <a href="https://intenzze.com/admin/forsaljning">Öppna CRM</a>`
+    );
+
     return NextResponse.json({ ok: true, id: info.messageId });
   } catch (err) {
   

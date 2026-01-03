@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Telegram notification
+async function sendTelegramNotification(message: string) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!botToken || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" }),
+    });
+  } catch (error) {
+    console.error("[Telegram] Fel:", error);
+  }
+}
+
 // Use service role for this API since it's public
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,6 +88,27 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Quote ${quote.id} ${newStatus} by customer`);
+
+    // Hämta kundinfo för Telegram
+    const { data: customerData } = await supabase
+      .from("customers")
+      .select("first_name, last_name")
+      .eq("id", quote.customer_id)
+      .single();
+
+    const customerName = customerData
+      ? `${customerData.first_name || ""} ${customerData.last_name || ""}`.trim() || "Okänd"
+      : "Okänd";
+
+    const emoji = accept ? "✅" : "❌";
+    const status = accept ? "ACCEPTERAD" : "AVBÖJD";
+
+    await sendTelegramNotification(
+      `${emoji} <b>Offert ${status}!</b>\n\n` +
+      `👤 <b>Kund:</b> ${customerName}\n` +
+      (note ? `💬 <b>Kommentar:</b> ${note}\n\n` : "\n") +
+      `🔗 <a href="https://intenzze.com/admin/forsaljning">Öppna CRM</a>`
+    );
 
     return NextResponse.json({
       success: true,
