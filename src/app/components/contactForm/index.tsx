@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
-import { trackContact } from "@/utils/metaPixel";
+import { trackLead } from "@/utils/metaPixel";
 
 type Props = {
   initialMessage?: string;
@@ -29,6 +29,8 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
       });
 
       if (!res.ok) throw new Error("Request failed");
+
+      trackLead({ source: "contact_form" });
       setStatus("sent");
       form.reset();
       if (onSent) onSent();
@@ -123,7 +125,6 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
 
         <button
           type="submit"
-          onClick={trackContact}
           disabled={status === "sending"}
           className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 disabled:opacity-70 disabled:hover:scale-100"
         >
