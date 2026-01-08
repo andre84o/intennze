@@ -254,33 +254,33 @@ const CustomerCard = ({
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Förnamn</span>
-                  <p className="text-gray-900 font-medium">{customer.first_name}</p>
+                  <p className="text-gray-900 font-medium truncate">{customer.first_name}</p>
                 </div>
                 <div>
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Efternamn</span>
-                  <p className="text-gray-900 font-medium">{customer.last_name}</p>
+                  <p className="text-gray-900 font-medium truncate">{customer.last_name}</p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">E-post</span>
                   {customer.email ? (
-                    <a href={`mailto:${customer.email}`} className="text-gray-900 text-sm break-all hover:text-blue-600 hover:underline">
+                    <a href={`mailto:${customer.email}`} className="block text-gray-900 text-sm break-all hover:text-blue-600 hover:underline">
                       {customer.email}
                     </a>
                   ) : (
                     <p className="text-gray-900 text-sm">-</p>
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</span>
                   {customer.phone ? (
-                    <a href={`tel:${customer.phone}`} className="text-gray-900 hover:text-blue-600 hover:underline">
+                    <a href={`tel:${customer.phone}`} className="block text-gray-900 text-sm break-all hover:text-blue-600 hover:underline">
                       {customer.phone}
                     </a>
                   ) : (
-                    <p className="text-gray-900">-</p>
+                    <p className="text-gray-900 text-sm">-</p>
                   )}
                 </div>
               </div>
@@ -865,7 +865,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
   const todayCount = customers.filter((c) => hasTodayReminder(c.id) && !hasOverdueReminder(c.id)).length;
 
   return (
-    <div className="bg-gray-50 min-h-screen -m-3 sm:-m-6 p-3 sm:p-6">
+    <div className="bg-gray-50 min-h-screen -m-3 sm:-m-6 p-3 sm:p-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -874,31 +874,32 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
           </h1>
           <p className="text-gray-500 mt-1 text-lg">Hantera leads och kunduppföljning</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={() => setShowQuestionsHelper(true)}
-            className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium rounded-lg hover:from-cyan-600 hover:to-purple-600 transition-all shadow-md flex items-center gap-2"
+            className="px-3 sm:px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium rounded-lg hover:from-cyan-600 hover:to-purple-600 transition-all shadow-md flex items-center gap-2 text-sm sm:text-base"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
             </svg>
-            Formulärfrågor
+            <span className="whitespace-nowrap">Formulärfrågor</span>
           </button>
           {expiredServiceCount > 0 && (
-            <span className="px-4 py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-full text-sm font-medium shadow-sm flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+            <span className="px-2 sm:px-4 py-1 sm:py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-full text-xs sm:text-sm font-medium shadow-sm flex items-center gap-1 sm:gap-1.5">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              {expiredServiceCount} utgångna avtal
+              <span className="hidden sm:inline">{expiredServiceCount} utgångna avtal</span>
+              <span className="sm:hidden">{expiredServiceCount} utgångna</span>
             </span>
           )}
           {overdueCount > 0 && (
-            <span className="px-4 py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-full text-sm font-medium shadow-sm">
+            <span className="px-2 sm:px-4 py-1 sm:py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-full text-xs sm:text-sm font-medium shadow-sm">
               {overdueCount} försenade
             </span>
           )}
           {todayCount > 0 && (
-            <span className="px-4 py-1.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-sm font-medium shadow-sm">
+            <span className="px-2 sm:px-4 py-1 sm:py-1.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs sm:text-sm font-medium shadow-sm">
               {todayCount} idag
             </span>
           )}
