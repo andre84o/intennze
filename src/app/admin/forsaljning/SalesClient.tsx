@@ -583,6 +583,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
   const [questionnaireResponses, setQuestionnaireResponses] = useState<Record<string, unknown> | null>(null);
   const [showAllRemindersPopup, setShowAllRemindersPopup] = useState(false);
   const [loadingResponses, setLoadingResponses] = useState(false);
+  const [showQuestionsHelper, setShowQuestionsHelper] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -874,6 +875,15 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
           <p className="text-gray-500 mt-1 text-lg">Hantera leads och kunduppföljning</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowQuestionsHelper(true)}
+            className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium rounded-lg hover:from-cyan-600 hover:to-purple-600 transition-all shadow-md flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+            </svg>
+            Formulärfrågor
+          </button>
           {expiredServiceCount > 0 && (
             <span className="px-4 py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-full text-sm font-medium shadow-sm flex items-center gap-1.5">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -1568,6 +1578,223 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
               <button
                 onClick={() => setShowAllRemindersPopup(false)}
                 className="w-full px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Stäng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Formulärfrågor Helper Modal */}
+      {showQuestionsHelper && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-cyan-500 to-purple-500">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Formulärfrågor</h2>
+                    <p className="text-white/80 text-sm">Använd som stöd vid kundsamtal</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowQuestionsHelper(false)}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Steg 1 */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-cyan-500 text-white text-sm flex items-center justify-center font-bold">1</span>
+                  Om verksamheten
+                </h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Företagsnamn</strong> - Vad heter företaget?</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Org.nummer</strong> - Vilket organisationsnummer har ni?</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Kontaktperson</strong> - Vem är kontaktperson?</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Befattning</strong> - Vilken roll har kontaktpersonen?</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Adress</strong> - Gatuadress, postnummer och ort</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Bransch</strong> - Vilken bransch är ni verksamma inom?</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Domän</strong> - Har ni en domän (webbadress)?</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>→ Om ja: Vilken domän?</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>→ Om nej: Vill ni att vi hjälper er skaffa domän? (5 förslag)</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Steg 2 */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-cyan-500 text-white text-sm flex items-center justify-center font-bold">2</span>
+                  Underhåll & Omfattning
+                </h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Underhåll</strong> - Vill ni att vi sköter underhåll av webbplatsen? (uppdateringar, säkerhet, support)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Antal sidor</strong> - Hur många sidor behöver webbplatsen?</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• 1-3 sidor (Enkel)</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• 4-7 sidor (Standard)</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• 8-15 sidor (Större)</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• Fler än 15 sidor</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Steg 3 */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-cyan-500 text-white text-sm flex items-center justify-center font-bold">3</span>
+                  Innehåll
+                </h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Bilder & texter</strong> - Har ni bilder och texter klara?</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• Ja, allt är klart</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• Delvis (behöver lite hjälp)</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• Nej (behöver hjälp med allt)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Designönskemål</strong> - Färger, stil, känsla? (Modern, minimalistisk, varm, inbjudande?)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Referenssidor</strong> - Finns det webbplatser ni gillar stilen på?</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Steg 4 */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-cyan-500 text-white text-sm flex items-center justify-center font-bold">4</span>
+                  Funktioner
+                </h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Vilka funktioner behövs?</strong> (Välj alla som passar)</span>
+                  </li>
+                </ul>
+                <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 pl-4">
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Kontaktformulär</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Bokningssystem</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Webshop / E-handel</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Blogg / Nyheter</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Bildgalleri / Portfolio</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Sociala medier-flöde</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Nyhetsbrev</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Chatt / Support</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Karta / Hitta hit</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Videor</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">Kundrecensioner</span>
+                  <span className="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-600">FAQ</span>
+                </div>
+                <ul className="space-y-2 text-gray-700 mt-3">
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Andra funktioner?</strong> - Beskriv andra funktioner ni behöver</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Steg 5 */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-cyan-500 text-white text-sm flex items-center justify-center font-bold">5</span>
+                  Tidslinje
+                </h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>När vill ni ha webbplatsen klar?</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• Så snart som möjligt</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• 1-2 veckor</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• Inom 1 månad</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• 2-3 månader</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-500 text-sm pl-4">
+                    <span>• Flexibel / Inget bråttom</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-1">•</span>
+                    <span><strong>Övrigt</strong> - Något mer vi bör veta?</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-100 px-6 py-4 bg-gray-50">
+              <button
+                onClick={() => setShowQuestionsHelper(false)}
+                className="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg hover:from-cyan-600 hover:to-purple-600 transition-all font-medium"
               >
                 Stäng
               </button>
