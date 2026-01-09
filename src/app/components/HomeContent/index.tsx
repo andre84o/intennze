@@ -70,6 +70,13 @@ export default function HomeContent() {
       desc: sv ? "Professionell juridisk rådgivning" : "Professional legal advice",
       gradient: "from-indigo-500/50 to-indigo-500/20",
       border: "hover:border-indigo-500/50"
+    },
+    {
+      url: "https://clinic-two-omega.vercel.app",
+      title: sv ? "Klinik" : "Clinic",
+      desc: sv ? "Modern design för vårdmottagning" : "Modern design for healthcare",
+      gradient: "from-rose-500/50 to-rose-500/20",
+      border: "hover:border-rose-500/50"
     }
   ];
 
