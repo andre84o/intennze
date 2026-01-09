@@ -2,6 +2,23 @@
 
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 
+const getFormattedDate = (lang: "sv" | "en") => {
+  const now = new Date();
+  const year = now.getFullYear();
+
+  const monthsSv = [
+    "Januari", "Februari", "Mars", "April", "Maj", "Juni",
+    "Juli", "Augusti", "September", "Oktober", "November", "December"
+  ];
+  const monthsEn = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const month = lang === "sv" ? monthsSv[now.getMonth()] : monthsEn[now.getMonth()];
+  return `${month} ${year}`;
+};
+
 export default function PolicyContent() {
   const { lang } = useLanguage();
 
@@ -347,7 +364,7 @@ export default function PolicyContent() {
 
           {/* Footer */}
           <div className="pt-8 border-t border-slate-800">
-            <p className="text-sm text-slate-500">Last updated: December 2025</p>
+            <p className="text-sm text-slate-500">Last updated: {getFormattedDate("en")}</p>
           </div>
         </div>
       </>
@@ -692,7 +709,7 @@ export default function PolicyContent() {
 
         {/* Footer */}
         <div className="pt-8 border-t border-slate-800">
-          <p className="text-sm text-slate-500">Senast uppdaterad: December 2025</p>
+          <p className="text-sm text-slate-500">Senast uppdaterad: {getFormattedDate("sv")}</p>
         </div>
       </div>
     </>
