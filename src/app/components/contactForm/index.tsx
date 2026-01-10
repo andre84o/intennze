@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
 import { trackLead } from "@/utils/metaPixel";
@@ -7,14 +7,33 @@ import { trackLead } from "@/utils/metaPixel";
 type Props = {
   initialMessage?: string;
   onSent?: () => void;
+  title?: string;
+  subtitle?: string;
+  buttonText?: string;
 };
 
-const ContactForm = ({ initialMessage, onSent }: Props) => {
+const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Props) => {
   const { lang } = useLanguage();
   const t = (k: string) => dict[lang][k];
+  const sv = lang === "sv";
+
+  const formTitle = title || t("contact_title");
+  const formSubtitle = subtitle || t("contact_subtitle");
+  const formButtonText = buttonText || t("submit");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
   );
+
+  // Fire tracking event when form is successfully sent
+  useEffect(() => {
+    if (status === "sent") {
+      // This can be used for additional tracking pixels
+      // The element with data-conversion="success" can be detected by GTM/other tools
+      if (typeof window !== "undefined" && (window as { fbq?: (action: string, event: string) => void }).fbq) {
+        (window as { fbq: (action: string, event: string) => void }).fbq("track", "Lead");
+      }
+    }
+  }, [status]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,6 +58,91 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
     }
   };
 
+  // Success/Thank you state
+  if (status === "sent") {
+    return (
+      <div className="w-full">
+        <div
+          className="flex flex-col items-center justify-center gap-6 p-8 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl min-h-[400px]"
+          data-conversion="success"
+          data-form-submitted="true"
+          id="contact-form-success"
+        >
+          {/* Success icon with animation */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="relative w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="3"
+                className="animate-[scale-in_0.3s_ease-out]"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Thank you message */}
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white mb-2">
+              {sv ? "Tack för ditt meddelande!" : "Thank you for your message!"}
+            </h2>
+            <p className="text-slate-400 max-w-sm">
+              {sv
+                ? "Vi återkommer inom 24 timmar."
+                : "We'll get back to you within 24 hours."}
+            </p>
+          </div>
+
+          {/* What happens next */}
+          <div className="w-full mt-4 p-4 bg-slate-800/30 border border-slate-700/50 rounded-xl">
+            <p className="text-sm text-slate-500 mb-3 font-medium">
+              {sv ? "Vad händer nu?" : "What happens next?"}
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-cyan-400 text-xs font-bold">1</span>
+                </div>
+                <p className="text-sm text-slate-400">
+                  {sv ? "Vi granskar din förfrågan" : "We review your request"}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-purple-400 text-xs font-bold">2</span>
+                </div>
+                <p className="text-sm text-slate-400">
+                  {sv ? "Vi kontaktar dig för att diskutera ditt projekt" : "We contact you to discuss your project"}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-fuchsia-500/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-fuchsia-400 text-xs font-bold">3</span>
+                </div>
+                <p className="text-sm text-slate-400">
+                  {sv ? "Du får en kostnadsfri offert" : "You receive a free quote"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Send another message button */}
+          <button
+            onClick={() => setStatus("idle")}
+            className="text-sm text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-4"
+          >
+            {sv ? "Skicka ett nytt meddelande" : "Send another message"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       <form
@@ -46,8 +150,8 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
         className="flex flex-col gap-5 p-8 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl"
       >
         <div className="text-center mb-2">
-          <h2 className="text-2xl font-bold">{t("contact_title")}</h2>
-          <p className="mt-1 text-slate-400">{t("contact_subtitle")}</p>
+          <h2 className="text-2xl font-bold">{formTitle}</h2>
+          <p className="mt-1 text-slate-400">{formSubtitle}</p>
         </div>
 
         <div>
@@ -136,16 +240,9 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
               </svg>
               {t("sending")}
             </>
-          ) : status === "sent" ? (
-            <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              {t("sent")}
-            </>
           ) : (
             <>
-              {t("submit")}
+              {formButtonText}
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
@@ -153,9 +250,6 @@ const ContactForm = ({ initialMessage, onSent }: Props) => {
           )}
         </button>
 
-        {status === "sent" && (
-          <p className="text-center text-sm text-emerald-400">{t("sent_msg")}</p>
-        )}
         {status === "error" && (
           <p className="text-center text-sm text-red-400">{t("error_msg")}</p>
         )}
