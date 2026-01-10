@@ -152,6 +152,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'G-EQ9TD4N13S');
+            gtag('config', 'AW-17863845026');
           `}
         </Script>
         {/* Track client-side route changes */}

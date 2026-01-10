@@ -26,10 +26,24 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Pr
 
   // Fire tracking event when form is successfully sent
   useEffect(() => {
-    if (status === "sent") {
-      // This can be used for additional tracking pixels
-      // The element with data-conversion="success" can be detected by GTM/other tools
-      if (typeof window !== "undefined" && (window as { fbq?: (action: string, event: string) => void }).fbq) {
+    if (status === "sent" && typeof window !== "undefined") {
+      // Google Ads Conversion
+      if ((window as { gtag?: (...args: unknown[]) => void }).gtag) {
+        (window as { gtag: (...args: unknown[]) => void }).gtag('event', 'conversion', {
+          'send_to': 'AW-17863845026/xm_vCN7IheAbEKLJksZC'
+        });
+      }
+
+      // Google Tag Manager dataLayer push
+      if ((window as { dataLayer?: Record<string, unknown>[] }).dataLayer) {
+        (window as { dataLayer: Record<string, unknown>[] }).dataLayer.push({
+          event: "form_submission",
+          form_name: "contact_form",
+        });
+      }
+
+      // Facebook Pixel
+      if ((window as { fbq?: (action: string, event: string) => void }).fbq) {
         (window as { fbq: (action: string, event: string) => void }).fbq("track", "Lead");
       }
     }
