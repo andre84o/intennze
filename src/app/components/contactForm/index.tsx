@@ -4,6 +4,9 @@ import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
 import { trackLead } from "@/utils/metaPixel";
 
+type DataLayerEvent = Record<string, unknown>;
+type DataLayerWindow = Window & { dataLayer?: DataLayerEvent[] };
+
 type Props = {
   initialMessage?: string;
   onSent?: () => void;
@@ -35,8 +38,9 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Pr
       }
 
       // Google Tag Manager dataLayer push
-      if ((window as { dataLayer?: Record<string, unknown>[] }).dataLayer) {
-        (window as { dataLayer: Record<string, unknown>[] }).dataLayer.push({
+      const dataLayer = (window as DataLayerWindow).dataLayer;
+      if (Array.isArray(dataLayer)) {
+        dataLayer.push({
           event: "form_submission",
           form_name: "contact_form",
         });
