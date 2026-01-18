@@ -39,14 +39,14 @@ export default function AboutContent() {
 
     stats: sv
       ? [
-          { value: "100%", label: "Nöjda kunder" },
-          { value: "50+", label: "Projekt levererade" },
-          { value: "<1s", label: "Genomsnittlig laddtid" },
+          { value: "Modern", label: "Teknik & ramverk" },
+          { value: "Direkt", label: "Personlig kontakt" },
+          { value: "Fast pris", label: "Inga dolda kostnader" },
         ]
       : [
-          { value: "100%", label: "Satisfied clients" },
-          { value: "50+", label: "Projects delivered" },
-          { value: "<1s", label: "Average load time" },
+          { value: "Modern", label: "Tech & frameworks" },
+          { value: "Direct", label: "Personal contact" },
+          { value: "Fixed price", label: "No hidden costs" },
         ],
 
     ctaTitle: sv ? "Redo att ta nästa steg?" : "Ready to take the next step?",
