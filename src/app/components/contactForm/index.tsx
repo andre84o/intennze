@@ -245,6 +245,22 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Pr
           />
         </div>
 
+        <div className="flex items-start gap-3">
+          <input
+            id="policy"
+            name="policy"
+            type="checkbox"
+            required
+            className="mt-1 h-4 w-4 rounded border-slate-700 bg-slate-800/50 text-cyan-500 focus:ring-cyan-500/20 focus:ring-offset-0 cursor-pointer"
+          />
+          <label htmlFor="policy" className="text-sm text-slate-400 cursor-pointer">
+            {sv
+              ? <>Jag godkänner <a href="/integritetspolicy" target="_blank" className="text-cyan-400 hover:underline">integritetspolicyn</a> och samtycker till att mina uppgifter behandlas.</>
+              : <>I accept the <a href="/integritetspolicy" target="_blank" className="text-cyan-400 hover:underline">privacy policy</a> and consent to my data being processed.</>
+            }
+          </label>
+        </div>
+
         <button
           type="submit"
           disabled={status === "sending"}

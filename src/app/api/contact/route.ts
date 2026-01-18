@@ -2,6 +2,18 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+// Rate limiter: 2 requests per 15 minutes per IP
+// Only initialize if Upstash is configured
+const ratelimit = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? new Ratelimit({
+      redis: Redis.fromEnv(),
+      limiter: Ratelimit.slidingWindow(2, "15 m"),
+      analytics: true,
+    })
+  : null;
 
 // Telegram notification
 async function sendTelegramNotification(message: string) {
@@ -41,6 +53,29 @@ const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting - only if Upstash is configured
+    if (ratelimit) {
+      const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ??
+                 req.headers.get("x-real-ip") ??
+                 "anonymous";
+
+      const { success, limit, reset, remaining } = await ratelimit.limit(ip);
+
+      if (!success) {
+        return NextResponse.json(
+          { ok: false, error: "För många förfrågningar. Försök igen senare." },
+          {
+            status: 429,
+            headers: {
+              "X-RateLimit-Limit": limit.toString(),
+              "X-RateLimit-Remaining": remaining.toString(),
+              "X-RateLimit-Reset": reset.toString(),
+            }
+          }
+        );
+      }
+    }
+
     const form = await req.formData();
     const name = String(form.get("name") || "").trim();
     const email = String(form.get("email") || "").trim();
