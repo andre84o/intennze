@@ -85,6 +85,13 @@ export default function HomeContent() {
       gradient: "from-green-500/50 to-green-500/20",
       border: "hover:border-green-500/50",
       platform: "shopify"
+    },
+    {
+      url: "https://booking-ten-psi.vercel.app/",
+      title: sv ? "Bokningssystem" : "Booking System",
+      desc: sv ? "Smart bokning för företag" : "Smart booking for businesses",
+      gradient: "from-sky-500/50 to-sky-500/20",
+      border: "hover:border-sky-500/50"
     }
   ];
 
