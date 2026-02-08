@@ -104,13 +104,13 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
       );
     }
     if (isCollapsed) {
-      // X icon (will hide)
+      // Sidebar hide icon (panel with arrow left)
       return (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M6 18L18 6M6 6l12 12"
-        />
+        <>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v16.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 8.25L10.5 12l3.75 3.75" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 12h9.75" />
+        </>
       );
     }
     // Menu icon (will open)
@@ -130,15 +130,15 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
         <button
           onClick={openSidebar}
           type="button"
-          className="fixed top-3 sm:top-4 left-3 sm:left-4 z-50 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+          className="fixed top-3.5 sm:top-4 left-3 sm:left-4 z-50 w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 active:scale-95 transition-all duration-150 cursor-pointer shadow-sm"
           aria-label="Öppna sidofält"
         >
           <svg
-            className="w-5 h-5 sm:w-6 sm:h-6 pointer-events-none"
+            className="w-4 h-4 sm:w-5 sm:h-5 pointer-events-none"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            strokeWidth="2"
+            strokeWidth="1.5"
           >
             <path
               strokeLinecap="round"

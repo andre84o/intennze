@@ -3,5 +3,9 @@
     "allow": [
       "Bash(npx supabase db push)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase",
+    "magic"
+  ]
 }

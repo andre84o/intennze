@@ -331,3 +331,17 @@ export const invoiceStatusColors: Record<InvoiceStatus, string> = {
   overdue: 'bg-red-100 text-red-700 border-red-200',
   cancelled: 'bg-gray-100 text-gray-500 border-gray-200',
 };
+
+// Code Snippets
+export interface CodeSnippet {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  title: string;
+  description: string | null;
+  code: string;
+  language: string | null;
+  tags: string[];
+  is_favorite: boolean;
+  created_by: string | null;
+}
