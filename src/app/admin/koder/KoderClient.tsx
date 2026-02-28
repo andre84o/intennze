@@ -33,6 +33,7 @@ export default function KoderClient({ initialSnippets, error }: Props) {
   const [formLanguage, setFormLanguage] = useState("");
   const [formTags, setFormTags] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const filteredSnippets = useMemo(() => {
     return snippets.filter((snippet) => {
@@ -62,6 +63,7 @@ export default function KoderClient({ initialSnippets, error }: Props) {
     setFormCode("");
     setFormLanguage("");
     setFormTags("");
+    setSaveError(null);
     setShowModal(true);
   };
 
@@ -72,12 +74,14 @@ export default function KoderClient({ initialSnippets, error }: Props) {
     setFormCode(snippet.code);
     setFormLanguage(snippet.language || "");
     setFormTags(snippet.tags?.join(", ") || "");
+    setSaveError(null);
     setShowModal(true);
   };
 
   const handleSave = async () => {
     if (!formTitle.trim() || !formCode.trim()) return;
     setSaving(true);
+    setSaveError(null);
     const supabase = createClient();
     const tags = formTags.split(",").map((t) => t.trim()).filter(Boolean);
     const payload = {
@@ -91,10 +95,20 @@ export default function KoderClient({ initialSnippets, error }: Props) {
 
     if (editingSnippet) {
       const { data, error } = await supabase.from("code_snippets").update(payload).eq("id", editingSnippet.id).select().single();
-      if (data && !error) setSnippets((prev) => prev.map((s) => (s.id === data.id ? data : s)));
+      if (error) {
+        setSaveError("Kunde inte uppdatera: " + error.message);
+        setSaving(false);
+        return;
+      }
+      if (data) setSnippets((prev) => prev.map((s) => (s.id === data.id ? data : s)));
     } else {
       const { data, error } = await supabase.from("code_snippets").insert(payload).select().single();
-      if (data && !error) setSnippets((prev) => [data, ...prev]);
+      if (error) {
+        setSaveError("Kunde inte spara: " + error.message);
+        setSaving(false);
+        return;
+      }
+      if (data) setSnippets((prev) => [data, ...prev]);
     }
     setSaving(false);
     setShowModal(false);
@@ -245,7 +259,7 @@ export default function KoderClient({ initialSnippets, error }: Props) {
                   {/* Footer */}
                   <div className="flex items-center justify-between mt-3">
                     <span className="text-[10px] text-gray-400">{new Date(snippet.created_at).toLocaleDateString("sv-SE")}</span>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-0.5">
                       <button onClick={() => copyToClipboard(snippet.code, snippet.id)} className="p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition-colors" title="Kopiera">
                         {copiedId === snippet.id ? (
                           <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -324,6 +338,10 @@ export default function KoderClient({ initialSnippets, error }: Props) {
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all resize-y" />
                 </div>
               </div>
+
+              {saveError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{saveError}</div>
+              )}
 
               <div className="flex justify-end gap-2 mt-5">
                 <button onClick={() => { setShowModal(false); setEditingSnippet(null); }}
