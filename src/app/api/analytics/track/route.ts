@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { analyticsLimiter, getClientIp, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 
 // Public endpoint — use anon key. The `anon_insert_page_views` RLS policy
 // permits inserts; no service role needed. Service role on a public endpoint
@@ -63,6 +64,15 @@ function getSource(referrer: string | null, utmSource: string | null): "direct" 
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req);
+    const limit = await tryLimit(analyticsLimiter, ip);
+    if (limit && !limit.success) {
+      return NextResponse.json(
+        { ok: false, error: "Rate limit exceeded" },
+        { status: 429, headers: rateLimitHeaders(limit) }
+      );
+    }
+
     const body = await req.json();
 
     const pagePath = truncate(body.pagePath, 512);

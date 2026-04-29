@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { webhookGetLimiter, getClientIp, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 
 // Telegram notification
 async function sendTelegramNotification(message: string) {
@@ -34,7 +35,7 @@ async function sendTelegramNotification(message: string) {
   }
 }
 
-const VERIFY_TOKEN = process.env.FACEBOOK_VERIFY_TOKEN || "intenzze_leads_verify_token";
+const VERIFY_TOKEN = process.env.FACEBOOK_VERIFY_TOKEN;
 const APP_SECRET = process.env.FACEBOOK_APP_SECRET;
 
 // Validera Facebook webhook-signatur
@@ -74,6 +75,20 @@ const supabaseAdmin = createClient(
 
 // GET - Facebook webhook verifiering
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const limit = await tryLimit(webhookGetLimiter, ip);
+  if (limit && !limit.success) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: rateLimitHeaders(limit) }
+    );
+  }
+
+  if (!VERIFY_TOKEN) {
+    console.error("[Facebook] FACEBOOK_VERIFY_TOKEN not configured");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
+
   const searchParams = request.nextUrl.searchParams;
 
   const mode = searchParams.get("hub.mode");

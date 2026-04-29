@@ -52,7 +52,6 @@ export default function SettingsPage() {
   const [companyMessage, setCompanyMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Password change
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -113,8 +112,8 @@ export default function SettingsPage() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setMessage({ type: "error", text: "Lösenordet måste vara minst 6 tecken" });
+    if (newPassword.length < 12) {
+      setMessage({ type: "error", text: "Lösenordet måste vara minst 12 tecken" });
       return;
     }
 
@@ -129,7 +128,6 @@ export default function SettingsPage() {
       setMessage({ type: "error", text: error.message });
     } else {
       setMessage({ type: "success", text: "Lösenordet har uppdaterats" });
-      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     }

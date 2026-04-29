@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { formOpenLimiter, getClientIp, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 
 // Use service role for this API since it's public
 const supabase = createClient(
@@ -9,6 +10,15 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limit = await tryLimit(formOpenLimiter, ip);
+    if (limit && !limit.success) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429, headers: rateLimitHeaders(limit) }
+      );
+    }
+
     const body = await request.json();
     const { token } = body;
 

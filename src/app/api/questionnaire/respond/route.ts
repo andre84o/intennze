@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { questionnaireRespondLimiter, getClientIp, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 
 // Telegram notification
 async function sendTelegramNotification(message: string) {
@@ -25,6 +26,15 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limit = await tryLimit(questionnaireRespondLimiter, ip);
+    if (limit && !limit.success) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429, headers: rateLimitHeaders(limit) }
+      );
+    }
+
     const body = await request.json();
     const { token, ...responses } = body;
 
