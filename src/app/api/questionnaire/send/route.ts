@@ -24,6 +24,13 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const { customerId } = await req.json();
 
     if (!customerId) {
@@ -32,8 +39,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    const supabase = await createClient();
 
     // Get the customer
     const { data: customer, error: customerError } = await supabase
@@ -188,7 +193,7 @@ export async function POST(req: Request) {
       description: `Frågeformulär skickat till ${customer.email}`,
     });
 
-    console.log(`Questionnaire sent to ${customer.email}, ID: ${questionnaire.id}`);
+    console.log(`Questionnaire sent, ID: ${questionnaire.id}`);
 
     return NextResponse.json({ ok: true, questionnaireId: questionnaire.id });
   } catch (err) {

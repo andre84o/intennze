@@ -89,7 +89,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
     fbq('init', '1537867027358765');
-    fbq('track', 'PageView');
+    if (!/^\\/(offert|formular)\\//.test(window.location.pathname)) {
+      fbq('track', 'PageView');
+    }
   `}
         </Script>
 
@@ -99,6 +101,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             width="1"
             style={{ display: "none" }}
             src="https://www.facebook.com/tr?id=1537867027358765&ev=PageView&noscript=1"
+            referrerPolicy="no-referrer"
           />
         </noscript>
       </head>
@@ -112,6 +115,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             height="0"
             width="0"
             style={{ display: "none", visibility: "hidden" }}
+            referrerPolicy="no-referrer"
           />
         </noscript>
 
@@ -151,7 +155,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-EQ9TD4N13S');
+            // Suppress automatic page_view on initial load — GAListener emits
+            // it manually and skips token-bearing paths to avoid token leaks.
+            gtag('config', 'G-EQ9TD4N13S', { send_page_view: false });
             gtag('config', 'AW-17863845026');
           `}
         </Script>

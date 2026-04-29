@@ -4,12 +4,14 @@ import QuoteResponseClient from "./QuoteResponseClient";
 
 export const metadata = {
   title: "Offert | intenzze",
+  robots: { index: false, follow: false },
 };
 
-// Use anon key with RLS policies for public access (secure)
+// Service role + explicit token equality. Anon RLS policies for quotes are removed
+// to prevent enumeration; reads happen server-side here only.
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export default async function PublicQuotePage({

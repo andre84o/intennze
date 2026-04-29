@@ -8,8 +8,14 @@ export default function GAListener() {
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.gtag !== "function") return;
+    // Don't leak token-bearing URLs to GA.
+    if (pathname?.startsWith("/offert/") || pathname?.startsWith("/formular/")) return;
     const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
-    window.gtag("config", "G-EQ9TD4N13S", { page_path: url });
+    window.gtag("event", "page_view", {
+      page_path: url,
+      page_location: window.location.origin + url,
+      send_to: "G-EQ9TD4N13S",
+    });
   }, [pathname, searchParams]);
 
   return null;

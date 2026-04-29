@@ -24,6 +24,13 @@ interface EmailAttachment {
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { to, subject, body, signature, logoHeight = 32, logoPosition = "left", replyToMessageId, attachments } = await req.json();
 
     if (!to || !subject || !body) {
@@ -43,8 +50,6 @@ export async function POST(req: Request) {
 
     const fromName = "Intenzze";
     const from = `${fromName} <${email}>`;
-
-    const supabase = await createClient();
 
     // Förbered bilagor
     const mailAttachments: any[] = (attachments || []).map((att: EmailAttachment) => ({

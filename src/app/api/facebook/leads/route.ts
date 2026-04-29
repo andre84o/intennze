@@ -269,17 +269,17 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
     const fieldData = leadData.field_data || [];
     const fields: Record<string, string> = {};
 
-    // Logga all field_data för debugging
-    console.log(`[Facebook Lead] Customer ${customerId} - Mottagna fält:`, JSON.stringify(fieldData, null, 2));
+    // Log only field names (not values) — values contain PII (email, phone, name).
+    console.log(
+      `[Facebook Lead] Customer ${customerId} - Mottagna fältnamn:`,
+      fieldData.map((f: { name?: string }) => f.name).join(", ")
+    );
 
     for (const field of fieldData) {
       const name = field.name?.toLowerCase();
       const value = field.values?.[0] || "";
       fields[name] = value;
     }
-
-    // Logga alla extraherade fält
-    console.log(`[Facebook Lead] Customer ${customerId} - Mappade fält:`, JSON.stringify(fields, null, 2));
 
     const firstName = fields.first_name || fields.förnamn || fields.full_name?.split(" ")[0] || null;
     const lastName = fields.last_name || fields.efternamn || fields.full_name?.split(" ").slice(1).join(" ") || null;
@@ -291,10 +291,10 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
                   fields.tel || fields.telephone || fields.telefonnummer ||
                   fields.cell_phone || fields.cellphone || null;
 
-    console.log(`[Facebook Lead] Customer ${customerId} - Extraherat telefon: "${phone || 'SAKNAS'}"`);
+    console.log(`[Facebook Lead] Customer ${customerId} - Telefon: ${phone ? "extraherat" : "SAKNAS"}`);
 
     if (!phone) {
-      console.warn(`[Facebook Lead] Customer ${customerId} - VARNING: Inget telefonnummer hittades! Tillgängliga fält: ${Object.keys(fields).join(', ')}`);
+      console.warn(`[Facebook Lead] Customer ${customerId} - VARNING: Inget telefonnummer hittades! Tillgängliga fältnamn: ${Object.keys(fields).join(', ')}`);
     }
     const companyName = fields.company_name || fields.company || fields.företag || null;
     const city = fields.city || fields.stad || null;
@@ -344,7 +344,10 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
     if (updateError) {
       console.error(`[Facebook Lead] Customer ${customerId} - Fel vid uppdatering:`, updateError);
     } else {
-      console.log(`[Facebook Lead] Customer ${customerId} - Uppdaterad med:`, JSON.stringify(updateData, null, 2));
+      console.log(
+        `[Facebook Lead] Customer ${customerId} - Uppdaterad fält:`,
+        Object.keys(updateData).join(", ")
+      );
     }
   } catch (error) {
     console.error(`[Facebook Lead] Customer ${customerId} - Oväntat fel:`, error);

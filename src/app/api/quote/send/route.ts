@@ -32,6 +32,13 @@ const formatCurrency = (amount: number) => {
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const { quoteId } = await req.json();
 
     if (!quoteId) {
@@ -40,8 +47,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    const supabase = await createClient();
 
     // Get the quote with customer and items
     const { data: quote, error: quoteError } = await supabase

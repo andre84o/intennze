@@ -30,8 +30,14 @@ export default function Analytics() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Don't track admin or login pages
-    if (pathname?.startsWith("/admin") || pathname?.startsWith("/login")) {
+    // Don't track admin, login, or token-bearing public pages.
+    // Token-bearing URLs must not leak to analytics backends.
+    if (
+      pathname?.startsWith("/admin") ||
+      pathname?.startsWith("/login") ||
+      pathname?.startsWith("/offert/") ||
+      pathname?.startsWith("/formular/")
+    ) {
       return;
     }
 

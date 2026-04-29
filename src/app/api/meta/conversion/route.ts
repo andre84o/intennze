@@ -123,16 +123,15 @@ export async function POST(request: NextRequest) {
       ],
     };
 
-    // Logga vad som skickas
+    // Logga vad som skickas — utan PII.
     console.log("\n========== META CONVERSION API ==========");
     console.log("📊 FÖRSÄLJNINGSTRATT-HÄNDELSE");
-    console.log("Kund:", customer.first_name, customer.last_name);
-    console.log("Email:", customer.email || "(saknas)");
-    console.log("Telefon:", customer.phone || "(saknas)");
     console.log("Status:", previousStatus, "→", customer.status);
     console.log("Facebook Event:", eventName);
     console.log("Lead Score:", leadScore, "/ 4");
     console.log("Värde:", leadScore * 1000, "SEK");
+    console.log("Email:", customer.email ? "✓" : "✗");
+    console.log("Telefon:", customer.phone ? "✓" : "✗");
     console.log("Pixel ID:", META_PIXEL_ID ? "Ja ✓" : "Nej ✗");
     console.log("Token:", META_ACCESS_TOKEN ? "Ja ✓" : "Nej ✗");
     console.log("==========================================\n");

@@ -283,6 +283,13 @@ function generateInvoicePDF(invoice: {
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const { invoiceId } = await req.json();
 
     if (!invoiceId) {
@@ -291,8 +298,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    const supabase = await createClient();
 
     // Get the invoice with customer data
     const { data: invoice, error: invoiceError } = await supabase

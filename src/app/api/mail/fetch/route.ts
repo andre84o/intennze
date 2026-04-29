@@ -19,7 +19,12 @@ const IMAP_CONFIG = {
 };
 
 export async function POST() {
-  console.log("=== FETCHING EMAILS VIA IMAP ===");
+  const supabase = await createClient();
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   if (!IMAP_CONFIG.imap.user || !IMAP_CONFIG.imap.password) {
     return NextResponse.json(
@@ -31,7 +36,6 @@ export async function POST() {
   let connection: Imap.ImapSimple | null = null;
 
   try {
-    const supabase = await createClient();
 
     // Kolla senaste hämtade mail för att bara hämta nya
     const { data: latestEmail } = await supabase
