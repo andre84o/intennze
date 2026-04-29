@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import AdminLayoutClient from "./AdminLayoutClient";
+import AdminIdleLogout from "./AdminIdleLogout";
 
 export default async function AdminLayout({
   children,
@@ -17,6 +18,9 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminLayoutClient userEmail={user.email}>{children}</AdminLayoutClient>
+    <AdminLayoutClient userEmail={user.email}>
+      <AdminIdleLogout />
+      {children}
+    </AdminLayoutClient>
   );
 }
