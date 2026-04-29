@@ -42,6 +42,15 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("sv-SE");
 };
 
+// Escape DB-supplied strings before interpolating into HTML email templates.
+const escapeHtml = (s: unknown): string =>
+  String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 // Generate PDF for invoice
 function generateInvoicePDF(invoice: {
   invoice_number: number;
@@ -350,7 +359,9 @@ export async function POST(req: Request) {
     }
 
     const from = `${company.company_name || "Företag"} <${email}>`;
-    const customerName = `${invoice.customer.first_name} ${invoice.customer.last_name}`;
+    const customerName = escapeHtml(`${invoice.customer.first_name} ${invoice.customer.last_name}`);
+    const companyNameHtml = escapeHtml(company.company_name || "");
+    const companyNameOrFallbackHtml = escapeHtml(company.company_name || "oss");
 
     const periodStart = new Date(invoice.period_start);
     const periodMonth = periodStart.toLocaleDateString("sv-SE", { month: "long", year: "numeric" });
@@ -393,15 +404,15 @@ export async function POST(req: Request) {
     const paymentInfoHtml = (company.bankgiro || company.plusgiro || company.swish) ? `
           <div style="background: #f0fdf4; border-radius: 8px; padding: 16px; margin: 24px 0;">
             <p style="margin: 0 0 8px 0; font-weight: 600; color: #166534;">Betalningsinformation</p>
-            ${company.bankgiro ? `<p style="margin: 0; color: #166534;">Bankgiro: ${company.bankgiro}</p>` : ""}
-            ${company.plusgiro ? `<p style="margin: 4px 0 0 0; color: #166534;">Plusgiro: ${company.plusgiro}</p>` : ""}
-            ${company.swish ? `<p style="margin: 4px 0 0 0; color: #166534;">Swish: ${company.swish}</p>` : ""}
+            ${company.bankgiro ? `<p style="margin: 0; color: #166534;">Bankgiro: ${escapeHtml(company.bankgiro)}</p>` : ""}
+            ${company.plusgiro ? `<p style="margin: 4px 0 0 0; color: #166534;">Plusgiro: ${escapeHtml(company.plusgiro)}</p>` : ""}
+            ${company.swish ? `<p style="margin: 4px 0 0 0; color: #166534;">Swish: ${escapeHtml(company.swish)}</p>` : ""}
             <p style="margin: 8px 0 0 0; font-size: 14px; color: #15803d;">Ange fakturanummer #${invoice.invoice_number} vid betalning</p>
           </div>
     ` : "";
 
     // Build footer location
-    const footerLocation = [company.city, company.country].filter(Boolean).join(", ") || "";
+    const footerLocation = escapeHtml([company.city, company.country].filter(Boolean).join(", ") || "");
 
     const html = `
       <!DOCTYPE html>
@@ -413,7 +424,7 @@ export async function POST(req: Request) {
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
         <div style="display:none; font-size:0; line-height:0; max-height:0; mso-hide:all;">
-          Faktura #${invoice.invoice_number} för ${periodMonth} från ${company.company_name || "oss"}.
+          Faktura #${invoice.invoice_number} för ${periodMonth} från ${companyNameOrFallbackHtml}.
         </div>
 
         <div style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); padding: 30px; border-radius: 12px 12px 0 0;">
@@ -429,7 +440,7 @@ export async function POST(req: Request) {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; color: #6b7280;">Beskrivning</td>
-                <td style="padding: 8px 0; text-align: right; font-weight: 500;">${invoice.description || `Serviceavtal ${invoice.service_type || "Webbhotell"}`}</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: 500;">${escapeHtml(invoice.description || `Serviceavtal ${invoice.service_type || "Webbhotell"}`)}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280;">Belopp exkl. moms</td>
@@ -460,8 +471,8 @@ export async function POST(req: Request) {
         </div>
 
         <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 14px;">
-          ${hasLogo ? `<img src="cid:logo-signature" alt="${company.company_name || "Logo"}" style="height: 32px; width: auto; margin-bottom: 12px;" />` : ""}
-          <p style="margin: 0;">${company.company_name || ""}</p>
+          ${hasLogo ? `<img src="cid:logo-signature" alt="${escapeHtml(company.company_name || "Logo")}" style="height: 32px; width: auto; margin-bottom: 12px;" />` : ""}
+          <p style="margin: 0;">${companyNameHtml}</p>
           ${footerLocation ? `<p style="margin: 4px 0 0 0;">${footerLocation}</p>` : ""}
         </div>
       </body>

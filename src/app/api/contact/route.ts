@@ -51,6 +51,14 @@ const transporter = nodemailer.createTransport({
 
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
+const escapeHtml = (s: string) =>
+  s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 export async function POST(req: Request) {
   try {
     // Rate limiting - only if Upstash is configured
@@ -141,11 +149,11 @@ export async function POST(req: Request) {
           </div>
           <div style="max-width: 600px; margin: 0 auto;">
             <h2 style="margin:0 0 8px">Nytt kontaktmeddelande</h2>
-            <p><strong>Namn:</strong> ${name}</p>
-            <p><strong>E-post:</strong> ${email}</p>
-            <p><strong>Telefon:</strong> ${phone}</p>
+            <p><strong>Namn:</strong> ${escapeHtml(name)}</p>
+            <p><strong>E-post:</strong> ${escapeHtml(email)}</p>
+            <p><strong>Telefon:</strong> ${escapeHtml(phone)}</p>
             <p><strong>Meddelande:</strong></p>
-            <p style="white-space:pre-line">${message}</p>
+            <p style="white-space:pre-line">${escapeHtml(message)}</p>
           </div>
         </body>
         </html>

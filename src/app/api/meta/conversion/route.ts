@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { createClient } from "@/utils/supabase/server";
 
 const META_PIXEL_ID = process.env.META_PIXEL_ID || "";
 const META_ACCESS_TOKEN = process.env.META_CAPI_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN || process.env.FACEBOOK_ACCESS_TOKEN || "";
@@ -51,12 +52,35 @@ function getLeadScore(status: string): number {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
-    const { customer, previousStatus } = body;
+    const { customerId, previousStatus } = body;
+
+    if (!customerId || typeof customerId !== "string") {
+      return NextResponse.json({ success: false, error: "customerId required" }, { status: 400 });
+    }
 
     if (!META_ACCESS_TOKEN || !META_PIXEL_ID) {
       console.warn("META_ACCESS_TOKEN or META_PIXEL_ID not configured");
       return NextResponse.json({ success: false, error: "Meta not configured" }, { status: 200 });
+    }
+
+    // Fetch customer from DB — never trust client-supplied PII for an outbound
+    // tracking call. The authenticated admin's RLS lets them read customers.
+    const { data: customer, error: customerError } = await supabase
+      .from("customers")
+      .select("status, email, phone, first_name, last_name, city, postal_code, country, meta_lead_id, fbclid")
+      .eq("id", customerId)
+      .single();
+
+    if (customerError || !customer) {
+      return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
     }
 
     // Bygg user_data med hashade värden
@@ -150,13 +174,13 @@ export async function POST(request: NextRequest) {
     const result = await response.json();
 
     if (!response.ok) {
-      console.error("❌ META FEL:", result.error?.message || result);
-      return NextResponse.json({ success: false, error: result }, { status: 200 });
+      console.error("❌ META FEL:", result.error?.message || "request failed");
+      return NextResponse.json({ success: false, error: "Meta request failed" }, { status: 200 });
     }
 
     console.log("✅ META LYCKADES! Events mottagna:", result.events_received || 1);
 
-    return NextResponse.json({ success: true, result });
+    return NextResponse.json({ success: true, eventsReceived: result.events_received || 1 });
   } catch (error) {
     console.error("Meta conversion error:", error);
     return NextResponse.json({ success: false, error: "Internal error" }, { status: 500 });

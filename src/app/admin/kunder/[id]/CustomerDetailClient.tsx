@@ -63,14 +63,14 @@ export default function CustomerDetailClient({
     if (!error) {
       setCustomer((prev) => ({ ...prev, status }));
 
-      // Send to Meta Conversions API
+      // Send to Meta Conversions API. Server fetches customer from DB.
       if (previousStatus !== status) {
         try {
           await fetch("/api/meta/conversion", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              customer: { ...customer, status },
+              customerId: customer.id,
               previousStatus,
             }),
           });

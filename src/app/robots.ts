@@ -3,7 +3,13 @@ import type { MetadataRoute } from "next";
 export default function robots(): MetadataRoute.Robots {
   const base = "https://intenzze.com";
   return {
-    rules: [{ userAgent: "*", allow: "/" }],
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/admin", "/api/", "/offert/", "/formular/", "/login"],
+      },
+    ],
     sitemap: `${base}/sitemap.xml`,
     host: base,
   };

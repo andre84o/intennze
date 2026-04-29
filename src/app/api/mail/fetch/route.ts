@@ -14,7 +14,7 @@ const IMAP_CONFIG = {
     port: 993,
     tls: true,
     authTimeout: 10000,
-    tlsOptions: { rejectUnauthorized: false },
+    tlsOptions: { rejectUnauthorized: true },
   },
 };
 
@@ -148,7 +148,7 @@ export async function POST() {
   } catch (error) {
     console.error("IMAP fel:", error);
     return NextResponse.json(
-      { error: "Kunde inte hämta mail", details: String(error) },
+      { error: "Kunde inte hämta mail" },
       { status: 500 }
     );
   } finally {

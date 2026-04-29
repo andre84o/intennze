@@ -36,7 +36,16 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/admin";
+  const redirectParam = searchParams.get("redirect");
+  // Only allow internal absolute paths. Reject protocol-relative ("//evil.com")
+  // and any non-path string to prevent open-redirect abuse.
+  const redirect =
+    redirectParam &&
+    redirectParam.startsWith("/") &&
+    !redirectParam.startsWith("//") &&
+    !redirectParam.startsWith("/\\")
+      ? redirectParam
+      : "/admin";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

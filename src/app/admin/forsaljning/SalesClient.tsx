@@ -722,20 +722,19 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
       .eq("id", customerId);
 
     if (!error) {
-      const updatedCustomer = { ...customer, [field]: value };
-
       setCustomers((prev) =>
         prev.map((c) => (c.id === customerId ? { ...c, [field]: value } : c))
       );
 
-      // Skicka till Meta Conversions API vid statusändring
+      // Skicka till Meta Conversions API vid statusändring.
+      // Server hämtar customer-data från DB — vi skickar bara id.
       if (field === "status" && previousStatus !== value) {
         try {
           await fetch("/api/meta/conversion", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              customer: updatedCustomer,
+              customerId,
               previousStatus,
             }),
           });

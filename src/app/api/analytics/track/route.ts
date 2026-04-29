@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Use service role to bypass RLS for anonymous inserts
+// Public endpoint — use anon key. The `anon_insert_page_views` RLS policy
+// permits inserts; no service role needed. Service role on a public endpoint
+// would bypass RLS and is unnecessary for analytics writes.
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+// Length caps to prevent abuse / unbounded writes.
+const truncate = (v: unknown, max: number): string | null => {
+  if (typeof v !== "string") return null;
+  return v.slice(0, max);
+};
 
 function getDeviceType(userAgent: string): "desktop" | "mobile" | "tablet" {
   if (/tablet|ipad|playbook|silk/i.test(userAgent)) return "tablet";
@@ -56,10 +64,28 @@ function getSource(referrer: string | null, utmSource: string | null): "direct" 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { pagePath, pageTitle, visitorId, sessionId, referrer, utmSource, utmMedium, utmCampaign } = body;
 
-    // Don't track admin pages
-    if (pagePath?.startsWith("/admin") || pagePath?.startsWith("/login")) {
+    const pagePath = truncate(body.pagePath, 512);
+    const pageTitle = truncate(body.pageTitle, 256);
+    const visitorId = truncate(body.visitorId, 128);
+    const sessionId = truncate(body.sessionId, 128);
+    const referrerRaw = truncate(body.referrer, 512);
+    const utmSource = truncate(body.utmSource, 128);
+    const utmMedium = truncate(body.utmMedium, 128);
+    const utmCampaign = truncate(body.utmCampaign, 128);
+
+    // visitorId is required for the RLS policy and for meaningful analytics.
+    if (!visitorId) {
+      return NextResponse.json({ ok: false, error: "visitorId required" }, { status: 400 });
+    }
+
+    // Don't track admin/login or token-bearing public pages.
+    if (
+      pagePath?.startsWith("/admin") ||
+      pagePath?.startsWith("/login") ||
+      pagePath?.startsWith("/offert/") ||
+      pagePath?.startsWith("/formular/")
+    ) {
       return NextResponse.json({ ok: true, tracked: false });
     }
 
@@ -73,11 +99,11 @@ export async function POST(req: Request) {
       device_type: getDeviceType(userAgent),
       browser: getBrowser(userAgent),
       os: getOS(userAgent),
-      referrer: referrer || null,
-      source: getSource(referrer, utmSource),
-      utm_source: utmSource || null,
-      utm_medium: utmMedium || null,
-      utm_campaign: utmCampaign || null,
+      referrer: referrerRaw,
+      source: getSource(referrerRaw, utmSource),
+      utm_source: utmSource,
+      utm_medium: utmMedium,
+      utm_campaign: utmCampaign,
     };
 
     const { error } = await supabase.from("page_views").insert(pageView);

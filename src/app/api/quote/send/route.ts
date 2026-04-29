@@ -30,6 +30,15 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Escape DB-supplied strings before interpolating into HTML email templates.
+const escapeHtml = (s: unknown): string =>
+  String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
@@ -86,10 +95,10 @@ export async function POST(req: Request) {
         (item: { description: string; details: string | null; quantity: number; unit: string; unit_price: number; total: number }) => `
         <tr>
           <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
-            <strong>${item.description}</strong>
-            ${item.details ? `<p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280; white-space: pre-line;">${item.details}</p>` : ""}
+            <strong>${escapeHtml(item.description)}</strong>
+            ${item.details ? `<p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280; white-space: pre-line;">${escapeHtml(item.details)}</p>` : ""}
           </td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center; vertical-align: top;">${item.quantity} ${item.unit}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center; vertical-align: top;">${item.quantity} ${escapeHtml(item.unit)}</td>
           <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right; vertical-align: top;">${formatCurrency(item.unit_price)}</td>
           <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right; vertical-align: top;">${formatCurrency(item.total)}</td>
         </tr>
@@ -97,7 +106,7 @@ export async function POST(req: Request) {
       )
       .join("");
 
-    const customerName = `${quote.customer.first_name} ${quote.customer.last_name}`;
+    const customerName = escapeHtml(`${quote.customer.first_name} ${quote.customer.last_name}`);
 
     // Generate public token for customer response
     const publicToken = quote.public_token || generateToken();
@@ -136,14 +145,14 @@ export async function POST(req: Request) {
         </div>
         <div style="background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%); padding: 30px; border-radius: 12px 12px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 28px;">Offert #${quote.quote_number}</h1>
-          <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0;">${quote.title}</p>
+          <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0;">${escapeHtml(quote.title)}</p>
         </div>
 
         <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
           <p style="margin-top: 0;">Hej ${customerName},</p>
           <p>Tack för ditt intresse! Här kommer offerten som vi diskuterat.</p>
 
-          ${quote.description ? `<p style="color: #6b7280;">${quote.description}</p>` : ""}
+          ${quote.description ? `<p style="color: #6b7280;">${escapeHtml(quote.description)}</p>` : ""}
 
           <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 24px 0;">
             <table style="width: 100%; border-collapse: collapse;">
@@ -178,7 +187,7 @@ export async function POST(req: Request) {
 
           <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
             <p style="margin: 0; color: #92400e;">
-              <strong>Giltig t.o.m.:</strong> ${quote.valid_until || "Tillsvidare"}
+              <strong>Giltig t.o.m.:</strong> ${escapeHtml(quote.valid_until || "Tillsvidare")}
             </p>
           </div>
 
@@ -187,7 +196,7 @@ export async function POST(req: Request) {
               ? `
             <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
               <h3 style="margin: 0 0 12px 0; font-size: 16px;">Villkor</h3>
-              <p style="color: #6b7280; white-space: pre-line; margin: 0;">${quote.terms}</p>
+              <p style="color: #6b7280; white-space: pre-line; margin: 0;">${escapeHtml(quote.terms)}</p>
             </div>
           `
               : ""
