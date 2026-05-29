@@ -30,7 +30,7 @@ export default function HomeContent() {
 
   const demos = [
     {
-      url: "/demos/bygg",
+      url: "/demo/bygg",
       screenshotUrl: "https://demo-bygg.vercel.app/",
       title: sv ? "Byggföretag" : "Construction",
       desc: sv ? "Modern sida för byggbranschen" : "Modern site for construction industry",
@@ -38,14 +38,16 @@ export default function HomeContent() {
       border: "hover:border-cyan-500/50"
     },
     {
-      url: "https://demo-barber-seven.vercel.app/",
+      url: "/demo/barber",
+      screenshotUrl: "https://demo-barber-seven.vercel.app/",
       title: sv ? "Barber" : "Barber",
       desc: sv ? "Stilren design för salong" : "Sleek design for salons",
       gradient: "from-purple-500/50 to-purple-500/20",
       border: "hover:border-purple-500/50"
     },
     {
-      url: "https://demo-redovisning.vercel.app/",
+      url: "/demo/redovisning",
+      screenshotUrl: "https://demo-redovisning.vercel.app/",
       title: sv ? "Redovisning" : "Accounting",
       desc: sv ? "Professionell och trovärdig" : "Professional and trustworthy",
       gradient: "from-fuchsia-500/50 to-fuchsia-500/20",
