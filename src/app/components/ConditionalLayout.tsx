@@ -16,8 +16,8 @@ export default function ConditionalLayout({
 }: ConditionalLayoutProps) {
   const pathname = usePathname();
 
-  // Hide header and footer on admin and login pages
-  const hideLayout = pathname.startsWith("/admin") || pathname === "/login";
+  // Hide header and footer on admin, login, and demo pages
+  const hideLayout = pathname.startsWith("/admin") || pathname === "/login" || pathname.startsWith("/demos") || pathname.startsWith("/demos");
 
   return (
     <>

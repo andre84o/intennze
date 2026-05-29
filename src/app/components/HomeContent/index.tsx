@@ -30,7 +30,8 @@ export default function HomeContent() {
 
   const demos = [
     {
-      url: "https://demo-bygg.vercel.app/",
+      url: "/demos/bygg",
+      screenshotUrl: "https://demo-bygg.vercel.app/",
       title: sv ? "Byggföretag" : "Construction",
       desc: sv ? "Modern sida för byggbranschen" : "Modern site for construction industry",
       gradient: "from-cyan-500/50 to-cyan-500/20",
@@ -398,7 +399,7 @@ export default function HomeContent() {
                 <div className="relative aspect-[16/10] overflow-hidden">
                   <div className={`absolute inset-0 bg-gradient-to-t ${demo.gradient} opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-10`} />
                   <img
-                    src={`https://api.microlink.io/?url=${encodeURIComponent(demo.url)}&screenshot=true&meta=false&embed=screenshot.url`}
+                    src={`https://api.microlink.io/?url=${encodeURIComponent((demo as any).screenshotUrl ?? demo.url)}&screenshot=true&meta=false&embed=screenshot.url`}
                     alt={demo.title}
                     className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
