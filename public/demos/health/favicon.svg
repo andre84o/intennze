@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c9a962"/>
+      <stop offset="50%" style="stop-color:#ddc78e"/>
+      <stop offset="100%" style="stop-color:#c9a962"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="15" fill="#4a5841"/>
+
+  <!-- Inner circle with cream -->
+  <circle cx="16" cy="16" r="12" fill="#faf8f5"/>
+
+  <!-- Stylized lotus/leaf - representing serenity and wellness -->
+  <!-- Center petal -->
+  <path d="M16 8 C16 8, 20 14, 16 20 C12 14, 16 8, 16 8" fill="#5c6d50"/>
+
+  <!-- Left petal -->
+  <path d="M10 14 C10 14, 14 16, 14 22 C10 18, 10 14, 10 14" fill="#768966"/>
+
+  <!-- Right petal -->
+  <path d="M22 14 C22 14, 18 16, 18 22 C22 18, 22 14, 22 14" fill="#768966"/>
+
+  <!-- Gold accent dot at center -->
+  <circle cx="16" cy="15" r="2" fill="url(#goldGradient)"/>
+</svg>

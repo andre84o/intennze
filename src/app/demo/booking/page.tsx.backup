@@ -1,0 +1,185 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Calendar from './components/Calendar';
+import TimeSlots from './components/TimeSlots';
+import BookingForm from './components/BookingForm';
+import BookingList from './components/BookingList';
+import { storage } from './lib/storage';
+import { Booking } from './types/booking';
+import { formatDate } from './lib/utils';
+
+export default function Home() {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [activeTab, setActiveTab] = useState<'book' | 'list'>('book');
+
+  useEffect(() => {
+    // Load bookings from localStorage when component mounts
+    setBookings(storage.getBookings());
+  }, []);
+
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+    setSelectedTime(null);
+    setShowForm(false);
+  };
+
+  const handleTimeSelect = (time: string) => {
+    setSelectedTime(time);
+    setShowForm(true);
+  };
+
+  const handleBookingSubmit = (bookingData: Omit<Booking, 'id' | 'createdAt'>) => {
+    const newBooking: Booking = {
+      ...bookingData,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString()
+    };
+
+    storage.saveBooking(newBooking);
+    setBookings(storage.getBookings());
+
+    // Reset state
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setShowForm(false);
+
+    // Show success message
+    alert('Bokningen är bekräftad! Du kommer att få en bekräftelse via e-post.');
+  };
+
+  const handleBookingCancel = () => {
+    setShowForm(false);
+    setSelectedTime(null);
+  };
+
+  const handleBookingDelete = (id: string) => {
+    storage.deleteBooking(id);
+    setBookings(storage.getBookings());
+  };
+
+  const bookedDates = Array.from(new Set(bookings.map(b => b.date)));
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-zinc-900 dark:to-zinc-800 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2">
+            Bookningskalender
+          </h1>
+          <p className="text-zinc-600 dark:text-zinc-400">
+            Boka tid enkelt och smidigt
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-md p-1 inline-flex">
+            <button
+              onClick={() => setActiveTab('book')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'book'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              Boka tid
+            </button>
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'list'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              Mina bokningar
+              {bookings.length > 0 && (
+                <span className="ml-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs rounded-full">
+                  {bookings.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        {activeTab === 'book' ? (
+          <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
+            {/* Calendar */}
+            <Calendar
+              onDateSelect={handleDateSelect}
+              selectedDate={selectedDate}
+              bookedDates={bookedDates}
+            />
+
+            {/* Time slots or Booking form */}
+            {selectedDate && !showForm && (
+              <TimeSlots
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                onTimeSelect={handleTimeSelect}
+                bookings={bookings}
+              />
+            )}
+
+            {selectedDate && selectedTime && showForm && (
+              <BookingForm
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                onSubmit={handleBookingSubmit}
+                onCancel={handleBookingCancel}
+              />
+            )}
+
+            {/* Instructions */}
+            {!selectedDate && (
+              <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6">
+                <h3 className="text-lg font-semibold mb-4">Hur bokar jag?</h3>
+                <ol className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-xs font-bold">
+                      1
+                    </span>
+                    <span>Välj ett datum i kalendern</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-xs font-bold">
+                      2
+                    </span>
+                    <span>Välj en ledig tid</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-xs font-bold">
+                      3
+                    </span>
+                    <span>Fyll i dina uppgifter och bekräfta</span>
+                  </li>
+                </ol>
+
+                <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                    <strong>Observera:</strong> Bokningar måste göras minst 24 timmar i förväg.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <BookingList bookings={bookings} onDelete={handleBookingDelete} />
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="mt-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          <p>Har du frågor? Kontakta oss på info@exempel.se eller 070-123 45 67</p>
+        </div>
+      </div>
+    </div>
+  );
+}

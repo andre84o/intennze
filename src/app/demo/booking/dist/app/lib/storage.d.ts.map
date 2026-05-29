@@ -1,0 +1,1 @@
+{"version":3,"file":"storage.d.ts","sourceRoot":"","sources":["../../../app/lib/storage.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,kBAAkB,CAAC;AAI3C,eAAO,MAAM,OAAO;uBACD,OAAO,EAAE;2BAWH,OAAO,KAAG,IAAI;wBAWjB,MAAM,kBAAkB,OAAO,KAAG,IAAI;wBActC,MAAM,KAAG,IAAI;8BAWP,MAAM,KAAG,OAAO,EAAE;CAG7C,CAAC"}

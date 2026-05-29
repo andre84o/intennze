@@ -54,35 +54,40 @@ export default function HomeContent() {
       border: "hover:border-fuchsia-500/50"
     },
     {
-      url: "https://demo-restaurang.vercel.app/",
+      url: "/demo/restaurang",
+      screenshotUrl: "https://demo-restaurang.vercel.app/",
       title: sv ? "Restaurang" : "Restaurant",
       desc: sv ? "Aptitretande webbupplevelse" : "Appetizing web experience",
       gradient: "from-amber-500/50 to-amber-500/20",
       border: "hover:border-amber-500/50"
     },
     {
-      url: "https://demo-health-red.vercel.app/",
+      url: "/demo/health",
+      screenshotUrl: "https://demo-health-red.vercel.app/",
       title: sv ? "Hälsa" : "Health",
       desc: sv ? "Fräsch design för hälsobranschen" : "Fresh design for health industry",
       gradient: "from-emerald-500/50 to-emerald-500/20",
       border: "hover:border-emerald-500/50"
     },
     {
-      url: "https://demo-law-jet.vercel.app/",
+      url: "/demo/lawyer",
+      screenshotUrl: "https://demo-law-jet.vercel.app/",
       title: sv ? "Juristbyrå" : "Law Firm",
       desc: sv ? "Professionell juridisk rådgivning" : "Professional legal advice",
       gradient: "from-indigo-500/50 to-indigo-500/20",
       border: "hover:border-indigo-500/50"
     },
     {
-      url: "https://clinic-two-omega.vercel.app",
+      url: "/demo/clinic",
+      screenshotUrl: "https://clinic-two-omega.vercel.app",
       title: sv ? "Klinik" : "Clinic",
       desc: sv ? "Modern design för vårdmottagning" : "Modern design for healthcare",
       gradient: "from-rose-500/50 to-rose-500/20",
       border: "hover:border-rose-500/50"
     },
     {
-      url: "https://mugg.vercel.app/",
+      url: "/demo/mugg",
+      screenshotUrl: "https://mugg.vercel.app/",
       title: sv ? "Mugg Shop" : "Mug Shop",
       desc: sv ? "E-handel byggt på Shopify" : "E-commerce built on Shopify",
       gradient: "from-green-500/50 to-green-500/20",
@@ -90,7 +95,8 @@ export default function HomeContent() {
       platform: "shopify"
     },
     {
-      url: "https://booking-ten-psi.vercel.app/",
+      url: "/demo/booking",
+      screenshotUrl: "https://booking-ten-psi.vercel.app/",
       title: sv ? "Bokningssystem" : "Booking System",
       desc: sv ? "Smart bokning för företag" : "Smart booking for businesses",
       gradient: "from-sky-500/50 to-sky-500/20",
