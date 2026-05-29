@@ -20,6 +20,12 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Skip auth entirely for routes that don't need it
+  const pathname = request.nextUrl.pathname;
+  if (!pathname.startsWith("/admin") && pathname !== "/login") {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
     supabaseUrl,
     supabaseAnonKey,
@@ -42,10 +48,6 @@ export async function updateSession(request: NextRequest) {
       },
     }
   );
-
-  // IMPORTANT: Do not add code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make your
-  // application vulnerable to security issues.
 
   const {
     data: { user },

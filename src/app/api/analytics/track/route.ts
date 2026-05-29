@@ -120,12 +120,12 @@ export async function POST(req: Request) {
 
     if (error) {
       console.error("Analytics tracking error:", error);
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: true, tracked: false }, { status: 200 });
     }
 
     return NextResponse.json({ ok: true, tracked: true });
   } catch (err) {
     console.error("Analytics error:", err);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    return NextResponse.json({ ok: true, tracked: false }, { status: 200 });
   }
 }
