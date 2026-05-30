@@ -1,8 +1,8 @@
 import { createStorefrontApiClient } from "@shopify/storefront-api-client";
 
-const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN!;
+const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || "demo.myshopify.com";
 const storefrontAccessToken =
-  process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN!;
+  process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN || "demo-token";
 
 export const shopifyClient = createStorefrontApiClient({
   storeDomain: domain,
