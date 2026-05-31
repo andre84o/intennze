@@ -171,7 +171,8 @@ export default function AdminSidebar() {
           <div className="px-2 sm:px-4 pt-2">
             <button
               onClick={() => setIsEditMode(!isEditMode)}
-              className={`w-full flex items-center justify-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all ${
+              title={isEditMode ? "Klar" : "Ändra ordning"}
+              className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all ${
                 isEditMode
                   ? "bg-blue-100 text-blue-600 border border-blue-200"
                   : "bg-gray-50 text-gray-500 hover:bg-gray-100"
@@ -180,7 +181,6 @@ export default function AdminSidebar() {
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
-              {isEditMode ? "Klar" : "Ändra ordning"}
             </button>
           </div>
         )}

@@ -7,6 +7,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 @keyframes slide-in-left {
   0%   { transform: translateX(-800px); opacity: 0; }
   100% { transform: translateX(0);     opacity: 1; }

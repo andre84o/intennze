@@ -35,12 +35,13 @@ export interface DesignProps {
   onUpdateCustomer: (id: string, field: string, value: string) => void;
   onUpdateCustomerBoolean: (id: string, field: string, value: boolean) => void;
   onAddInteraction: (customerId: string, type: InteractionType, description: string) => void;
+  onDeleteInteraction: (id: string) => void;
   onAddReminder: (customerId: string, form: ReminderFormData) => void;
   onCompleteReminder: (id: string) => void;
   onSendQuestionnaire: (id: string) => void;
   onViewResponses: (id: string) => void;
   onMarkRead: (id: string) => void;
-  onOpenReminderForm: (id: string) => void;
+  onReplaceCustomer: (customer: Customer) => void;
 }
 
 export const statusLabels: Record<CustomerStatus, string> = {

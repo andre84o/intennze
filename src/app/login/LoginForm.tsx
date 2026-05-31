@@ -3,18 +3,19 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { lookupEmailByUsername } from "./actions";
 
 function getErrorMessage(error: { message: string; status?: number }): string {
   const msg = error.message.toLowerCase();
 
   if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
-    return "Fel e-post eller lösenord. Kontrollera dina uppgifter och försök igen.";
+    return "Fel uppgifter. Kontrollera användarnamn/e-post och lösenord.";
   }
   if (msg.includes("email not confirmed")) {
     return "E-postadressen är inte bekräftad. Kontrollera din inkorg eller be admin att bekräfta kontot.";
   }
   if (msg.includes("user not found")) {
-    return "Ingen användare hittades med denna e-postadress.";
+    return "Ingen användare hittades.";
   }
   if (msg.includes("too many requests") || msg.includes("rate limit")) {
     return "För många inloggningsförsök. Vänta en stund och försök igen.";
@@ -30,15 +31,13 @@ function getErrorMessage(error: { message: string; status?: number }): string {
 }
 
 export default function LoginForm() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect");
-  // Only allow internal absolute paths. Reject protocol-relative ("//evil.com")
-  // and any non-path string to prevent open-redirect abuse.
   const redirect =
     redirectParam &&
     redirectParam.startsWith("/") &&
@@ -52,12 +51,21 @@ export default function LoginForm() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    let email = identifier.trim();
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // If not an email address, look up by username
+    if (!email.includes("@")) {
+      const resolved = await lookupEmailByUsername(email);
+      if (!resolved) {
+        setError("Inget konto hittades med detta användarnamn.");
+        setLoading(false);
+        return;
+      }
+      email = resolved;
+    }
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError(getErrorMessage(error));
@@ -75,19 +83,20 @@ export default function LoginForm() {
         <div className="space-y-4">
           <div>
             <label
-              htmlFor="email"
+              htmlFor="identifier"
               className="block text-sm font-medium text-slate-300 mb-2"
             >
-              E-post
+              Användarnamn eller e-post
             </label>
             <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="identifier"
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
+              autoComplete="username"
               className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-              placeholder="admin@example.com"
+              placeholder="användarnamn eller e-post"
             />
           </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Customer, CustomerStatus, customerStatusLabels, Reminder, ReminderType, reminderTypeLabels, CustomerInteraction, InteractionType } from "@/types/database";
+import { Customer, CustomerStatus, Reminder, CustomerInteraction, InteractionType } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
 import { DesignProps, Questionnaire, ReminderFormData } from "./designs/types";
 import Design1Pipeline from "./designs/Design1Pipeline";
@@ -29,8 +29,6 @@ export default function SalesClient({ customers: init, reminders: initR, interac
   const [questionnaires, setQuestionnaires] = useState(initQ);
   const [savingCustomer, setSavingCustomer] = useState<string | null>(null);
   const [sendingQuestionnaire, setSendingQuestionnaire] = useState<string | null>(null);
-  const [showReminderForm, setShowReminderForm] = useState<string | null>(null);
-  const [reminderForm, setReminderForm] = useState<ReminderFormData>({ title: "", date: "", time: "", type: "follow_up" });
   const [showSuccessPopup, setShowSuccessPopup] = useState<{ show: boolean; email?: string }>({ show: false });
   const [showResponsesPopup, setShowResponsesPopup] = useState<string | null>(null);
   const [questionnaireResponses, setQuestionnaireResponses] = useState<Record<string, unknown> | null>(null);
@@ -79,11 +77,17 @@ export default function SalesClient({ customers: init, reminders: initR, interac
     if (!error && data) setInteractions(p => [data, ...p]);
   };
 
+  const onDeleteInteraction = async (id: string) => {
+    const sb = createClient();
+    const { error } = await sb.from("customer_interactions").delete().eq("id", id);
+    if (!error) setInteractions(p => p.filter(i => i.id !== id));
+  };
+
   const onAddReminder = async (customerId: string, form: ReminderFormData) => {
     if (!form.title || !form.date) return;
     const sb = createClient();
     const { data, error } = await sb.from("reminders").insert({ customer_id: customerId, title: form.title, reminder_date: form.date, reminder_time: form.time || null, type: form.type }).select().single();
-    if (!error && data) { setReminders(p => [...p, data]); setShowReminderForm(null); setReminderForm({ title: "", date: "", time: "", type: "follow_up" }); }
+    if (!error && data) { setReminders(p => [...p, data]); }
   };
 
   const onCompleteReminder = async (id: string) => {
@@ -118,6 +122,10 @@ export default function SalesClient({ customers: init, reminders: initR, interac
     setLoadingResponses(false);
   };
 
+  const onReplaceCustomer = (c: Customer) => {
+    setCustomers(p => p.map(x => x.id === c.id ? c : x));
+  };
+
   const onMarkRead = async (id: string) => {
     const c = customers.find(c => c.id === id);
     if (c && !c.is_read) {
@@ -136,7 +144,7 @@ export default function SalesClient({ customers: init, reminders: initR, interac
     onUpdateCustomer, onUpdateCustomerBoolean,
     onAddInteraction, onAddReminder, onCompleteReminder,
     onSendQuestionnaire, onViewResponses, onMarkRead,
-    onOpenReminderForm: (id) => setShowReminderForm(id),
+    onDeleteInteraction, onReplaceCustomer,
   };
 
   return (
@@ -148,54 +156,14 @@ export default function SalesClient({ customers: init, reminders: initR, interac
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">CRM</h1>
           <p className="text-sm text-slate-400 mt-0.5">Hantera leads och kunduppföljning</p>
         </div>
-        <button onClick={() => setShowQuestionsHelper(true)} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors self-start">
+        <button onClick={() => setShowQuestionsHelper(true)} title="Formulärfrågor" className="flex items-center justify-center w-9 h-9 bg-white border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 shadow-sm transition-colors self-start">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>
-          Formulärfrågor
         </button>
       </div>
 
       {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>}
 
       <Design1Pipeline {...designProps} />
-
-      {/* ── Reminder form modal ─────────────────────────────────────────────── */}
-      {showReminderForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowReminderForm(null)} />
-          <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl">
-            <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900">Ny påminnelse</h2>
-              <button onClick={() => setShowReminderForm(null)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Titel *</label>
-                <input type="text" value={reminderForm.title} onChange={e => setReminderForm({ ...reminderForm, title: e.target.value })} placeholder="T.ex. Ring kunden" className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Datum *</label>
-                  <input type="date" value={reminderForm.date} onChange={e => setReminderForm({ ...reminderForm, date: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tid</label>
-                  <input type="time" value={reminderForm.time} onChange={e => setReminderForm({ ...reminderForm, time: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Typ</label>
-                <select value={reminderForm.type} onChange={e => setReminderForm({ ...reminderForm, type: e.target.value as ReminderType })} className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  {Object.entries(reminderTypeLabels).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="border-t border-slate-100 px-6 py-4 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
-              <button onClick={() => setShowReminderForm(null)} className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 font-medium">Avbryt</button>
-              <button onClick={() => onAddReminder(showReminderForm, reminderForm)} disabled={!reminderForm.title || !reminderForm.date} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">Spara</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Success popup ───────────────────────────────────────────────────── */}
       {showSuccessPopup.show && (
