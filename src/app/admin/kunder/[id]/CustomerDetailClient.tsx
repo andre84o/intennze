@@ -193,6 +193,26 @@ export default function CustomerDetailClient({
                   </p>
                 </div>
               )}
+              {customer.category && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">Kategori</label>
+                  <p className="text-gray-900">{customer.category}</p>
+                </div>
+              )}
+              {customer.website_url && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">Webbplats</label>
+                  <a href={customer.website_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 hover:text-blue-700 font-medium truncate">
+                    {customer.website_url}
+                  </a>
+                </div>
+              )}
+              {customer.instagram_url && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">Instagram</label>
+                  <p className="text-gray-900">{customer.instagram_url}</p>
+                </div>
+              )}
               {customer.org_number && (
                 <div>
                   <label className="text-xs text-gray-500 uppercase tracking-wider font-medium">Org.nummer</label>

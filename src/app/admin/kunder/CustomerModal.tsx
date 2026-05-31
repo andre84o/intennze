@@ -20,6 +20,9 @@ const initialFormData: CustomerFormData = {
   city: "",
   country: "Sverige",
   company_name: "",
+  category: "",
+  instagram_url: "",
+  website_url: "",
   org_number: "",
   contact_person: "",
   position: "",
@@ -49,6 +52,9 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
           city: customer.city || "",
           country: customer.country || "Sverige",
           company_name: customer.company_name || "",
+          category: customer.category || "",
+          instagram_url: customer.instagram_url || "",
+          website_url: customer.website_url || "",
           org_number: customer.org_number || "",
           contact_person: customer.contact_person || "",
           position: customer.position || "",
@@ -86,6 +92,9 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
       city: formData.city || null,
       country: formData.country || null,
       company_name: formData.company_name || null,
+      category: formData.category || null,
+      instagram_url: formData.instagram_url || null,
+      website_url: formData.website_url || null,
       org_number: formData.org_number || null,
       contact_person: formData.contact_person || null,
       position: formData.position || null,
@@ -259,6 +268,39 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
                         onChange={(e) => setFormData({ ...formData, org_number: e.target.value })}
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
                         placeholder="556677-8899"
+                      />
+                    </div>
+
+                    <div className="group col-span-2">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">Kategori</label>
+                      <input
+                        type="text"
+                        value={formData.category}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                        placeholder="t.ex. Restaurang, E-handel"
+                      />
+                    </div>
+
+                    <div className="group">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">Webbplats</label>
+                      <input
+                        type="url"
+                        value={formData.website_url}
+                        onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                        placeholder="https://foretag.se"
+                      />
+                    </div>
+
+                    <div className="group">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">Instagram</label>
+                      <input
+                        type="text"
+                        value={formData.instagram_url}
+                        onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
+                        placeholder="@foretagsnamn"
                       />
                     </div>
 

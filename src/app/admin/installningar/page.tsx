@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
+import ImportLeadsCard from "./ImportLeadsCard";
 
 interface CompanySettings {
   company_name: string;
@@ -531,6 +532,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <ImportLeadsCard />
 
       {/* Sign out */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">

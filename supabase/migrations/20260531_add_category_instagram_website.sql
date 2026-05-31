@@ -1,0 +1,4 @@
+
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS instagram_url TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS website_url TEXT;
