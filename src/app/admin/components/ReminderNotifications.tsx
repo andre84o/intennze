@@ -180,7 +180,7 @@ export default function ReminderNotifications() {
           {/* Footer */}
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
             <Link
-              href="/admin/forsaljning"
+              href="/admin/crm"
               className="text-sm text-blue-600 hover:text-blue-500 transition-colors"
             >
               Gå till CRM →

@@ -167,7 +167,7 @@ export async function POST(req: Request) {
       `📞 <b>Telefon:</b> ${phone}\n` +
       `📧 <b>E-post:</b> ${email}\n\n` +
       `💬 <b>Meddelande:</b>\n${message}\n\n` +
-      `🔗 <a href="https://intenzze.com/admin/forsaljning">Öppna CRM</a>`
+      `🔗 <a href="https://intenzze.com/admin/crm">Öppna CRM</a>`
     );
 
     return NextResponse.json({ ok: true, id: info.messageId });
