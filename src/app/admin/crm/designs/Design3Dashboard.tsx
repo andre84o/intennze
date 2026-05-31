@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { Fragment } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -129,8 +130,8 @@ export default function Design3Dashboard(p: DesignProps) {
                 const next = p.getNextReminder(c.id);
                 const isExpanded = expandedId === c.id;
                 return (
-                  <>
-                    <tr key={c.id} onClick={() => setExpandedId(isExpanded ? null : c.id)} className="cursor-pointer hover:bg-slate-50 transition-colors">
+                  <Fragment key={c.id}>
+                    <tr onClick={() => setExpandedId(isExpanded ? null : c.id)} className="cursor-pointer hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="text-xs bg-slate-100 text-slate-600 font-semibold">{c.first_name?.[0]}{c.last_name?.[0]}</AvatarFallback>
@@ -170,7 +171,7 @@ export default function Design3Dashboard(p: DesignProps) {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
