@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -82,12 +82,10 @@ export default function Design1Pipeline(p: DesignProps) {
           { label: "Kunder", count: p.customers.filter(c => c.status === "customer").length, color: "text-green-600" },
           { label: "Försenade", count: p.customers.filter(c => p.hasOverdueReminder(c.id)).length, color: "text-rose-600" },
         ].map((s) => (
-          <Card key={s.label} className="border border-slate-200 shadow-none">
-            <CardContent className="pt-5 pb-4 px-5">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">{s.label}</p>
-              <p data-count={s.count} className={`text-3xl font-bold ${s.color}`}>0</p>
-            </CardContent>
-          </Card>
+          <div key={s.label} className="border border-slate-200 rounded-xl bg-white py-3 px-4">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-0.5">{s.label}</p>
+            <p data-count={s.count} className={`text-2xl font-bold ${s.color}`}>0</p>
+          </div>
         ))}
       </div>
 

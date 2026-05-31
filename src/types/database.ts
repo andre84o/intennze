@@ -3,7 +3,7 @@ export type ReminderType = 'general' | 'follow_up' | 'service_update' | 'renewal
 export type RecurringInterval = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'sale' | 'other';
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired';
-export type LeadSource = 'facebook_ads' | 'google_ads' | 'website' | 'referral' | 'linkedin' | 'other';
+export type LeadSource = 'facebook_ads' | 'google_ads' | 'website' | 'referral' | 'linkedin' | 'instagram' | 'xml_import' | 'other';
 
 // Lead source labels och ikoner
 export const leadSourceLabels: Record<LeadSource, string> = {
@@ -12,6 +12,8 @@ export const leadSourceLabels: Record<LeadSource, string> = {
   website: 'Webbplats',
   referral: 'Referens',
   linkedin: 'LinkedIn',
+  instagram: 'Instagram',
+  xml_import: 'Importerad',
   other: 'Övrigt',
 };
 
@@ -21,7 +23,9 @@ export const leadSourceColors: Record<LeadSource, string> = {
   website: 'bg-cyan-500',
   referral: 'bg-green-500',
   linkedin: 'bg-blue-700',
-  other: 'bg-slate-500',
+  instagram: 'bg-pink-500',
+  xml_import: 'bg-slate-500',
+  other: 'bg-slate-400',
 };
 
 export interface Customer {
@@ -37,6 +41,9 @@ export interface Customer {
   city: string | null;
   country: string | null;
   company_name: string | null;
+  category: string | null;
+  instagram_url: string | null;
+  website_url: string | null;
   org_number: string | null;
   contact_person: string | null;
   position: string | null;
@@ -155,6 +162,9 @@ export interface CustomerFormData {
   city: string;
   country: string;
   company_name: string;
+  category: string;
+  instagram_url: string;
+  website_url: string;
   org_number: string;
   contact_person: string;
   position: string;

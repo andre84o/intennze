@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Customer, customerStatusLabels, CustomerStatus, LeadSource, leadSourceLabels, leadSourceColors } from "@/types/database";
+import { Customer, customerStatusLabels, CustomerStatus, leadSourceLabels, leadSourceColors } from "@/types/database";
 import CustomerModal from "./CustomerModal";
+import { LeadSourceIcon } from "@/components/lead-source-icon";
 import { createClient } from "@/utils/supabase/client";
 
 interface Props {
@@ -25,59 +26,15 @@ const statusBadges: Record<CustomerStatus, string> = {
   churned: "bg-red-50 text-red-700 border-red-200",
 };
 
-// Facebook-ikon SVG
-const FacebookIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </svg>
-);
-
-// Google Ads-ikon SVG
-const GoogleAdsIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/>
-  </svg>
-);
-
-// LinkedIn-ikon SVG
-const LinkedInIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-  </svg>
-);
-
-// Webbplats-ikon SVG
-const WebsiteIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10"/>
-    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-  </svg>
-);
-
 // Helper functions for lead source
 const getLeadSourceLabel = (source: string | null) => {
   if (!source) return "";
-  return leadSourceLabels[source as LeadSource] || source;
+  return leadSourceLabels[source as keyof typeof leadSourceLabels] || source;
 };
 
 const getLeadSourceColor = (source: string | null) => {
   if (!source) return "bg-gray-500";
-  return leadSourceColors[source as LeadSource] || "bg-gray-500";
-};
-
-const getLeadSourceIcon = (source: string | null) => {
-  switch (source) {
-    case "facebook_ads":
-      return <FacebookIcon />;
-    case "google_ads":
-      return <GoogleAdsIcon />;
-    case "linkedin_ads":
-      return <LinkedInIcon />;
-    case "website":
-      return <WebsiteIcon />;
-    default:
-      return null;
-  }
+  return leadSourceColors[source as keyof typeof leadSourceColors] || "bg-gray-500";
 };
 
 // Check if service agreement has expired
@@ -205,7 +162,7 @@ export default function CustomersClient({
         )}
         <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
           <div className="flex items-center gap-2 text-gray-500 text-sm">
-            <FacebookIcon />
+            <LeadSourceIcon source="facebook_ads" size={16} />
             <span>Facebook Ads</span>
           </div>
           <p className="text-2xl font-bold text-blue-600">{customers.filter((c) => c.source === "facebook_ads").length}</p>
@@ -262,8 +219,7 @@ export default function CustomersClient({
                               className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded text-white ${getLeadSourceColor(customer.source)} bg-opacity-90`}
                               title={getLeadSourceLabel(customer.source)}
                             >
-                              {getLeadSourceIcon(customer.source)}
-                              {customer.source === 'facebook_ads' && <span>FB</span>}
+                              <LeadSourceIcon source={customer.source} size={14} />
                             </span>
                           )}
                         </div>
