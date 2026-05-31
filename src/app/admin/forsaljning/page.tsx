@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import SalesClient from "./SalesClient";
 
 export const metadata = {
-  title: "Försäljning | Admin",
+  title: "CRM | Admin",
 };
 
 export default async function SalesPage() {

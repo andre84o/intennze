@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useAdmin } from "./AdminContext";
 
@@ -12,73 +11,6 @@ interface AdminHeaderProps {
 export default function AdminHeader({ userEmail }: AdminHeaderProps) {
   const { sidebarState, toggleSidebar, openSidebar } = useAdmin();
   const router = useRouter();
-  const [notificationCount, setNotificationCount] = useState(0);
-
-  // Hämta antal olästa notifikationer
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      const supabase = createClient();
-
-      // Hämta olästa leads (nya som inte öppnats)
-      const { count: unreadLeadsCount } = await supabase
-        .from("customers")
-        .select("*", { count: "exact", head: true })
-        .eq("is_read", false);
-
-      // Hämta besvarade formulär som inte granskats
-      const { count: unreadQuestionnairesCount } = await supabase
-        .from("questionnaires")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "completed")
-        .eq("response_read", false);
-
-      // Hämta besvarade offerter som inte granskats
-      const { count: unreadQuotesCount } = await supabase
-        .from("quotes")
-        .select("*", { count: "exact", head: true })
-        .in("status", ["accepted", "declined"])
-        .eq("response_read", false);
-
-      // Hämta fakturor som väntar på att skickas
-      const { count: pendingInvoicesCount } = await supabase
-        .from("invoices")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "pending");
-
-      setNotificationCount(
-        (unreadLeadsCount || 0) +
-        (unreadQuestionnairesCount || 0) +
-        (unreadQuotesCount || 0) +
-        (pendingInvoicesCount || 0)
-      );
-    };
-
-    fetchNotifications();
-
-    // Uppdatera var 30:e sekund
-    const interval = setInterval(fetchNotifications, 30000);
-
-    // Lyssna på realtime-ändringar
-    const supabase = createClient();
-    const channel = supabase
-      .channel("notifications")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "customers" },
-        () => fetchNotifications()
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "questionnaires" },
-        () => fetchNotifications()
-      )
-      .subscribe();
-
-    return () => {
-      clearInterval(interval);
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   const isOpen = sidebarState === "open";
   const isCollapsed = sidebarState === "collapsed";
@@ -186,20 +118,12 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
                 <p className="text-sm font-medium text-gray-900">Admin</p>
                 <p className="text-xs text-gray-500">{userEmail || "admin@intenzze.se"}</p>
               </div>
-              <div className="relative">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px]">
-                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                    <span className="font-bold text-transparent bg-clip-text bg-gradient-to-br from-blue-500 to-purple-500 text-xs sm:text-sm">
-                      A
-                    </span>
-                  </div>
-                </div>
-                {/* Notification badge */}
-                {notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-[20px] flex items-center justify-center px-1 text-[10px] sm:text-xs font-bold text-white bg-red-500 rounded-full shadow-lg animate-pulse">
-                    {notificationCount > 99 ? "99+" : notificationCount}
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px]">
+                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                  <span className="font-bold text-transparent bg-clip-text bg-gradient-to-br from-blue-500 to-purple-500 text-xs sm:text-sm">
+                    A
                   </span>
-                )}
+                </div>
               </div>
               
               {/* Logout button */}

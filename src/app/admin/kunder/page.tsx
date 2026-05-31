@@ -11,6 +11,7 @@ export default async function CustomersPage() {
   const { data: customers, error } = await supabase
     .from("customers")
     .select("*")
+    .eq("status", "customer")
     .order("created_at", { ascending: false });
 
   return (

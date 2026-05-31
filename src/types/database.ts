@@ -1,4 +1,4 @@
-export type CustomerStatus = 'lead' | 'contacted' | 'negotiating' | 'customer' | 'churned';
+export type CustomerStatus = 'lead' | 'contacted' | 'customer' | 'churned';
 export type ReminderType = 'general' | 'follow_up' | 'service_update' | 'renewal' | 'upsell';
 export type RecurringInterval = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'sale' | 'other';
@@ -206,10 +206,9 @@ export interface QuoteFormData {
 // Status labels
 export const customerStatusLabels: Record<CustomerStatus, string> = {
   lead: 'Lead',
-  contacted: 'Kontaktad',
-  negotiating: 'Förhandlar',
+  contacted: 'Kontaktat',
   customer: 'Kund',
-  churned: 'Avslutad',
+  churned: 'Nej',
 };
 
 export const reminderTypeLabels: Record<ReminderType, string> = {

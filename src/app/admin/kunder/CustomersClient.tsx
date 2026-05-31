@@ -14,7 +14,6 @@ interface Props {
 const statusColors: Record<CustomerStatus, string> = {
   lead: "bg-gray-500",
   contacted: "bg-blue-500",
-  negotiating: "bg-amber-500",
   customer: "bg-green-500",
   churned: "bg-red-500",
 };
@@ -22,7 +21,6 @@ const statusColors: Record<CustomerStatus, string> = {
 const statusBadges: Record<CustomerStatus, string> = {
   lead: "bg-gray-100 text-gray-700 border-gray-200",
   contacted: "bg-blue-50 text-blue-700 border-blue-200",
-  negotiating: "bg-amber-50 text-amber-700 border-amber-200",
   customer: "bg-green-50 text-green-700 border-green-200",
   churned: "bg-red-50 text-red-700 border-red-200",
 };
@@ -100,7 +98,6 @@ export default function CustomersClient({
 }: Props) {
   const [customers, setCustomers] = useState(initialCustomers);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<CustomerStatus | "all">("all");
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -114,9 +111,7 @@ export default function CustomersClient({
         customer.email?.toLowerCase().includes(search.toLowerCase()) ||
         customer.company_name?.toLowerCase().includes(search.toLowerCase());
 
-      const matchesStatus = statusFilter === "all" || customer.status === statusFilter;
-
-      return matchesSearch && matchesStatus;
+      return matchesSearch;
     })
     .sort((a, b) => {
       // Expired service agreements first
@@ -228,18 +223,6 @@ export default function CustomersClient({
             className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as CustomerStatus | "all")}
-          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">Alla statusar</option>
-          {Object.entries(customerStatusLabels).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Customer list */}

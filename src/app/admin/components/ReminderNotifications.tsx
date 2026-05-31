@@ -183,7 +183,7 @@ export default function ReminderNotifications() {
               href="/admin/forsaljning"
               className="text-sm text-blue-600 hover:text-blue-500 transition-colors"
             >
-              Gå till försäljning →
+              Gå till CRM →
             </Link>
           </div>
         </div>

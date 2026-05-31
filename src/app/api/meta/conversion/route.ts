@@ -29,11 +29,10 @@ function normalizePhone(phone: string): string {
 // Dessa matchar Facebooks fördefinierade händelser för Lead Ads
 function statusToEventName(status: string): string {
   const statusMap: Record<string, string> = {
-    lead: "Lead",                    // Ny lead
-    contacted: "Contact",            // Kontaktad
-    negotiating: "Schedule",         // Möte/förhandling
-    customer: "Purchase",            // Blev kund (köp)
-    churned: "Other",                // Förlorad
+    lead: "Lead",
+    contacted: "Contact",
+    customer: "Purchase",
+    churned: "Other",
   };
   return statusMap[status] || "Lead";
 }
@@ -43,7 +42,6 @@ function getLeadScore(status: string): number {
   const scoreMap: Record<string, number> = {
     lead: 1,
     contacted: 2,
-    negotiating: 3,
     customer: 4,
     churned: 0,
   };

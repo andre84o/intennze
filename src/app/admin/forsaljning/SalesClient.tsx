@@ -38,7 +38,6 @@ interface Props {
 const statusColors: Record<CustomerStatus, string> = {
   lead: "bg-gray-500 text-white",
   contacted: "bg-blue-500 text-white",
-  negotiating: "bg-amber-500 text-white",
   customer: "bg-green-500 text-white",
   churned: "bg-red-500 text-white",
 };
@@ -46,7 +45,6 @@ const statusColors: Record<CustomerStatus, string> = {
 const statusBadges: Record<CustomerStatus, string> = {
   lead: "bg-gray-100 text-gray-700 border-gray-200",
   contacted: "bg-blue-50 text-blue-700 border-blue-200",
-  negotiating: "bg-amber-50 text-amber-700 border-amber-200",
   customer: "bg-green-50 text-green-700 border-green-200",
   churned: "bg-red-50 text-red-700 border-red-200",
 };
@@ -534,9 +532,7 @@ const CustomerCard = ({
               {customer.status === "contacted" && (
                 <li>Följ upp med mer information eller ett möte</li>
               )}
-              {customer.status === "negotiating" && (
-                <li>Skicka en offert och diskutera villkor</li>
-              )}
+
               {!customer.wishes && (
                 <li>Fråga om kundens önskemål och behov</li>
               )}
@@ -869,7 +865,7 @@ export default function SalesClient({ customers: initialCustomers, reminders: in
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Försäljning
+            CRM
           </h1>
           <p className="text-gray-500 mt-1 text-lg">Hantera leads och kunduppföljning</p>
         </div>
