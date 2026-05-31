@@ -1,15 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
-import gsap from "gsap";
+import { useState } from "react";
 import { Customer, CustomerStatus, customerStatusLabels, Reminder, ReminderType, reminderTypeLabels, CustomerInteraction, InteractionType } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
 import { DesignProps, Questionnaire, ReminderFormData } from "./designs/types";
 import Design1Pipeline from "./designs/Design1Pipeline";
-import Design2Focus from "./designs/Design2Focus";
-import Design3Dashboard from "./designs/Design3Dashboard";
-import Design4Kanban from "./designs/Design4Kanban";
-import Design5Activity from "./designs/Design5Activity";
 
 interface Props {
   customers: Customer[];
@@ -19,15 +14,6 @@ interface Props {
   error?: string;
 }
 
-type DesignId = 1 | 2 | 3 | 4 | 5;
-
-const DESIGNS: { id: DesignId; label: string; description: string; icon: string }[] = [
-  { id: 1, label: "Pipeline", description: "Tabs + tabell + sidopanel", icon: "M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125h7.5c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-7.5z" },
-  { id: 2, label: "Focus", description: "Lista + detaljpanel", icon: "M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" },
-  { id: 3, label: "Dashboard", description: "Metriker + urgency + lista", icon: "M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605" },
-  { id: 4, label: "Kanban", description: "Kolumner per status", icon: "M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" },
-  { id: 5, label: "Flöde", description: "Aktivitetsflöde + agenda", icon: "M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" },
-];
 
 const isServiceExpired = (c: Customer) => {
   if (!c.has_service_agreement || !c.service_renewal_date) return false;
@@ -41,7 +27,6 @@ export default function SalesClient({ customers: init, reminders: initR, interac
   const [reminders, setReminders] = useState(initR);
   const [interactions, setInteractions] = useState(initI);
   const [questionnaires, setQuestionnaires] = useState(initQ);
-  const [activeDesign, setActiveDesign] = useState<DesignId>(1);
   const [savingCustomer, setSavingCustomer] = useState<string | null>(null);
   const [sendingQuestionnaire, setSendingQuestionnaire] = useState<string | null>(null);
   const [showReminderForm, setShowReminderForm] = useState<string | null>(null);
@@ -51,17 +36,8 @@ export default function SalesClient({ customers: init, reminders: initR, interac
   const [questionnaireResponses, setQuestionnaireResponses] = useState<Record<string, unknown> | null>(null);
   const [loadingResponses, setLoadingResponses] = useState(false);
   const [showQuestionsHelper, setShowQuestionsHelper] = useState(false);
-  const mainRef = useRef<HTMLDivElement>(null);
 
   const today = new Date().toISOString().split("T")[0];
-
-  const switchDesign = (id: DesignId) => {
-    if (!mainRef.current) { setActiveDesign(id); return; }
-    gsap.to(mainRef.current, { opacity: 0, y: 8, duration: 0.15, onComplete: () => {
-      setActiveDesign(id);
-      gsap.to(mainRef.current, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" });
-    }});
-  };
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const getCustomerReminders = (id: string) => reminders.filter(r => r.customer_id === id && !r.is_completed).sort((a, b) => a.reminder_date.localeCompare(b.reminder_date));
@@ -178,28 +154,9 @@ export default function SalesClient({ customers: init, reminders: initR, interac
         </button>
       </div>
 
-      {/* Design switcher */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-        {DESIGNS.map(d => (
-          <button key={d.id} onClick={() => switchDesign(d.id)}
-            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeDesign === d.id ? "bg-white text-slate-900 border border-slate-300 shadow-sm" : "bg-white/60 text-slate-500 border border-slate-200 hover:bg-white hover:text-slate-700"}`}>
-            <svg className={`w-4 h-4 ${activeDesign === d.id ? "text-blue-600" : "text-slate-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d={d.icon} /></svg>
-            <span>{d.label}</span>
-            {activeDesign === d.id && <span className="text-xs text-slate-400 font-normal hidden sm:inline">{d.description}</span>}
-          </button>
-        ))}
-      </div>
-
       {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>}
 
-      {/* Active design */}
-      <div ref={mainRef}>
-        {activeDesign === 1 && <Design1Pipeline {...designProps} />}
-        {activeDesign === 2 && <Design2Focus {...designProps} />}
-        {activeDesign === 3 && <Design3Dashboard {...designProps} />}
-        {activeDesign === 4 && <Design4Kanban {...designProps} />}
-        {activeDesign === 5 && <Design5Activity {...designProps} />}
-      </div>
+      <Design1Pipeline {...designProps} />
 
       {/* ── Reminder form modal ─────────────────────────────────────────────── */}
       {showReminderForm && (
