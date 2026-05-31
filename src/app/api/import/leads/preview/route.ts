@@ -19,6 +19,7 @@ import { XMLParser } from "fast-xml-parser";
 const MAX_FILE_BYTES = 3 * 1024 * 1024; // 3 MB
 const MAX_ROWS = 1000;
 const TOKEN_TTL_SECONDS = 3600; // 1 h
+const MAX_DISPLAY_NAME = 100;
 
 const ALLOWED_STATUSES = ["lead", "contacted", "customer", "churned"] as const;
 type AllowedStatus = (typeof ALLOWED_STATUSES)[number];
@@ -267,6 +268,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ingen fil bifogad" }, { status: 400 });
   }
 
+  const displayName = typeof formData.get("displayName") === "string"
+    ? (formData.get("displayName") as string).trim().slice(0, MAX_DISPLAY_NAME)
+    : "";
+  if (!displayName) {
+    return NextResponse.json({ error: "Importnamn saknas" }, { status: 400 });
+  }
+
   // 5. Validate file size and extension
   if (file.size > MAX_FILE_BYTES) {
     return NextResponse.json({ error: "Filen är för stor (max 3 MB)" }, { status: 413 });
@@ -365,29 +373,55 @@ export async function POST(req: NextRequest) {
     toImport.push(row);
   }
 
-  // 10. Store in Redis — namespaced key, one-time token
+  // 10. Upload file to private Storage bucket (audit trail)
+  // batchId is used as both the Redis token and lead_import_batches PK
+  const batchId = crypto.randomUUID();
+  const safeName = file.name.replace(/[/\:*?"<>|]/g, "_").replace(/s+/g, "_").slice(0, 100);
+  const storagePath = `lead-imports/${user.id}/${batchId}/${safeName}`;
+  let uploadedStoragePath = "";
+  try {
+    const { error: uploadError } = await supabase.storage
+      .from("lead-imports")
+      .upload(storagePath, new Uint8Array(bytes), {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+    if (!uploadError) uploadedStoragePath = storagePath;
+  } catch {
+    // Storage upload failed — import continues without file archiving
+  }
+
+  // 11. Store parsed rows + metadata in Redis (one-time token = batchId)
   const redis = new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL!,
     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
   });
 
-  const token = crypto.randomUUID();
-  const redisKey = `import-leads:${user.id}:${token}`;
+  const redisKey = `import-leads:${user.id}:${batchId}`;
 
   await redis.set(
     redisKey,
-    { rows: toImport, userId: user.id },
+    {
+      rows: toImport,
+      userId: user.id,
+      displayName,
+      originalFilename: file.name.slice(0, 255),
+      fileType: ext,
+      fileSize: file.size,
+      storagePath: uploadedStoragePath,
+    },
     { ex: TOKEN_TTL_SECONDS }
   );
 
   return NextResponse.json({
-    token,
+    token: batchId,
     summary: {
       total: allRows.length,
       valid: validRows.length,
       missing_required: missingRequired,
       duplicates,
       to_import: toImport.length,
+      display_name: displayName,
     },
   });
 }

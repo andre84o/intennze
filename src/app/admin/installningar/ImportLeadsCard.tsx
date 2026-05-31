@@ -11,6 +11,7 @@ interface PreviewSummary {
   missing_required: number;
   duplicates: number;
   to_import: number;
+  display_name?: string;
 }
 
 interface ImportResult {
@@ -29,9 +30,22 @@ export default function ImportLeadsCard() {
   const [summary, setSummary] = useState<PreviewSummary | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [displayName, setDisplayName] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   function reset() {
+    setFile(null);
+    setStep("idle");
+    setError(null);
+    setSummary(null);
+    setToken(null);
+    setResult(null);
+    setDisplayName("");
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  // resetForNewFile resets everything except displayName (batch name persists across file changes)
+  function resetForNewFile() {
     setFile(null);
     setStep("idle");
     setError(null);
@@ -43,7 +57,7 @@ export default function ImportLeadsCard() {
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
-    reset();
+    resetForNewFile();
     if (!f) return;
     if (f.size > MAX_FILE_BYTES) {
       setError("Filen är för stor (max 3 MB)");
@@ -60,6 +74,7 @@ export default function ImportLeadsCard() {
 
     const fd = new FormData();
     fd.append("file", file);
+    fd.append("displayName", displayName.trim());
 
     try {
       const res = await fetch("/api/import/leads/preview", { method: "POST", body: fd });
@@ -149,6 +164,23 @@ export default function ImportLeadsCard() {
       {/* ── Active states ────────────────────────────────────────────────────── */}
       {step !== "done" && (
         <div className="space-y-4">
+          {/* Import name */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5 font-medium">
+              Importnamn <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value.slice(0, 100))}
+              disabled={isLoading || step === "preview"}
+              placeholder="t.ex. Bygg Leads Stockholm Maj 2026"
+              maxLength={100}
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-sm"
+            />
+            <p className="text-xs text-gray-400 mt-1">{displayName.length}/100</p>
+          </div>
+
           {/* File input */}
           <div>
             <label className="block text-sm text-gray-700 mb-1.5 font-medium">
@@ -170,7 +202,7 @@ export default function ImportLeadsCard() {
           </div>
 
           {/* Analyse button */}
-          {file && (step === "idle" || step === "error") && (
+          {file && displayName.trim().length > 0 && (step === "idle" || step === "error") && (
             <button
               onClick={handleAnalyze}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
@@ -194,6 +226,9 @@ export default function ImportLeadsCard() {
           {step === "preview" && summary && (
             <div className="border border-gray-100 rounded-xl p-4 bg-gray-50 space-y-3">
               <p className="text-sm font-semibold text-gray-700">Förhandsvisning</p>
+              {summary && summary.display_name && (
+                <p className="text-xs text-blue-600 font-medium truncate -mt-1">{summary.display_name}</p>
+              )}
 
               <div className="space-y-1.5 text-sm">
                 <Row label="Totalt rader i fil" value={summary.total} />

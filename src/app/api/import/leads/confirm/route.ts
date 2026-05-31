@@ -31,6 +31,11 @@ interface StoredRow {
 interface RedisPayload {
   rows: unknown[];
   userId: string;
+  displayName?: string;
+  originalFilename?: string;
+  fileType?: string;
+  fileSize?: number;
+  storagePath?: string;
 }
 
 function normalizePhone(p: string | null | undefined): string {
@@ -179,7 +184,9 @@ export async function POST(req: NextRequest) {
   );
   const skipped = rows.length - rowsToInsert.length;
 
-  // 10. Batch insert in chunks of 100
+  // 10. Batch insert in chunks of 100 — link each customer to this batch
+  // token === batchId (same UUID generated in preview)
+  const batchId = token;
   let inserted = 0;
   for (let i = 0; i < rowsToInsert.length; i += CHUNK_SIZE) {
     const chunk = rowsToInsert.slice(i, i + CHUNK_SIZE).map((row) => ({
@@ -189,13 +196,29 @@ export async function POST(req: NextRequest) {
       has_purchased: false,
       has_service_agreement: false,
       is_read: false,
+      import_batch_id: batchId,
     }));
     const { error } = await supabase.from("customers").insert(chunk);
     if (!error) inserted += chunk.length;
-    // Continue on chunk error — partial import beats complete failure
   }
 
-  // 11. Invalidate Next.js router cache for CRM
+  // 11. Insert batch audit record (id = batchId → PK conflict rejects double-confirm)
+  await supabase.from("lead_import_batches").insert({
+    id: batchId,
+    created_by: user.id,
+    display_name: stored.displayName ?? "Import",
+    original_filename: stored.originalFilename ?? "",
+    file_type: stored.fileType ?? "",
+    file_size: stored.fileSize ?? 0,
+    storage_path: stored.storagePath ?? "",
+    total_rows: rows.length,
+    imported_rows: inserted,
+    duplicate_rows: skipped,
+    skipped_rows: rowsToInsert.length - inserted,
+    status: "completed",
+  });
+
+  // 12. Invalidate Next.js router cache for CRM
   revalidatePath("/admin/crm");
 
   return NextResponse.json({ inserted, skipped });

@@ -58,6 +58,7 @@ export interface Customer {
   service_start_date: string | null;
   service_renewal_date: string | null;
   source: string | null;
+  import_batch_id: string | null;
   created_by: string | null;
   // Meta Conversions API
   meta_lead_id: string | null;
