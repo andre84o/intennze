@@ -275,6 +275,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Importnamn saknas" }, { status: 400 });
   }
 
+  const defaultCategoryRaw = formData.get("defaultCategory");
+  const defaultCategory = typeof defaultCategoryRaw === "string"
+    ? defaultCategoryRaw.trim().slice(0, 100)
+    : "";
+
+  const maxRowsRaw = formData.get("maxRows");
+  const maxRowsLimit = maxRowsRaw ? Math.min(Math.max(1, parseInt(String(maxRowsRaw), 10) || MAX_ROWS), MAX_ROWS) : MAX_ROWS;
+
   // 5. Validate file size and extension
   if (file.size > MAX_FILE_BYTES) {
     return NextResponse.json({ error: "Filen är för stor (max 3 MB)" }, { status: 413 });
@@ -314,7 +322,11 @@ export async function POST(req: NextRequest) {
   }
 
   // 7. Map columns and classify
-  const allRows = rawRows.map(mapRow);
+  const allRows = rawRows.map((raw) => {
+    const row = mapRow(raw);
+    if (defaultCategory) row.category = defaultCategory;
+    return row;
+  });
   const validRows = allRows.filter((r) => r.first_name.length > 0 || r.company_name);
   const missingRequired = allRows.length - validRows.length;
 
@@ -373,6 +385,9 @@ export async function POST(req: NextRequest) {
     toImport.push(row);
   }
 
+  // Trim to requested limit before storing
+  const limitedToImport = toImport.slice(0, maxRowsLimit);
+
   // 10. Upload file to private Storage bucket (audit trail)
   // batchId is used as both the Redis token and lead_import_batches PK
   const batchId = crypto.randomUUID();
@@ -402,7 +417,7 @@ export async function POST(req: NextRequest) {
   await redis.set(
     redisKey,
     {
-      rows: toImport,
+      rows: limitedToImport,
       userId: user.id,
       displayName,
       originalFilename: file.name.slice(0, 255),
@@ -420,7 +435,7 @@ export async function POST(req: NextRequest) {
       valid: validRows.length,
       missing_required: missingRequired,
       duplicates,
-      to_import: toImport.length,
+      to_import: limitedToImport.length,
       display_name: displayName,
     },
   });

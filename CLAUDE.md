@@ -1,4 +1,4 @@
-For new UI design ideas, you may use shadcn/ui as visual inspiration:
+For UI design ideas, you may use shadcn/ui as visual inspiration:
 https://ui.shadcn.com/
 
 ## Security rules

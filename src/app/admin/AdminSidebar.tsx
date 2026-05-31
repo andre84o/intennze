@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -58,9 +58,9 @@ const defaultMenuItems: MenuItem[] = [
 ];
 
 export default function AdminSidebar() {
-  const { sidebarState } = useAdmin();
+  const { sidebarState, setSidebarState, openSidebar } = useAdmin();
   const pathname = usePathname();
-  const [isHovering, setIsHovering] = useState(false);
+  const asideRef = useRef<HTMLElement>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenuItems);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
   const [dragOverItem, setDragOverItem] = useState<number | null>(null);
@@ -70,8 +70,20 @@ export default function AdminSidebar() {
   const isCollapsed = sidebarState === "collapsed";
   const isHidden = sidebarState === "hidden";
 
-  // Expand on hover when collapsed
-  const shouldExpand = isOpen || (isCollapsed && isHovering);
+  // Expand only when explicitly opened (click), not on hover
+  const shouldExpand = isOpen;
+
+  // Close (collapse) when clicking outside the sidebar while it's open
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (asideRef.current && !asideRef.current.contains(e.target as Node)) {
+        setSidebarState("collapsed");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, setSidebarState]);
 
   // Load sidebar order from database
   useEffect(() => {
@@ -137,16 +149,16 @@ export default function AdminSidebar() {
 
   return (
     <aside
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      ref={asideRef}
+      onClick={isCollapsed ? openSidebar : undefined}
       className={`fixed top-0 left-0 h-full bg-white/95 backdrop-blur-xl border-r border-gray-200 z-40 transition-all duration-300 ease-in-out overflow-hidden ${
-        shouldExpand ? "w-52 sm:w-64" : isCollapsed ? "w-14 sm:w-20" : "w-0 -translate-x-full"
+        shouldExpand ? "w-52 sm:w-64" : isCollapsed ? "w-14 sm:w-20 cursor-pointer" : "w-0 -translate-x-full"
       }`}
     >
       <div className={`${isHidden ? "opacity-0" : "opacity-100"} transition-opacity duration-200`}>
         {/* Logo */}
         <div className="h-14 sm:h-16 flex items-center px-3 sm:px-6 border-b border-gray-200">
-          <Link href="/admin" className="flex items-center gap-2 sm:gap-3 p-0">
+          <Link href="/admin" onClick={(e) => { if (isCollapsed) e.preventDefault(); }} className="flex items-center gap-2 sm:gap-3 p-0">
             <div className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 relative">
               <Image
                 src="/favicon20.png"
@@ -203,7 +215,7 @@ export default function AdminSidebar() {
               >
                 <Link
                   href={isEditMode ? "#" : item.href}
-                  onClick={(e) => isEditMode && e.preventDefault()}
+                  onClick={(e) => { if (isEditMode || isCollapsed) e.preventDefault(); }}
                   className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-200 group ${
                     isActive
                       ? "bg-blue-50 text-blue-600 border border-blue-100"
@@ -252,6 +264,7 @@ export default function AdminSidebar() {
         <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 border-t border-gray-200">
           <Link
             href="/"
+            onClick={(e) => { if (isCollapsed) e.preventDefault(); }}
             className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 group"
           >
             <svg

@@ -23,7 +23,11 @@ type Step = "idle" | "analyzing" | "preview" | "confirming" | "done" | "error";
 
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 
-export default function ImportLeadsCard() {
+interface ImportLeadsCardProps {
+  onDone?: () => void;
+}
+
+export default function ImportLeadsCard({ onDone }: ImportLeadsCardProps = {}) {
   const [file, setFile] = useState<File | null>(null);
   const [step, setStep] = useState<Step>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +35,8 @@ export default function ImportLeadsCard() {
   const [token, setToken] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [displayName, setDisplayName] = useState<string>("");
+  const [defaultCategory, setDefaultCategory] = useState<string>("");
+  const [maxRows, setMaxRows] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   function reset() {
@@ -41,10 +47,12 @@ export default function ImportLeadsCard() {
     setToken(null);
     setResult(null);
     setDisplayName("");
+    setDefaultCategory("");
+    setMaxRows("");
     if (inputRef.current) inputRef.current.value = "";
   }
 
-  // resetForNewFile resets everything except displayName (batch name persists across file changes)
+  // resetForNewFile resets analysis state but keeps displayName and the input's visual state
   function resetForNewFile() {
     setFile(null);
     setStep("idle");
@@ -52,7 +60,6 @@ export default function ImportLeadsCard() {
     setSummary(null);
     setToken(null);
     setResult(null);
-    if (inputRef.current) inputRef.current.value = "";
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -75,6 +82,8 @@ export default function ImportLeadsCard() {
     const fd = new FormData();
     fd.append("file", file);
     fd.append("displayName", displayName.trim());
+    if (defaultCategory.trim()) fd.append("defaultCategory", defaultCategory.trim().slice(0, 100));
+    if (maxRows.trim()) fd.append("maxRows", maxRows.trim());
 
     try {
       const res = await fetch("/api/import/leads/preview", { method: "POST", body: fd });
@@ -112,6 +121,7 @@ export default function ImportLeadsCard() {
       }
       setResult({ inserted: data.inserted ?? 0, skipped: data.skipped ?? 0 });
       setStep("done");
+      onDone?.();
     } catch {
       setError("Nätverksfel — försök igen");
       setStep("error");
@@ -181,6 +191,41 @@ export default function ImportLeadsCard() {
             <p className="text-xs text-gray-400 mt-1">{displayName.length}/100</p>
           </div>
 
+          {/* Default category override */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5 font-medium">
+              Kategori <span className="text-red-500">*</span>
+
+            </label>
+            <input
+              type="text"
+              value={defaultCategory}
+              onChange={(e) => setDefaultCategory(e.target.value.slice(0, 100))}
+              disabled={isLoading || step === "preview"}
+              placeholder="t.ex. Herrfrisör, Restaurang, E-handel"
+              maxLength={100}
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-sm"
+            />
+          </div>
+
+          {/* Max rows limit */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5 font-medium">
+              Max antal leads
+              <span className="ml-1 text-gray-400 font-normal">— lämna tomt för hela listan</span>
+            </label>
+            <input
+              type="number"
+              value={maxRows}
+              onChange={(e) => setMaxRows(e.target.value)}
+              disabled={isLoading || step === "preview"}
+              placeholder="t.ex. 50"
+              min={1}
+              max={1000}
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-sm"
+            />
+          </div>
+
           {/* File input */}
           <div>
             <label className="block text-sm text-gray-700 mb-1.5 font-medium">
@@ -202,7 +247,7 @@ export default function ImportLeadsCard() {
           </div>
 
           {/* Analyse button */}
-          {file && displayName.trim().length > 0 && (step === "idle" || step === "error") && (
+          {file && displayName.trim().length > 0 && defaultCategory.trim().length > 0 && (step === "idle" || step === "error") && (
             <button
               onClick={handleAnalyze}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"

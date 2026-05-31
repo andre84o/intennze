@@ -32,13 +32,6 @@ const InstagramIcon = ({ size }: { size: number }) => (
   </svg>
 );
 
-const XmlImportIcon = ({ size }: { size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6M3 7l2-2h14l2 2v14l-2 2H5l-2-2V7z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v4H3" />
-  </svg>
-);
-
 const ReferralIcon = ({ size }: { size: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
     <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m10-4a4 4 0 11-8 0 4 4 0 018 0zm6 4a3 3 0 11-6 0 3 3 0 016 0zM7 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -55,10 +48,13 @@ function renderIcon(source: string, size: number) {
       return <LinkedInIcon size={size} />;
     case "instagram":
       return <InstagramIcon size={size} />;
+    case "xlsx_import":
     case "xml_import":
     case "csv_import":
-    case "xlsx_import":
-      return <XmlImportIcon size={size} />;
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/icons/excel.png" width={size} height={size} alt="" className="object-contain rounded-sm" />
+      );
     case "website":
       return (
         // eslint-disable-next-line @next/next/no-img-element

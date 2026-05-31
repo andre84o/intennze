@@ -90,7 +90,7 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
         <div className="h-full px-3 sm:px-6 flex items-center justify-between">
           {/* Left side - Toggle button */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {!isHidden && (
+            {!isHidden && !isOpen && (
               <button
                 onClick={toggleSidebar}
                 type="button"

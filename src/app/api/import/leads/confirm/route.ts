@@ -184,9 +184,25 @@ export async function POST(req: NextRequest) {
   );
   const skipped = rows.length - rowsToInsert.length;
 
-  // 10. Batch insert in chunks of 100 — link each customer to this batch
-  // token === batchId (same UUID generated in preview)
+  // 10. Insert batch record FIRST so import_batch_id FK is satisfied when customers are inserted
+  // (id = batchId → PK conflict rejects double-confirm)
   const batchId = token;
+  await supabase.from("lead_import_batches").insert({
+    id: batchId,
+    created_by: user.id,
+    display_name: stored.displayName ?? "Import",
+    original_filename: stored.originalFilename ?? "",
+    file_type: stored.fileType ?? "",
+    file_size: stored.fileSize ?? 0,
+    storage_path: stored.storagePath ?? "",
+    total_rows: rows.length,
+    imported_rows: rowsToInsert.length,
+    duplicate_rows: skipped,
+    skipped_rows: 0,
+    status: "completed",
+  });
+
+  // 11. Batch insert customers in chunks of 100 — linked to batch via import_batch_id
   let inserted = 0;
   for (let i = 0; i < rowsToInsert.length; i += CHUNK_SIZE) {
     const chunk = rowsToInsert.slice(i, i + CHUNK_SIZE).map((row) => ({
@@ -201,22 +217,6 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase.from("customers").insert(chunk);
     if (!error) inserted += chunk.length;
   }
-
-  // 11. Insert batch audit record (id = batchId → PK conflict rejects double-confirm)
-  await supabase.from("lead_import_batches").insert({
-    id: batchId,
-    created_by: user.id,
-    display_name: stored.displayName ?? "Import",
-    original_filename: stored.originalFilename ?? "",
-    file_type: stored.fileType ?? "",
-    file_size: stored.fileSize ?? 0,
-    storage_path: stored.storagePath ?? "",
-    total_rows: rows.length,
-    imported_rows: inserted,
-    duplicate_rows: skipped,
-    skipped_rows: rowsToInsert.length - inserted,
-    status: "completed",
-  });
 
   // 12. Invalidate Next.js router cache for CRM
   revalidatePath("/admin/crm");

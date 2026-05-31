@@ -15,7 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Customer, CustomerStatus, customerStatusLabels, InteractionType, ReminderType, reminderTypeLabels } from "@/types/database";
 import { LeadSourceIcon } from "@/components/lead-source-icon";
 import { DesignProps, ReminderFormData, statusColors, statusDot, interactionIcons } from "./types";
-import CustomerModal from "@/app/admin/kunder/CustomerModal";
+import dynamic from "next/dynamic";
+const CustomerModal = dynamic(() => import("@/app/admin/kunder/CustomerModal"), { ssr: false });
 
 export default function Design1Pipeline(p: DesignProps) {
   const statsRef = useRef<HTMLDivElement>(null);
@@ -95,7 +96,7 @@ export default function Design1Pipeline(p: DesignProps) {
           <div className="border-b border-slate-100 px-4 pt-1">
             <TabsList className="bg-transparent h-auto gap-1 p-0">
               {tabs.map(t => (
-                <TabsTrigger key={t.key} value={t.key} className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3 text-sm font-medium text-slate-500">
+                <TabsTrigger key={t.key} value={t.key} className="rounded-none border-0 border-b-2 border-transparent shadow-none! data-[state=active]:border-b-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none! px-4 py-3 text-sm font-medium text-slate-500">
                   {t.label}
                   {t.count > 0 && <span className="ml-2 text-xs bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">{t.count}</span>}
                 </TabsTrigger>
@@ -140,7 +141,7 @@ export default function Design1Pipeline(p: DesignProps) {
                           <div className="flex items-center gap-2">
                             {c.first_name} {c.last_name}
                             {!c.is_read && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />}
-                            <LeadSourceIcon source={c.source ?? null} size={14} className="text-slate-400 opacity-70" />
+                            <LeadSourceIcon source={c.source ?? null} size={c.source === "website" ? 25 : 16} className="text-slate-400 opacity-70" />
                           </div>
                         </TableCell>
                         <TableCell className="py-3 text-slate-500 text-sm hidden md:table-cell">{c.company_name || "–"}</TableCell>
