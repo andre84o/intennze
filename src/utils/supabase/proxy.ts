@@ -21,8 +21,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Skip auth entirely for routes that don't need it
+  // /api/call/* is included so long-open Mobile Call Companion sessions get
+  // their auth token refreshed on outcome/next calls (no redirect for APIs).
   const pathname = request.nextUrl.pathname;
-  if (!pathname.startsWith("/admin") && pathname !== "/login") {
+  if (!pathname.startsWith("/admin") && pathname !== "/login" && !pathname.startsWith("/api/call")) {
     return supabaseResponse;
   }
 
