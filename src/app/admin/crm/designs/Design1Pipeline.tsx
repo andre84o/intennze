@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { EmailInteractionItem, type EmailPreview } from "@/app/admin/crm/components/EmailInteractionItem";
 import gsap from "gsap";
@@ -22,6 +23,7 @@ import dynamic from "next/dynamic";
 const CustomerModal = dynamic(() => import("@/app/admin/kunder/CustomerModal"), { ssr: false });
 
 export default function Design1Pipeline(p: DesignProps) {
+  const router = useRouter();
   const statsRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<Customer | null>(null);
   const [activeTab, setActiveTab] = useState("lead");
@@ -184,9 +186,10 @@ export default function Design1Pipeline(p: DesignProps) {
     : null;
 
   async function handleStartCallSession() {
-    const ids = sorted.map((c) => c.id);
+    // Prioritised queue: overdue → due-today (by time) → plain leads.
+    const ids = p.getCallQueue();
     if (ids.length === 0) {
-      setStartMsg("Listan är tom");
+      setStartMsg("Inga kunder att ringa");
       return;
     }
     setStarting(true);
@@ -201,9 +204,10 @@ export default function Design1Pipeline(p: DesignProps) {
       if (!res.ok) {
         setStartMsg(data.error ?? "Kunde inte starta samtalssession");
       } else if (data.none) {
-        setStartMsg("No callable customers");
+        setStartMsg("Inga kunder att ringa");
       } else {
         setStartMsg(null);
+        router.push("/admin/call");
       }
     } catch {
       setStartMsg("Nätverksfel — försök igen");
@@ -234,13 +238,14 @@ export default function Design1Pipeline(p: DesignProps) {
         {/* Mobile Call Companion control bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-100">
           <div className="flex items-center gap-3 min-w-0">
+            {/* Mobile/tablet only — agents start the companion from their phone. */}
             <button
               onClick={handleStartCallSession}
-              disabled={starting || sorted.length === 0}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              disabled={starting}
+              className="md:hidden inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
             >
               <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>
-              {starting ? "Startar…" : "Start Call Session"}
+              {starting ? "Startar…" : "Start Calling"}
             </button>
             {startMsg && <span className="text-xs text-amber-600 truncate">{startMsg}</span>}
           </div>

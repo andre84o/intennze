@@ -27,6 +27,9 @@ export interface DesignProps {
   getNextReminder: (id: string) => Reminder | null;
   hasOverdueReminder: (id: string) => boolean;
   hasTodayReminder: (id: string) => boolean;
+  // Prioritised call queue (overdue → due-today by time → plain leads) used to
+  // seed the Mobile Call Companion session. Returns customer ids in order.
+  getCallQueue: () => string[];
   hasQuestionnaire: (id: string) => boolean;
   isServiceExpired: (c: Customer) => boolean;
   formatDate: (s: string) => string;

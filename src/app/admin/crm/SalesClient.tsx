@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Customer, CustomerStatus, Reminder, CustomerInteraction, InteractionType } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
+import { buildCallQueue, stockholmToday, type QueueReminder } from "@/lib/nextLead";
 import { DesignProps, Questionnaire, ReminderFormData } from "./designs/types";
 import Design1Pipeline from "./designs/Design1Pipeline";
 
@@ -81,6 +82,22 @@ export default function SalesClient({ customers: init, reminders: initR, interac
   const hasOverdueReminder = (id: string) => reminders.some(r => r.customer_id === id && !r.is_completed && r.reminder_date < today);
   const hasTodayReminder = (id: string) => reminders.some(r => r.customer_id === id && !r.is_completed && r.reminder_date === today);
   const hasQuestionnaire = (id: string) => questionnaires.some(q => q.customer_id === id);
+  // Prioritised calling queue, seeds the Mobile Call Companion session.
+  // Uses Europe/Stockholm "today" so it matches the server-side predicate.
+  const getCallQueue = () => {
+    const remByCustomer = new Map<string, QueueReminder[]>();
+    for (const r of reminders) {
+      if (!r.customer_id) continue;
+      const arr = remByCustomer.get(r.customer_id) ?? [];
+      arr.push({ reminder_date: r.reminder_date, reminder_time: r.reminder_time, is_completed: r.is_completed });
+      remByCustomer.set(r.customer_id, arr);
+    }
+    return buildCallQueue(
+      customers.map(c => ({ id: c.id, status: c.status, phone: c.phone })),
+      remByCustomer,
+      stockholmToday(),
+    );
+  };
   const formatDate = (s: string) => new Date(s).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
   const formatDateTime = (s: string) => new Date(s).toLocaleDateString("sv-SE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
@@ -176,7 +193,7 @@ export default function SalesClient({ customers: init, reminders: initR, interac
     customers, reminders, interactions, questionnaires, today,
     savingCustomer, sendingQuestionnaire,
     getCustomerReminders, getCustomerInteractions, getNextReminder,
-    hasOverdueReminder, hasTodayReminder, hasQuestionnaire, isServiceExpired,
+    hasOverdueReminder, hasTodayReminder, hasQuestionnaire, getCallQueue, isServiceExpired,
     formatDate, formatDateTime,
     onUpdateCustomer, onUpdateCustomerBoolean,
     onAddInteraction, onAddReminder, onCompleteReminder,

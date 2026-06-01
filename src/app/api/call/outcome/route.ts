@@ -8,6 +8,33 @@ const ALLOWED_OUTCOMES = ["interested", "call_back", "no_answer", "not_intereste
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_NOTE = 2000;
 
+// Normalises a user-supplied reminder date to YYYYMMDD (the RPC's expected
+// format). Accepts YYYYMMDD or YYYY-MM-DD. Returns null when absent, or
+// undefined when present-but-invalid.
+function normalizeReminderDate(v: unknown): string | null | undefined {
+  if (v === undefined || v === null || v === "") return null;
+  if (typeof v !== "string") return undefined;
+  const s = v.replace(/-/g, "");
+  if (!/^\d{8}$/.test(s)) return undefined;
+  const m = +s.slice(4, 6);
+  const d = +s.slice(6, 8);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return undefined;
+  return s;
+}
+
+// Normalises a user-supplied reminder time to HHMM. Accepts HHMM or HH:MM.
+// Returns null when absent, or undefined when present-but-invalid.
+function normalizeReminderTime(v: unknown): string | null | undefined {
+  if (v === undefined || v === null || v === "") return null;
+  if (typeof v !== "string") return undefined;
+  const s = v.replace(":", "");
+  if (!/^\d{4}$/.test(s)) return undefined;
+  const h = +s.slice(0, 2);
+  const min = +s.slice(2, 4);
+  if (h > 23 || min > 59) return undefined;
+  return s;
+}
+
 // POST /api/call/outcome — records a single call outcome via the atomic
 // record_call_outcome RPC. Never triggers Meta Conversions.
 export async function POST(req: NextRequest) {
@@ -62,6 +89,30 @@ export async function POST(req: NextRequest) {
   }
   const noteStr = typeof note === "string" ? note.slice(0, MAX_NOTE) : null;
 
+  // Reminder date/time (only used by call_back + interested).
+  const reminderDate = normalizeReminderDate(body.reminder_date);
+  const reminderTime = normalizeReminderTime(body.reminder_time);
+  if (reminderDate === undefined || reminderTime === undefined) {
+    return NextResponse.json({ error: "Ogiltigt datum eller tid" }, { status: 400 });
+  }
+  if (outcome === "call_back") {
+    if (!reminderDate || !reminderTime) {
+      return NextResponse.json({ error: "Datum och tid krävs för Ring tillbaka" }, { status: 400 });
+    }
+    if (!noteStr || noteStr.trim() === "") {
+      return NextResponse.json({ error: "Anteckning krävs för Ring tillbaka" }, { status: 400 });
+    }
+  } else if (outcome === "interested") {
+    if ((reminderDate && !reminderTime) || (!reminderDate && reminderTime)) {
+      return NextResponse.json({ error: "Ange både datum och tid" }, { status: 400 });
+    }
+  } else {
+    // no_answer / not_interested never accept a user reminder.
+    if (reminderDate || reminderTime) {
+      return NextResponse.json({ error: "Datum/tid stöds inte för detta utfall" }, { status: 400 });
+    }
+  }
+
   // 4. Consistency checks before the write (defense-in-depth; the RPC re-checks
   //    under row locks). RLS scopes the session to the authenticated agent.
   const { data: session } = await supabase
@@ -94,6 +145,8 @@ export async function POST(req: NextRequest) {
     p_outcome: outcome,
     p_request_id: requestId,
     p_note: noteStr,
+    p_reminder_date: reminderDate,
+    p_reminder_time: reminderTime,
   });
 
   if (error) {
