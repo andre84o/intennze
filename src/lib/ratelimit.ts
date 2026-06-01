@@ -31,6 +31,10 @@ export const webhookGetLimiter = makeLimiter("webhook-get", 60, "1 m");
 export const crmEmailSendLimiter = makeLimiter("crm-email-send", 10, "1 m");
 // 3/min: each generation calls 2 providers in parallel, so cost per request is doubled
 export const crmEmailSuggestionsLimiter = makeLimiter("crm-email-suggestions", 3, "1 m");
+// Mobile Call Companion. Outcome is fail-closed in production when missing
+// (see /api/call/outcome); the session endpoints fail open like the rest.
+export const callOutcomeLimiter = makeLimiter("call-outcome", 30, "1 m");
+export const callSessionLimiter = makeLimiter("call-session", 60, "1 m");
 
 // Extract the originating client IP from the request. On Vercel the platform
 // sets `x-forwarded-for` to the real client; the first entry is canonical.
