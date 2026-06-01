@@ -47,6 +47,7 @@ export interface DesignProps {
 export const statusLabels: Record<CustomerStatus, string> = {
   lead: "Lead",
   contacted: "Kontaktat",
+  negotiating: "Förhandling",
   customer: "Kund",
   churned: "Nej",
 };
@@ -54,6 +55,7 @@ export const statusLabels: Record<CustomerStatus, string> = {
 export const statusColors: Record<CustomerStatus, string> = {
   lead: "bg-slate-100 text-slate-700 border-slate-200",
   contacted: "bg-blue-100 text-blue-700 border-blue-200",
+  negotiating: "bg-amber-100 text-amber-700 border-amber-200",
   customer: "bg-green-100 text-green-700 border-green-200",
   churned: "bg-rose-100 text-rose-600 border-rose-200",
 };
@@ -61,6 +63,7 @@ export const statusColors: Record<CustomerStatus, string> = {
 export const statusDot: Record<CustomerStatus, string> = {
   lead: "bg-slate-400",
   contacted: "bg-blue-500",
+  negotiating: "bg-amber-500",
   customer: "bg-green-500",
   churned: "bg-rose-400",
 };
@@ -68,6 +71,7 @@ export const statusDot: Record<CustomerStatus, string> = {
 export const statusAccent: Record<CustomerStatus, string> = {
   lead: "border-l-slate-400",
   contacted: "border-l-blue-500",
+  negotiating: "border-l-amber-500",
   customer: "border-l-green-500",
   churned: "border-l-rose-400",
 };

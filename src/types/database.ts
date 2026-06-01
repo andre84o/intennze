@@ -1,5 +1,8 @@
-export type CustomerStatus = 'lead' | 'contacted' | 'customer' | 'churned';
+export type CustomerStatus = 'lead' | 'contacted' | 'negotiating' | 'customer' | 'churned';
 export type ReminderType = 'general' | 'follow_up' | 'service_update' | 'renewal' | 'upsell';
+// Mobile Call Companion
+export type CallOutcome = 'interested' | 'call_back' | 'no_answer' | 'not_interested';
+export type CallSessionState = 'idle' | 'dialing' | 'wrap_up' | 'ended';
 export type RecurringInterval = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'sale' | 'other';
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'expired';
@@ -67,6 +70,9 @@ export interface Customer {
   facebook_lead_id: string | null;
   // Notification tracking
   is_read: boolean;
+  // Mobile Call Companion — last-call summary
+  last_call_at: string | null;
+  last_call_result: CallOutcome | null;
 }
 
 export interface Reminder {
@@ -97,6 +103,23 @@ export interface CustomerInteraction {
   description: string;
   created_by: string | null;
   email_id?: string | null;
+  // Mobile Call Companion — structured outcome + idempotency key
+  call_outcome?: CallOutcome | null;
+  request_id?: string | null;
+}
+
+export interface CallSession {
+  id: string;
+  agent_id: string;
+  active_customer_id: string | null;
+  active_call_id: string | null;
+  state: CallSessionState;
+  lead_order: string[];
+  lead_index: number;
+  mobile_last_seen_at: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Purchase {
@@ -219,6 +242,7 @@ export interface QuoteFormData {
 export const customerStatusLabels: Record<CustomerStatus, string> = {
   lead: 'Lead',
   contacted: 'Kontaktat',
+  negotiating: 'Förhandling',
   customer: 'Kund',
   churned: 'Nej',
 };

@@ -15,6 +15,7 @@ interface Props {
 const statusColors: Record<CustomerStatus, string> = {
   lead: "bg-gray-500",
   contacted: "bg-blue-500",
+  negotiating: "bg-amber-500",
   customer: "bg-green-500",
   churned: "bg-red-500",
 };
@@ -22,6 +23,7 @@ const statusColors: Record<CustomerStatus, string> = {
 const statusBadges: Record<CustomerStatus, string> = {
   lead: "bg-gray-100 text-gray-700 border-gray-200",
   contacted: "bg-blue-50 text-blue-700 border-blue-200",
+  negotiating: "bg-amber-50 text-amber-700 border-amber-200",
   customer: "bg-green-50 text-green-700 border-green-200",
   churned: "bg-red-50 text-red-700 border-red-200",
 };
