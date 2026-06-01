@@ -3,10 +3,9 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { generateText, AIError } from "@/lib/ai/client";
-import type { AIGenerateResponse } from "@/lib/ai/client";
 import { crmEmailSuggestionsLimiter, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 
-type ProviderLabel = "DeepSeek" | "Claude";
+type ProviderLabel = "Claude";
 
 interface Suggestion {
   tone: string;
@@ -40,33 +39,6 @@ function validateSuggestions(raw: unknown, provider: ProviderLabel): Suggestion[
       provider,
     };
   });
-}
-
-function parseResult(
-  result: PromiseSettledResult<AIGenerateResponse>,
-  provider: ProviderLabel
-): Suggestion[] | null {
-  if (result.status === "rejected") {
-    const err = result.reason;
-    // Log only error code — never prompt, customer data, or response body
-    if (err instanceof AIError) {
-      console.error(`[crm/email/suggestions] ${provider} error:`, err.code);
-    } else {
-      console.error(`[crm/email/suggestions] ${provider} failed`);
-    }
-    return null;
-  }
-  try {
-    const cleaned = result.value.text
-      .trim()
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/, "");
-    const parsed = JSON.parse(cleaned) as Record<string, unknown>;
-    return validateSuggestions(parsed["suggestions"], provider);
-  } catch {
-    console.error(`[crm/email/suggestions] ${provider} invalid response format`);
-    return null;
-  }
 }
 
 export async function POST(req: Request) {
@@ -144,29 +116,49 @@ Regler:
 
     const prompt = `Utkast: ${String(draftMessage).trim()}${context}`;
 
-    const sharedOptions = {
-      systemPrompt,
-      temperature: 0.7,
-      maxTokens: 2000,
-      timeout: 30_000,
-    };
+    let suggestions: Suggestion[];
+    try {
+      const response = await generateText(prompt, {
+        provider: "anthropic",
+        systemPrompt,
+        temperature: 0.7,
+        maxTokens: 2000,
+        timeout: 30_000,
+      });
 
-    // Call both providers in parallel — Promise.allSettled so one failure
-    // never blocks the other's results from reaching the user
-    const [deepseekResult, claudeResult] = await Promise.allSettled([
-      generateText(prompt, { ...sharedOptions, provider: "deepseek" }),
-      generateText(prompt, { ...sharedOptions, provider: "anthropic" }),
-    ]);
+      // Strip markdown code fences if AI wraps JSON in ```json ... ```
+      const cleaned = response.text
+        .trim()
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/, "");
 
-    const deepseekSuggestions = parseResult(deepseekResult, "DeepSeek");
-    const claudeSuggestions = parseResult(claudeResult, "Claude");
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch {
+        throw new Error("invalid JSON from AI");
+      }
 
-    const suggestions: Suggestion[] = [
-      ...(deepseekSuggestions ?? []),
-      ...(claudeSuggestions ?? []),
-    ];
-
-    if (suggestions.length === 0) {
+      const data = parsed as Record<string, unknown>;
+      suggestions = validateSuggestions(data["suggestions"], "Claude");
+    } catch (err) {
+      if (err instanceof AIError) {
+        console.error("[crm/email/suggestions] AI error code:", err.code);
+        if (err.code === "TIMEOUT") {
+          return NextResponse.json(
+            { error: "AI-tjänsten svarade inte i tid, försök igen" },
+            { status: 504 }
+          );
+        }
+        if (err.code === "RATE_LIMITED") {
+          return NextResponse.json(
+            { error: "AI-tjänsten är tillfälligt överbelastad, försök igen" },
+            { status: 503 }
+          );
+        }
+      }
+      // Never log prompt, customer data, or AI response body
+      console.error("[crm/email/suggestions] Failed to generate or validate suggestions");
       return NextResponse.json(
         { error: "Kunde inte generera förslag, försök igen" },
         { status: 500 }
