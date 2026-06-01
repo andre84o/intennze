@@ -35,7 +35,7 @@ export class AIError extends Error {
   }
 }
 
-export type AIProviderName = "openai" | "deepseek";
+export type AIProviderName = "openai" | "deepseek" | "anthropic";
 
 export interface Provider {
   generateText(

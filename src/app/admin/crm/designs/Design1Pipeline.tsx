@@ -37,7 +37,7 @@ export default function Design1Pipeline(p: DesignProps) {
   const [composeError, setComposeError] = useState<string | null>(null);
   const [composeSuccess, setComposeSuccess] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
-  const [suggestions, setSuggestions] = useState<{ tone: string; subject: string; message: string }[] | null>(null);
+  const [suggestions, setSuggestions] = useState<{ tone: string; subject: string; message: string; provider: string }[] | null>(null);
   const [suggestError, setSuggestError] = useState<string | null>(null);
   const [customerEmails, setCustomerEmails] = useState<EmailPreview[]>([]);
 
@@ -67,7 +67,7 @@ export default function Design1Pipeline(p: DesignProps) {
           ...(composeSubject.trim() && { subject: composeSubject.trim() }),
         }),
       });
-      const data = await res.json() as { suggestions?: { tone: string; subject: string; message: string }[]; error?: string };
+      const data = await res.json() as { suggestions?: { tone: string; subject: string; message: string; provider: string }[]; error?: string };
       if (!res.ok) {
         setSuggestError(data.error ?? "Kunde inte generera förslag");
       } else {
@@ -510,9 +510,11 @@ export default function Design1Pipeline(p: DesignProps) {
                   )}
 
                   {suggestions && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">3 förslag</p>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          {suggestions.length} förslag
+                        </p>
                         <button
                           type="button"
                           onClick={() => { setSuggestions(null); setSuggestError(null); }}
@@ -521,20 +523,36 @@ export default function Design1Pipeline(p: DesignProps) {
                           Dölj
                         </button>
                       </div>
-                      {suggestions.map((s, i) => (
-                        <div key={i} className="border border-violet-200 bg-violet-50 rounded-xl p-3 space-y-1">
-                          <p className="text-xs font-semibold text-violet-600">{s.tone}</p>
-                          <p className="text-sm font-medium text-slate-800 truncate">{s.subject}</p>
-                          <p className="text-xs text-slate-500 whitespace-pre-wrap">{s.message}</p>
-                          <button
-                            type="button"
-                            onClick={() => applySuggestion(s)}
-                            className="mt-1 w-full py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-lg transition-colors"
-                          >
-                            Använd det här
-                          </button>
-                        </div>
-                      ))}
+                      {(["DeepSeek", "Claude"] as const).map(providerName => {
+                        const group = suggestions.filter(s => s.provider === providerName);
+                        if (group.length === 0) return null;
+                        const isDeepSeek = providerName === "DeepSeek";
+                        const c = isDeepSeek
+                          ? { border: "border-amber-200", bg: "bg-amber-50", text: "text-amber-600", dot: "bg-amber-500", btn: "bg-amber-600 hover:bg-amber-700" }
+                          : { border: "border-violet-200", bg: "bg-violet-50", text: "text-violet-600", dot: "bg-violet-500", btn: "bg-violet-600 hover:bg-violet-700" };
+                        return (
+                          <div key={providerName} className="space-y-2">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-2 h-2 rounded-full ${c.dot}`} />
+                              <p className={`text-xs font-bold uppercase tracking-wider ${c.text}`}>{providerName}</p>
+                            </div>
+                            {group.map((s, i) => (
+                              <div key={i} className={`border ${c.border} ${c.bg} rounded-xl p-3 space-y-1`}>
+                                <p className={`text-xs font-semibold ${c.text}`}>{s.tone}</p>
+                                <p className="text-sm font-medium text-slate-800 truncate">{s.subject}</p>
+                                <p className="text-xs text-slate-500 whitespace-pre-wrap">{s.message}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => applySuggestion(s)}
+                                  className={`mt-1 w-full py-1.5 ${c.btn} text-white text-xs font-medium rounded-lg transition-colors`}
+                                >
+                                  Använd det här
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
