@@ -685,20 +685,22 @@ export default function Design1Pipeline(p: DesignProps) {
               </div>
             </div>
           )}
+
+          {/* Edit customer modal — must render inside the sheet portal, otherwise
+              the open sheet (a modal) layers above it and blocks all interaction */}
+          {showEdit && selected && (
+            <CustomerModal
+              customer={selected}
+              onClose={() => setShowEdit(false)}
+              onSave={(updated) => {
+                p.onReplaceCustomer(updated);
+                setSelected(updated);
+                setShowEdit(false);
+              }}
+            />
+          )}
         </SheetContent>
       </Sheet>
-
-      {showEdit && selected && (
-        <CustomerModal
-          customer={selected}
-          onClose={() => setShowEdit(false)}
-          onSave={(updated) => {
-            p.onReplaceCustomer(updated);
-            setSelected(updated);
-            setShowEdit(false);
-          }}
-        />
-      )}
     </div>
   );
 }
