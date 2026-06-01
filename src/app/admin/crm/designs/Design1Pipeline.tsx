@@ -525,7 +525,7 @@ export default function Design1Pipeline(p: DesignProps) {
                         <div key={i} className="border border-violet-200 bg-violet-50 rounded-xl p-3 space-y-1">
                           <p className="text-xs font-semibold text-violet-600">{s.tone}</p>
                           <p className="text-sm font-medium text-slate-800 truncate">{s.subject}</p>
-                          <p className="text-xs text-slate-500 line-clamp-2">{s.message}</p>
+                          <p className="text-xs text-slate-500 whitespace-pre-wrap">{s.message}</p>
                           <button
                             type="button"
                             onClick={() => applySuggestion(s)}
