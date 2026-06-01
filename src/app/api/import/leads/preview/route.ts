@@ -391,9 +391,11 @@ export async function POST(req: NextRequest) {
   // 10. Upload file to private Storage bucket (audit trail)
   // batchId is used as both the Redis token and lead_import_batches PK
   const batchId = crypto.randomUUID();
-  const safeName = file.name.replace(/[/\:*?"<>|]/g, "_").replace(/s+/g, "_").slice(0, 100);
-  const storagePath = `lead-imports/${user.id}/${batchId}/${safeName}`;
+  const safeName = file.name.replace(/[/\\:*?"<>|]/g, "_").replace(/\s+/g, "_").slice(0, 100);
+  // Object key is relative to the bucket — no "lead-imports/" prefix here.
+  const storagePath = `${user.id}/${batchId}/${safeName}`;
   let uploadedStoragePath = "";
+  let archiveError: string | null = null;
   try {
     const { error: uploadError } = await supabase.storage
       .from("lead-imports")
@@ -401,9 +403,17 @@ export async function POST(req: NextRequest) {
         contentType: file.type || "application/octet-stream",
         upsert: false,
       });
-    if (!uploadError) uploadedStoragePath = storagePath;
-  } catch {
-    // Storage upload failed — import continues without file archiving
+    if (uploadError) {
+      // Surface (server-side only) why archiving failed — without this the
+      // import silently succeeds but cannot be re-imported later.
+      archiveError = uploadError.message;
+      console.error("Lead-import: filuppladdning till Storage misslyckades:", uploadError.message);
+    } else {
+      uploadedStoragePath = storagePath;
+    }
+  } catch (e) {
+    archiveError = e instanceof Error ? e.message : "Okänt fel";
+    console.error("Lead-import: filuppladdning kastade undantag:", archiveError);
   }
 
   // 11. Store parsed rows + metadata in Redis (one-time token = batchId)
@@ -437,6 +447,8 @@ export async function POST(req: NextRequest) {
       duplicates,
       to_import: limitedToImport.length,
       display_name: displayName,
+      archived: !!uploadedStoragePath,
+      archive_error: archiveError,
     },
   });
 }

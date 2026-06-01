@@ -12,6 +12,8 @@ interface PreviewSummary {
   duplicates: number;
   to_import: number;
   display_name?: string;
+  archived?: boolean;
+  archive_error?: string | null;
 }
 
 interface ImportResult {
@@ -273,6 +275,18 @@ export default function ImportLeadsCard({ onDone }: ImportLeadsCardProps = {}) {
               <p className="text-sm font-semibold text-gray-700">Förhandsvisning</p>
               {summary && summary.display_name && (
                 <p className="text-xs text-blue-600 font-medium truncate -mt-1">{summary.display_name}</p>
+              )}
+
+              {summary.archived === false && (
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                  <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                  <span>
+                    Filen kunde inte arkiveras — du kommer inte kunna använda &quot;Importera igen&quot; för den här listan.
+                    {summary.archive_error ? ` (${summary.archive_error})` : ""}
+                  </span>
+                </div>
               )}
 
               <div className="space-y-1.5 text-sm">

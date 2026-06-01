@@ -210,8 +210,9 @@ export default function ImportHistoryCard() {
                   {!isActive ? (
                     <button
                       onClick={() => handleReprocess(batch.id)}
-                      disabled={!!reprocessId}
-                      className="px-3 py-1.5 bg-white border border-gray-200 hover:border-blue-300 hover:text-blue-600 text-gray-600 rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
+                      disabled={!!reprocessId || !batch.storage_path}
+                      title={!batch.storage_path ? "Ingen fil sparad för denna import — ladda upp filen på nytt via Import leads" : undefined}
+                      className="px-3 py-1.5 bg-white border border-gray-200 hover:border-blue-300 hover:text-blue-600 text-gray-600 rounded-lg text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:text-gray-600"
                     >
                       Importera igen
                     </button>
