@@ -427,8 +427,8 @@ export default function Design1Pipeline(p: DesignProps) {
           {showComposeModal && selected && (
             <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
               <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => { if (!composeSending) closeCompose(); }} />
-              <div className="relative w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-5 pt-5 pb-4">
+              <div className="relative w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90svh]">
+                <div className="flex items-center justify-between px-5 pt-5 pb-4 flex-shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
                       <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
@@ -442,7 +442,7 @@ export default function Design1Pipeline(p: DesignProps) {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
-                <div className="px-5 pb-5 space-y-3">
+                <div className="px-5 pb-5 space-y-3 overflow-y-auto flex-1">
                   <div>
                     <p className="text-xs font-medium text-slate-500 mb-1">Från</p>
                     <input readOnly value="System – info@intenzze.com" className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-500 cursor-default" />
