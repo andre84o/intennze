@@ -2,10 +2,9 @@ import "server-only";
 
 import { AIError, type AIGenerateOptions, type AIGenerateResponse, type AIProviderName, type Provider } from "./types";
 import { OpenAIProvider } from "./providers/openai";
-import { DeepSeekProvider } from "./providers/deepseek";
 import { AnthropicProvider } from "./providers/anthropic";
 
-const VALID_PROVIDERS: AIProviderName[] = ["openai", "deepseek", "anthropic"];
+const VALID_PROVIDERS: AIProviderName[] = ["openai", "anthropic"];
 
 // One cached instance per provider name — recreated on cold start or redeploy
 const _providers = new Map<AIProviderName, Provider>();
@@ -16,12 +15,6 @@ function createProviderByName(name: AIProviderName): Provider {
     if (!apiKey) throw new AIError("OPENAI_API_KEY is not set", "INVALID_CONFIG");
     const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
     return new OpenAIProvider(apiKey, model);
-  }
-  if (name === "deepseek") {
-    const apiKey = process.env.DEEPSEEK_API_KEY;
-    if (!apiKey) throw new AIError("DEEPSEEK_API_KEY is not set", "INVALID_CONFIG");
-    const model = process.env.DEEPSEEK_MODEL ?? "deepseek-chat";
-    return new DeepSeekProvider(apiKey, model);
   }
   // name === "anthropic"
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -34,7 +27,7 @@ function getProvider(override?: AIProviderName): Provider {
   const name = override ?? (process.env.AI_PROVIDER as AIProviderName | undefined);
   if (!name || !VALID_PROVIDERS.includes(name)) {
     throw new AIError(
-      'AI_PROVIDER must be "openai", "deepseek", or "anthropic"',
+      'AI_PROVIDER must be "openai" or "anthropic"',
       "INVALID_CONFIG"
     );
   }
