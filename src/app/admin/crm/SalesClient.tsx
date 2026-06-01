@@ -1,10 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Customer, CustomerStatus, Reminder, CustomerInteraction, InteractionType } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
 import { DesignProps, Questionnaire, ReminderFormData } from "./designs/types";
 import Design1Pipeline from "./designs/Design1Pipeline";
+
+function upsertById<T extends { id: string }>(list: T[], row: T): T[] {
+  const i = list.findIndex((x) => x.id === row.id);
+  if (i === -1) return [row, ...list];
+  const copy = [...list];
+  copy[i] = { ...copy[i], ...row };
+  return copy;
+}
+function removeById<T extends { id: string }>(list: T[], id: string): T[] {
+  return list.filter((x) => x.id !== id);
+}
 
 interface Props {
   customers: Customer[];
@@ -36,6 +47,32 @@ export default function SalesClient({ customers: init, reminders: initR, interac
   const [showQuestionsHelper, setShowQuestionsHelper] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
+
+  // ── Realtime ───────────────────────────────────────────────────────────────
+  // Keeps the desktop in sync across tabs/devices (incl. Mobile Call Companion
+  // outcomes) without a refresh. These handlers ONLY update local state — they
+  // never trigger /api/meta/conversion or any other side effect.
+  useEffect(() => {
+    const sb = createClient();
+    const channel = sb
+      .channel("crm-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, (p) => {
+        if (p.eventType === "DELETE") setCustomers((prev) => removeById(prev, (p.old as { id: string }).id));
+        else setCustomers((prev) => upsertById(prev, p.new as Customer));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "customer_interactions" }, (p) => {
+        if (p.eventType === "DELETE") setInteractions((prev) => removeById(prev, (p.old as { id: string }).id));
+        else setInteractions((prev) => upsertById(prev, p.new as CustomerInteraction));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "reminders" }, (p) => {
+        if (p.eventType === "DELETE") setReminders((prev) => removeById(prev, (p.old as { id: string }).id));
+        else setReminders((prev) => upsertById(prev, p.new as Reminder));
+      })
+      .subscribe();
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, []);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const getCustomerReminders = (id: string) => reminders.filter(r => r.customer_id === id && !r.is_completed).sort((a, b) => a.reminder_date.localeCompare(b.reminder_date));
