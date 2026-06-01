@@ -4,7 +4,6 @@ import { ReactNode } from "react";
 import { AdminProvider, useAdmin } from "./AdminContext";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
-import ReminderNotifications from "./components/ReminderNotifications";
 
 function AdminContent({
   children,
@@ -32,8 +31,6 @@ function AdminContent({
         <div className="p-3 sm:p-6">{children}</div>
       </main>
 
-      {/* Reminder notifications popup */}
-      <ReminderNotifications />
     </div>
   );
 }
