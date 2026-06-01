@@ -1,8 +1,9 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { EmailInteractionItem, type EmailPreview } from "@/app/admin/crm/components/EmailInteractionItem";
 import { createClient } from "@/utils/supabase/client";
 import {
   Customer,
@@ -43,6 +44,19 @@ export default function CustomerDetailClient({
   const [customer, setCustomer] = useState(initialCustomer);
   const [interactions, setInteractions] = useState(initialInteractions);
   const [saving, setSaving] = useState(false);
+  const [customerEmails, setCustomerEmails] = useState<EmailPreview[]>([]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("emails")
+      .select("id, subject, body_text, from_email, to_email, email_date")
+      .eq("customer_id", initialCustomer.id)
+      .eq("direction", "outbound")
+      .order("email_date", { ascending: false })
+      .limit(20)
+      .then(({ data }) => { setCustomerEmails(data ?? []); });
+  }, [initialCustomer.id]);
   const [showInteractionForm, setShowInteractionForm] = useState(false);
   const [newInteraction, setNewInteraction] = useState({
     type: "note" as InteractionType,
@@ -345,29 +359,47 @@ export default function CustomerDetailClient({
               <p className="text-gray-500 text-center py-8">Inga aktiviteter ännu</p>
             ) : (
               <div className="space-y-3">
-                {interactions.map((interaction) => (
-                  <div
-                    key={interaction.id}
-                    className="flex gap-3 p-3 bg-gray-50 border border-gray-100 rounded-lg"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <span className="text-xs text-gray-500 font-medium">
-                        {interactionTypeLabels[interaction.type]?.charAt(0) || "?"}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-gray-900">
-                          {interactionTypeLabels[interaction.type]}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(interaction.created_at).toLocaleString("sv-SE")}
+                {interactions.map((interaction) => {
+                  if (interaction.type === "email") {
+                    const email = interaction.email_id
+                      ? (customerEmails.find(e => e.id === interaction.email_id) ?? null)
+                      : null;
+                    return (
+                      <div key={interaction.id} className="p-3 bg-gray-50 border border-gray-100 rounded-lg">
+                        <EmailInteractionItem
+                          interactionId={interaction.id}
+                          createdAt={interaction.created_at}
+                          description={interaction.description}
+                          email={email}
+                          formatDateTime={(dt) => new Date(dt).toLocaleString("sv-SE")}
+                        />
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      key={interaction.id}
+                      className="flex gap-3 p-3 bg-gray-50 border border-gray-100 rounded-lg"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="text-xs text-gray-500 font-medium">
+                          {interactionTypeLabels[interaction.type]?.charAt(0) || "?"}
                         </span>
                       </div>
-                      <p className="text-gray-600 text-sm">{interaction.description}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium text-gray-900">
+                            {interactionTypeLabels[interaction.type]}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(interaction.created_at).toLocaleString("sv-SE")}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 text-sm">{interaction.description}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

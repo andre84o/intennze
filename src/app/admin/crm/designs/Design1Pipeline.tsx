@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { EmailInteractionItem, type EmailPreview } from "@/app/admin/crm/components/EmailInteractionItem";
 import gsap from "gsap";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,6 +30,104 @@ export default function Design1Pipeline(p: DesignProps) {
   const [reminderForm, setReminderForm] = useState<ReminderFormData>({ title: "", date: "", time: "", type: "follow_up" });
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showComposeModal, setShowComposeModal] = useState(false);
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeMessage, setComposeMessage] = useState("");
+  const [composeSending, setComposeSending] = useState(false);
+  const [composeError, setComposeError] = useState<string | null>(null);
+  const [composeSuccess, setComposeSuccess] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ tone: string; subject: string; message: string }[] | null>(null);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [customerEmails, setCustomerEmails] = useState<EmailPreview[]>([]);
+
+  function closeCompose() {
+    setShowComposeModal(false);
+    setComposeSubject("");
+    setComposeMessage("");
+    setComposeSending(false);
+    setComposeError(null);
+    setComposeSuccess(false);
+    setSuggestions(null);
+    setSuggestError(null);
+  }
+
+  async function handleGenerateSuggestions() {
+    if (!selected || !composeMessage.trim()) return;
+    setSuggesting(true);
+    setSuggestions(null);
+    setSuggestError(null);
+    try {
+      const res = await fetch("/api/crm/email/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: selected.id,
+          draftMessage: composeMessage.trim(),
+          ...(composeSubject.trim() && { subject: composeSubject.trim() }),
+        }),
+      });
+      const data = await res.json() as { suggestions?: { tone: string; subject: string; message: string }[]; error?: string };
+      if (!res.ok) {
+        setSuggestError(data.error ?? "Kunde inte generera förslag");
+      } else {
+        setSuggestions(data.suggestions ?? null);
+      }
+    } catch {
+      setSuggestError("Nätverksfel, försök igen");
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
+  function applySuggestion(s: { subject: string; message: string }) {
+    setComposeSubject(s.subject);
+    setComposeMessage(s.message);
+    setSuggestions(null);
+    setSuggestError(null);
+  }
+
+  async function handleSendEmail() {
+    if (!selected || !composeSubject.trim() || !composeMessage.trim()) return;
+    setComposeSending(true);
+    setComposeError(null);
+    try {
+      const res = await fetch("/api/crm/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: selected.id,
+          subject: composeSubject.trim(),
+          message: composeMessage.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setComposeError(data.error || "Kunde inte skicka mail");
+      } else {
+        setComposeSuccess(true);
+        setTimeout(closeCompose, 1800);
+      }
+    } catch {
+      setComposeError("Nätverksfel, försök igen");
+    } finally {
+      setComposeSending(false);
+    }
+  }
+
+  // Lazy-fetch outbound emails for the selected customer (authenticated via RLS)
+  useEffect(() => {
+    if (!selected) { setCustomerEmails([]); return; }
+    const supabase = createClient();
+    supabase
+      .from("emails")
+      .select("id, subject, body_text, from_email, to_email, email_date")
+      .eq("customer_id", selected.id)
+      .eq("direction", "outbound")
+      .order("email_date", { ascending: false })
+      .limit(20)
+      .then(({ data }) => { setCustomerEmails(data ?? []); });
+  }, [selected?.id]);
 
   const reminderDateObj = reminderForm.date ? new Date(reminderForm.date + "T00:00:00") : undefined;
   const reminderDateLabel = reminderDateObj
@@ -182,10 +282,10 @@ export default function Design1Pipeline(p: DesignProps) {
       </Card>
 
       {/* Detail Sheet */}
-      <Sheet open={!!selected} onOpenChange={(o) => { if (!o) { setSelected(null); setShowReminderForm(false); setShowEdit(false); setReminderForm({ title: "", date: "", time: "", type: "follow_up" }); } }}>
+      <Sheet open={!!selected} onOpenChange={(o) => { if (!o) { setSelected(null); setShowReminderForm(false); setShowEdit(false); setReminderForm({ title: "", date: "", time: "", type: "follow_up" }); closeCompose(); } }}>
         <SheetContent
           className="w-full sm:max-w-lg overflow-y-auto bg-white p-6"
-          onInteractOutside={(e) => { if (showReminderForm) e.preventDefault(); }}
+          onInteractOutside={(e) => { if (showReminderForm || showComposeModal) e.preventDefault(); }}
         >
           {selected && (
             <>
@@ -228,7 +328,11 @@ export default function Design1Pipeline(p: DesignProps) {
                 {/* Actions */}
                 <div className="grid grid-cols-2 gap-2">
                   {selected.phone && <a href={`tel:${selected.phone}`} className="flex items-center justify-center gap-1.5 px-2 py-2 bg-green-50 text-green-700 border border-green-200 rounded-xl text-xs font-medium hover:bg-green-100 transition-colors"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>Ring</a>}
-                  {selected.email && <a href={`mailto:${selected.email}`} className="flex items-center justify-center gap-1.5 px-2 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-medium hover:bg-blue-100 transition-colors"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>Maila</a>}
+                  {selected.email ? (
+                    <button onClick={() => setShowComposeModal(true)} className="flex items-center justify-center gap-1.5 px-2 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-medium hover:bg-blue-100 transition-colors"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>Maila</button>
+                  ) : (
+                    <button disabled title="Kunden saknar e-postadress" className="flex items-center justify-center gap-1.5 px-2 py-2 bg-slate-50 text-slate-400 border border-slate-200 rounded-xl text-xs font-medium cursor-not-allowed"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>Maila</button>
+                  )}
                   <button onClick={() => setShowReminderForm(true)} className="flex items-center justify-center gap-1.5 px-2 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-xs font-medium hover:bg-amber-100 transition-colors"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>Påminnelse</button>
                   {p.hasQuestionnaire(selected.id) && <button onClick={() => p.onViewResponses(selected.id)} className="flex items-center justify-center gap-1.5 px-2 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-medium hover:bg-indigo-100 transition-colors"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Formulärsvar</button>}
                 </div>
@@ -277,30 +381,194 @@ export default function Design1Pipeline(p: DesignProps) {
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Aktivitetslogg</p>
                     <div className="space-y-3">
-                      {customerInteractions.map(ia => (
-                        <div key={ia.id} className="flex gap-3 group">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d={interactionIcons[ia.type] || interactionIcons.other} /></svg>
+                      {customerInteractions.map(ia => {
+                        if (ia.type === "email") {
+                          const email = ia.email_id
+                            ? (customerEmails.find(e => e.id === ia.email_id) ?? null)
+                            : null;
+                          return (
+                            <EmailInteractionItem
+                              key={ia.id}
+                              interactionId={ia.id}
+                              createdAt={ia.created_at}
+                              description={ia.description}
+                              email={email}
+                              formatDateTime={p.formatDateTime}
+                              onDelete={() => p.onDeleteInteraction(ia.id)}
+                            />
+                          );
+                        }
+                        return (
+                          <div key={ia.id} className="flex gap-3 group">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d={interactionIcons[ia.type] || interactionIcons.other} /></svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-slate-400">{p.formatDateTime(ia.created_at)}</p>
+                              <p className="text-sm text-slate-700">{ia.description}</p>
+                            </div>
+                            <button
+                              onClick={() => p.onDeleteInteraction(ia.id)}
+                              className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1 text-slate-300 hover:text-rose-500 transition-all rounded"
+                              title="Radera"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-slate-400">{p.formatDateTime(ia.created_at)}</p>
-                            <p className="text-sm text-slate-700">{ia.description}</p>
-                          </div>
-                          <button
-                            onClick={() => p.onDeleteInteraction(ia.id)}
-                            className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1 text-slate-300 hover:text-rose-500 transition-all rounded"
-                            title="Radera"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
               </div>
             </>
           )}
+          {/* Compose email modal */}
+          {showComposeModal && selected && (
+            <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => { if (!composeSending) closeCompose(); }} />
+              <div className="relative w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
+                <div className="flex items-center justify-between px-5 pt-5 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Nytt mail</p>
+                      <p className="text-xs text-slate-400">{selected.first_name} {selected.last_name}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => { if (!composeSending) closeCompose(); }} disabled={composeSending} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                <div className="px-5 pb-5 space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 mb-1">Från</p>
+                    <input readOnly value="System – info@intenzze.com" className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-500 cursor-default" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 mb-1">Till</p>
+                    <input readOnly value={selected.email ?? ""} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 cursor-default" />
+                  </div>
+                  <input
+                    type="text"
+                    value={composeSubject}
+                    onChange={e => setComposeSubject(e.target.value)}
+                    placeholder="Ämnesrad..."
+                    maxLength={255}
+                    disabled={composeSending || composeSuccess}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-shadow disabled:opacity-60"
+                  />
+                  <div>
+                    <textarea
+                      value={composeMessage}
+                      onChange={e => setComposeMessage(e.target.value)}
+                      placeholder="Skriv ditt meddelande..."
+                      rows={5}
+                      maxLength={10000}
+                      disabled={composeSending || composeSuccess}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-shadow resize-none disabled:opacity-60"
+                    />
+                    <p className="text-xs text-slate-400 text-right mt-0.5">{composeMessage.length}/10 000</p>
+                  </div>
+
+                  {/* AI suggestions */}
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleGenerateSuggestions}
+                      disabled={suggesting || composeSending || composeSuccess || !composeMessage.trim()}
+                      className="w-full py-2 px-3 bg-violet-50 text-violet-700 border border-violet-200 rounded-xl text-xs font-medium hover:bg-violet-100 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
+                    >
+                      {suggesting ? (
+                        <>
+                          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          Genererar förslag...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                          </svg>
+                          Generera förslag med AI
+                        </>
+                      )}
+                    </button>
+                    <p className="text-xs text-slate-400">
+                      AI suggestions may send your draft text to the selected AI provider.
+                    </p>
+                  </div>
+
+                  {suggestError && (
+                    <p className="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+                      {suggestError}
+                    </p>
+                  )}
+
+                  {suggestions && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">3 förslag</p>
+                        <button
+                          type="button"
+                          onClick={() => { setSuggestions(null); setSuggestError(null); }}
+                          className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                          Dölj
+                        </button>
+                      </div>
+                      {suggestions.map((s, i) => (
+                        <div key={i} className="border border-violet-200 bg-violet-50 rounded-xl p-3 space-y-1">
+                          <p className="text-xs font-semibold text-violet-600">{s.tone}</p>
+                          <p className="text-sm font-medium text-slate-800 truncate">{s.subject}</p>
+                          <p className="text-xs text-slate-500 line-clamp-2">{s.message}</p>
+                          <button
+                            type="button"
+                            onClick={() => applySuggestion(s)}
+                            className="mt-1 w-full py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-lg transition-colors"
+                          >
+                            Använd det här
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {composeError && (
+                    <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">{composeError}</p>
+                  )}
+                  {composeSuccess && (
+                    <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      Mail skickat!
+                    </p>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={closeCompose} disabled={composeSending} className="flex-1 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 rounded-xl text-sm font-medium transition-colors">
+                      Avbryt
+                    </button>
+                    <button
+                      onClick={handleSendEmail}
+                      disabled={composeSending || composeSuccess || !composeSubject.trim() || !composeMessage.trim()}
+                      className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      {composeSending ? (
+                        <>
+                          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                          Skickar...
+                        </>
+                      ) : "Skicka"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Reminder form */}
           {showReminderForm && selected && (
             <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">

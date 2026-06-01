@@ -96,6 +96,7 @@ export interface CustomerInteraction {
   type: InteractionType;
   description: string;
   created_by: string | null;
+  email_id?: string | null;
 }
 
 export interface Purchase {
