@@ -8,6 +8,7 @@ export const metadata = {
 export default async function QuotesPage() {
   const supabase = await createClient();
 
+  
   const { data: quotes, error } = await supabase
     .from("quotes")
     .select("*, customer:customers(*), items:quote_items(*)")
