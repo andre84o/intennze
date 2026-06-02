@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import PageViewTracker from "@/components/PageViewTracker";
 import DemoNavbar from "../components/DemoNavbar";
 import DemoFooter from "../components/DemoFooter";
 

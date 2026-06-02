@@ -10,6 +10,7 @@ import CookieBanner from "@/app/components/CookieBanner";
 import ConditionalLayout from "@/app/components/ConditionalLayout";
 import { LanguageProvider } from "@/app/i18n/LanguageProvider";
 import GAListener from "./components/GAListener";
+import MetaRouteListener from "./components/MetaRouteListener";
 import Analytics from "./components/Analytics";
 
 const geistSans = Geist({
@@ -89,7 +90,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
     fbq('init', '1537867027358765');
-    if (!/^\\/(offert|formular)\\//.test(window.location.pathname)) {
+    if (!/^\\/(offert|formular|admin|login|demo)\\//.test(window.location.pathname)) {
       fbq('track', 'PageView');
     }
   `}
@@ -163,6 +164,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </Script>
         {/* Track client-side route changes */}
         <GAListener />
+        <Suspense fallback={null}>
+          <MetaRouteListener />
+        </Suspense>
       </body>
     </html>
   );

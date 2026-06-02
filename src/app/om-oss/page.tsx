@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import AboutContent from "../components/AboutContent";
-import PageViewTracker from "@/components/PageViewTracker";
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await cookies();
@@ -39,7 +38,6 @@ export default async function AboutPage() {
   };
   return (
     <>
-      <PageViewTracker pageName="Om oss" />
       <AboutContent />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
