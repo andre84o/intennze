@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
-import { trackLead } from "@/utils/metaPixel";
+import { trackLead, genEventId, getFbp, getFbc } from "@/utils/metaPixel";
 
 type DataLayerEvent = Record<string, unknown>;
 type DataLayerWindow = Window & { dataLayer?: DataLayerEvent[] };
@@ -27,7 +27,9 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Pr
     "idle"
   );
 
-  // Fire tracking event when form is successfully sent
+  // Fire Google tracking when the form is successfully sent. The Meta `Lead`
+  // is fired inside onSubmit instead, where we still have the form values for
+  // advanced matching and a shared dedup id (see below).
   useEffect(() => {
     if (status === "sent" && typeof window !== "undefined") {
       // Google Ads Conversion
@@ -45,11 +47,6 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Pr
           form_name: "contact_form",
         });
       }
-
-      // Facebook Pixel
-      if ((window as { fbq?: (action: string, event: string) => void }).fbq) {
-        (window as { fbq: (action: string, event: string) => void }).fbq("track", "Lead");
-      }
     }
   }, [status]);
 
@@ -60,6 +57,25 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Pr
       const form = e.currentTarget;
       const formData = new FormData(form);
 
+      // Shared dedup id + browser identity, so the server CAPI Lead (fired from
+      // /api/contact) collapses into the same conversion as this browser event.
+      const eventId = genEventId();
+      formData.append("meta_event_id", eventId);
+      const fbp = getFbp();
+      const fbc = getFbc();
+      if (fbp) formData.append("meta_fbp", fbp);
+      if (fbc) formData.append("meta_fbc", fbc);
+      if (typeof window !== "undefined") {
+        formData.append("meta_event_source_url", window.location.href);
+      }
+
+      // Read field values for advanced matching before the form is reset.
+      const fullName = String(formData.get("name") || "").trim();
+      const email = String(formData.get("email") || "").trim();
+      const phone = String(formData.get("phone") || "").trim();
+      const firstName = fullName.split(/\s+/)[0] || undefined;
+      const lastName = fullName.split(/\s+/).slice(1).join(" ") || undefined;
+
       const res = await fetch("/api/contact", {
         method: "POST",
         body: formData,
@@ -67,7 +83,14 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Pr
 
       if (!res.ok) throw new Error("Request failed");
 
-      trackLead({ source: "contact_form" });
+      // Single Meta Lead: advanced matching (em/ph/fn/ln) + dedup id.
+      trackLead(
+        { content_name: "contact_form" },
+        {
+          eventID: eventId,
+          userData: { em: email, ph: phone, fn: firstName, ln: lastName },
+        }
+      );
       setStatus("sent");
       form.reset();
       if (onSent) onSent();

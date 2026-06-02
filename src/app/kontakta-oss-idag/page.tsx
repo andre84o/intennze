@@ -2,15 +2,16 @@
 import ContactForm from "../components/contactForm";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { useEffect } from "react";
-import { trackLead } from "@/utils/metaPixel";
+import { trackViewContent } from "@/utils/metaPixel";
 
 export default function LandingPage() {
   const { lang } = useLanguage();
   const sv = lang === "sv";
 
-  // Track landing page view for ad campaigns
+  // Track the ad landing-page view. This is a ViewContent, NOT a Lead — a
+  // visit is not a conversion. The Lead fires only on actual form submit.
   useEffect(() => {
-    trackLead({ source: "ad_landing" });
+    trackViewContent("Ad Landing", "landing_page");
   }, []);
 
   const benefits = [

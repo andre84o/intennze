@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import PolicyContent from "./PolicyContent";
-import PageViewTracker from "@/components/PageViewTracker";
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await cookies();
@@ -22,7 +21,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function IntegritetspolicyPage() {
   return (
     <main className="min-h-screen w-full bg-slate-950 text-white">
-      <PageViewTracker pageName="Integritetspolicy" />
       <div className="mx-auto max-w-4xl px-6 py-24 md:py-32">
         <PolicyContent />
       </div>

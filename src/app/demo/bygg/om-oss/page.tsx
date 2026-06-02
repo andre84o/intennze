@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import PageViewTracker from "@/components/PageViewTracker";
 import DemoNavbar from "../components/DemoNavbar";
 import DemoFooter from "../components/DemoFooter";
 
@@ -13,7 +12,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function OmOssPage() {
   return (
     <div className="min-h-screen">
-      <PageViewTracker pageName="Demo: Construction / About" />
       <DemoNavbar />
 
       {/* Hero Section */}

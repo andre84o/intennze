@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import ContactContent from "../components/ContactContent";
-import PageViewTracker from "@/components/PageViewTracker";
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await cookies();
@@ -39,7 +38,6 @@ const ContactPage = async () => {
     };
     return (
       <>
-        <PageViewTracker pageName="Kontakt" />
         <ContactContent />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(contactLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />

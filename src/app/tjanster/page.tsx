@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import PriceContent from "../components/PriceContent";
-import PageViewTracker from "@/components/PageViewTracker";
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await cookies();
@@ -171,7 +170,6 @@ export default async function ServicesPage() {
 
   return (
     <>
-      <PageViewTracker pageName="Tjänster" />
       <PriceContent />
       {/* Product + Offer JSON-LD per tier (one-time) */}
       {products.map((p, i) => (

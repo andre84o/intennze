@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import PageViewTracker from "@/components/PageViewTracker";
 import DemoNavbar from "../components/DemoNavbar";
 import DemoFooter from "../components/DemoFooter";
 
@@ -12,7 +11,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function KontaktPage() {
   return (
     <div className="min-h-screen">
-      <PageViewTracker pageName="Demo: Construction / Contact" />
       <DemoNavbar />
 
       {/* Hero Section */}

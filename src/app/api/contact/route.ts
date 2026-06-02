@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { sendMetaEvent } from "@/lib/meta/capi";
 
 // Rate limiter: 2 requests per 15 minutes per IP
 // Only initialize if Upstash is configured
@@ -169,6 +170,46 @@ export async function POST(req: Request) {
       `💬 <b>Meddelande:</b>\n${message}\n\n` +
       `🔗 <a href="https://intenzze.com/admin/crm">Öppna CRM</a>`
     );
+
+    // Server-side Meta Lead (Conversions API), deduped against the browser
+    // pixel via the shared event_id the form generated. Hashing + sending lives
+    // in the CAPI helper. Never block or fail the user response on tracking.
+    try {
+      const metaEventId = String(form.get("meta_event_id") || "") || undefined;
+      const fbp = String(form.get("meta_fbp") || "") || undefined;
+      const fbc = String(form.get("meta_fbc") || "") || undefined;
+      const eventSourceUrl =
+        String(form.get("meta_event_source_url") || "") ||
+        req.headers.get("referer") ||
+        undefined;
+      const clientIp =
+        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        req.headers.get("x-real-ip") ||
+        undefined;
+      const clientUserAgent = req.headers.get("user-agent") || undefined;
+      const [firstName, ...rest] = name.split(/\s+/);
+
+      await sendMetaEvent({
+        eventName: "Lead",
+        actionSource: "website",
+        eventId: metaEventId,
+        eventSourceUrl,
+        user: {
+          email,
+          phone,
+          firstName: firstName || null,
+          lastName: rest.join(" ") || null,
+          country: "se",
+          fbp,
+          fbc,
+          clientIp,
+          clientUserAgent,
+        },
+        customData: { lead_source: "contact_form" },
+      });
+    } catch (e) {
+      console.error("[Meta CAPI] contact Lead failed:", e);
+    }
 
     return NextResponse.json({ ok: true, id: info.messageId });
   } catch (err) {
