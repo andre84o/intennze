@@ -222,7 +222,7 @@ async function fetchLeadData(leadgenId: string) {
 
   try {
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${leadgenId}?access_token=${accessToken}&appsecret_proof=${appSecretProof}`
+      `https://graph.facebook.com/v24.0/${leadgenId}?access_token=${accessToken}&appsecret_proof=${appSecretProof}`
     );
 
     if (!response.ok) {
@@ -260,6 +260,10 @@ async function saveBasicLead(metadata: {
       status: "lead",
       source: "facebook_ads",
       facebook_lead_id: metadata.leadgen_id,
+      // Store the leadgen_id as meta_lead_id too: this is the offline match key
+      // (`lead_id`) the CRM funnel events read when the lead later progresses,
+      // so Meta can attribute Contact/Purchase back to the originating Lead Ad.
+      meta_lead_id: metadata.leadgen_id,
       is_read: false,
       notes: `Facebook Lead Ad
 Lead ID: ${metadata.leadgen_id}

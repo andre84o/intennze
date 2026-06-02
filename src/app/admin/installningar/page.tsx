@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import ImportLeadsCard from "./ImportLeadsCard";
 import ImportHistoryCard from "./ImportHistoryCard";
+import MetaAudienceCard from "./MetaAudienceCard";
 
 interface CompanySettings {
   company_name: string;
@@ -533,6 +534,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <MetaAudienceCard />
 
       <ImportLeadsCard />
       <ImportHistoryCard />

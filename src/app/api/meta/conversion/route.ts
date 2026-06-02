@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { sendMetaEvent, isMetaConfigured, buildFbcFromFbclid } from "@/lib/meta/capi";
 
-// Mappa CRM-status till Facebook försäljningstratt-händelser
+// Mappa CRM-status till Facebook försäljningstratt-händelser. Stegen följer
+// DB-enumet (lead → contacted → negotiating → customer → churned).
 function statusToEventName(status: string): string {
   const statusMap: Record<string, string> = {
     lead: "Lead",
     contacted: "Contact",
+    negotiating: "InitiateCheckout",
     customer: "Purchase",
     churned: "Other",
   };
@@ -18,6 +20,7 @@ function getLeadScore(status: string): number {
   const scoreMap: Record<string, number> = {
     lead: 1,
     contacted: 2,
+    negotiating: 3,
     customer: 4,
     churned: 0,
   };
@@ -49,7 +52,7 @@ export async function POST(request: NextRequest) {
     // tracking call. The authenticated admin's RLS lets them read customers.
     const { data: customer, error: customerError } = await supabase
       .from("customers")
-      .select("status, email, phone, first_name, last_name, city, postal_code, country, meta_lead_id, fbclid")
+      .select("status, email, phone, first_name, last_name, city, postal_code, country, meta_lead_id, facebook_lead_id, fbclid")
       .eq("id", customerId)
       .single();
 
@@ -88,7 +91,9 @@ export async function POST(request: NextRequest) {
         postalCode: customer.postal_code,
         country: customer.country || "se",
         externalId: customerId,
-        leadId: customer.meta_lead_id,
+        // Prefer the stored Meta lead_id; fall back to the raw Lead Ads
+        // leadgen_id for leads imported before meta_lead_id was backfilled.
+        leadId: customer.meta_lead_id || customer.facebook_lead_id,
         fbc,
       },
       customData: {
