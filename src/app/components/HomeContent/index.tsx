@@ -2,11 +2,20 @@
 import { useState } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import ContactForm from "../contactForm";
+import { trackContact } from "@/utils/metaPixel";
 
 export default function HomeContent() {
   const { lang } = useLanguage();
   const sv = lang === "sv";
   const [showContactModal, setShowContactModal] = useState(false);
+
+  // Contact-intent signal (replaces the old "boka möte" Event Setup Tool rule).
+  // The Lead still fires on actual form submit inside ContactForm.
+  const fireContact = () => trackContact();
+  const openContactModal = () => {
+    fireContact();
+    setShowContactModal(true);
+  };
 
   const HERO_TAGLINE = sv ? "Struktur före glitter" : "Structure before glitter";
   const INTRO = sv
@@ -136,6 +145,7 @@ export default function HomeContent() {
               <div className="mt-10 flex flex-wrap gap-4">
                 <a
                   href="/kontakt"
+                  onClick={fireContact}
                   className="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-medium overflow-hidden"
                 >
                   <span className="relative">{BTN_BOOK}</span>
@@ -368,7 +378,7 @@ export default function HomeContent() {
                 : "We help you find the right path forward – book a free consultation today."}
             </p>
             <button
-              onClick={() => setShowContactModal(true)}
+              onClick={openContactModal}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full font-medium hover:opacity-90 transition-opacity"
             >
               {sv ? "Kontakta oss idag" : "Contact us today"}
@@ -466,7 +476,7 @@ export default function HomeContent() {
             </span>
           </h2>
           <button
-            onClick={() => setShowContactModal(true)}
+            onClick={openContactModal}
             className="inline-flex items-center gap-3 px-10 py-5 bg-white text-slate-950 rounded-full font-bold text-lg hover:scale-105 transition-transform"
           >
             {sv ? "Starta nu" : "Start now"}
