@@ -3,6 +3,7 @@ import ContactForm from "../components/contactForm";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { useEffect } from "react";
 import { trackViewContent } from "@/utils/metaPixel";
+import { useEngagementTracking } from "@/lib/useEngagementTracking";
 
 export default function LandingPage() {
   const { lang } = useLanguage();
@@ -13,6 +14,10 @@ export default function LandingPage() {
   useEffect(() => {
     trackViewContent("Ad Landing", "landing_page");
   }, []);
+
+  // Scroll depth, dwell time and nav clicks — so we can tell whether ad
+  // visitors engage with the page or bounce straight off.
+  useEngagementTracking("Ad Landing");
 
   const benefits = [
     sv ? "Proffsig design som bygger förtroende" : "Professional design that builds trust",
