@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { sendMetaEvent } from "@/lib/meta/capi";
+import { createClient } from "@supabase/supabase-js";
 
 // Rate limiter: 2 requests per 15 minutes per IP
 // Only initialize if Upstash is configured
@@ -59,6 +60,61 @@ const escapeHtml = (s: string) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+
+// Write a website contact submission into the same `customers` CRM table the
+// Facebook leads use, so web leads show up alongside them (source "website").
+// Server-side only — the service-role key never reaches the client. Best-effort:
+// callers wrap this so a CRM failure never blocks the user's confirmation.
+async function saveContactLead(input: {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+}): Promise<void> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) {
+    console.warn("[CRM] Supabase ej konfigurerad – hoppar över CRM-skrivning");
+    return;
+  }
+
+  const supabaseAdmin = createClient(url, serviceKey);
+  const [firstName, ...rest] = input.name.split(/\s+/);
+  const lastName = rest.join(" ");
+  const receivedAt = new Date().toLocaleString("sv-SE");
+
+  // Avoid duplicate CRM rows: if this email already exists, append the new
+  // inquiry to that customer's notes and flag it unread instead of inserting.
+  const { data: existing } = await supabaseAdmin
+    .from("customers")
+    .select("id, notes")
+    .eq("email", input.email)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    const appended =
+      `${existing.notes ? existing.notes + "\n\n" : ""}` +
+      `Ny förfrågan via webbformulär (${receivedAt}):\n${input.message}`;
+    await supabaseAdmin
+      .from("customers")
+      .update({ notes: appended, is_read: false })
+      .eq("id", existing.id);
+    return;
+  }
+
+  await supabaseAdmin.from("customers").insert({
+    first_name: firstName || input.name,
+    last_name: lastName || null,
+    email: input.email,
+    phone: input.phone,
+    wishes: input.message,
+    status: "lead",
+    source: "website",
+    is_read: false,
+    notes: `Webbformulär (kontakta-oss-idag)\nMottagen: ${receivedAt}`,
+  });
+}
 
 export async function POST(req: Request) {
   try {
@@ -170,6 +226,14 @@ export async function POST(req: Request) {
       `💬 <b>Meddelande:</b>\n${message}\n\n` +
       `🔗 <a href="https://intenzze.com/admin/crm">Öppna CRM</a>`
     );
+
+    // Save into the CRM (Supabase). Best-effort — never block or fail the user
+    // response on a CRM write; email + Telegram have already gone out.
+    try {
+      await saveContactLead({ name, email, phone, message });
+    } catch (e) {
+      console.error("[CRM] contact lead insert failed:", e);
+    }
 
     // Server-side Meta Lead (Conversions API), deduped against the browser
     // pixel via the shared event_id the form generated. Hashing + sending lives
