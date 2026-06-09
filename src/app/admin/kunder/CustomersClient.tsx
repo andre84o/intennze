@@ -78,7 +78,8 @@ export default function CustomersClient({
       const bExpired = isServiceExpired(b);
       if (aExpired && !bExpired) return -1;
       if (!aExpired && bExpired) return 1;
-      return 0;
+      // Newest first.
+      return (b.created_at || "").localeCompare(a.created_at || "");
     });
 
   const handleSave = async (savedCustomer: Customer) => {

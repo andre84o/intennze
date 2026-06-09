@@ -170,7 +170,8 @@ export default function Design1Pipeline(p: DesignProps) {
     if (!p.isServiceExpired(a) && p.isServiceExpired(b)) return 1;
     if (p.hasOverdueReminder(a.id) && !p.hasOverdueReminder(b.id)) return -1;
     if (!p.hasOverdueReminder(a.id) && p.hasOverdueReminder(b.id)) return 1;
-    return 0;
+    // Newest leads first within the same priority group.
+    return (b.created_at || "").localeCompare(a.created_at || "");
   });
 
   const customerInteractions = selected ? p.getCustomerInteractions(selected.id) : [];
