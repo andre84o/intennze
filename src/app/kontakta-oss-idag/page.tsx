@@ -26,7 +26,7 @@ export default function LandingPage() {
   ];
 
   const trustSignals = [
-    sv ? "Kostnadsfri offert" : "Free quote",
+    sv ? "Kostnadsfri konsultation" : "Free consultation",
     sv ? "Svar inom 24 timmar" : "Response within 24 hours",
     sv ? "Inga dolda kostnader" : "No hidden costs",
   ];
@@ -106,9 +106,9 @@ export default function LandingPage() {
             {/* Right - Contact Form */}
             <div>
               <ContactForm
-                title={sv ? "Få ett prisförslag" : "Get a price quote"}
+                title={sv ? "Boka din kostnadsfria konsultation" : "Book your free consultation"}
                 subtitle={sv ? "Svar inom 24 timmar. Kostnadsfritt och utan bindning." : "Response within 24 hours. Free and non-binding."}
-                buttonText={sv ? "Få prisförslag" : "Get quote"}
+                buttonText={sv ? "Boka konsultation" : "Book consultation"}
               />
 
               {/* Trust signals under form */}
