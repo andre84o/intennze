@@ -109,6 +109,7 @@ export default function LandingPage() {
                 title={sv ? "Boka din kostnadsfria konsultation" : "Book your free consultation"}
                 subtitle={sv ? "Svar inom 24 timmar. Kostnadsfritt och utan bindning." : "Response within 24 hours. Free and non-binding."}
                 buttonText={sv ? "Boka konsultation" : "Book consultation"}
+                messageRequired={false}
               />
 
               {/* Trust signals under form */}
