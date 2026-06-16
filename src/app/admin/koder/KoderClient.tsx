@@ -271,7 +271,7 @@ export default function KoderClient({ initialSnippets, error }: Props) {
                     value={snippet.code}
                     onChange={(e) => editField(snippet, "code", e.target.value)}
                     onFocus={() => setExpandedSnippet(snippet.id)}
-                    onBlur={() => persistField(snippet, "code")}
+                    onBlur={() => { persistField(snippet, "code"); setExpandedSnippet(null); }}
                     spellCheck={false}
                     placeholder="Klistra in din kod här..."
                     className={`w-full p-3 text-xs font-mono text-slate-700 bg-slate-50 border border-slate-100 rounded-xl resize-y focus:outline-none focus:ring-1 focus:ring-blue-400 focus:bg-white transition-all ${isExpanded ? "h-72" : "h-24"}`}
