@@ -3,6 +3,7 @@ import ContactForm from "../components/contactForm";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { useEffect } from "react";
 import { trackViewContent } from "@/utils/metaPixel";
+import { useEngagementTracking } from "@/lib/useEngagementTracking";
 
 export default function LandingPage() {
   const { lang } = useLanguage();
@@ -14,6 +15,10 @@ export default function LandingPage() {
     trackViewContent("Ad Landing", "landing_page");
   }, []);
 
+  // Scroll depth, dwell time and nav clicks — so we can tell whether ad
+  // visitors engage with the page or bounce straight off.
+  useEngagementTracking("Ad Landing");
+
   const benefits = [
     sv ? "Proffsig design som bygger förtroende" : "Professional design that builds trust",
     sv ? "Mobilanpassat och snabbt" : "Mobile-friendly and fast",
@@ -21,7 +26,7 @@ export default function LandingPage() {
   ];
 
   const trustSignals = [
-    sv ? "Kostnadsfri offert" : "Free quote",
+    sv ? "Kostnadsfri konsultation" : "Free consultation",
     sv ? "Svar inom 24 timmar" : "Response within 24 hours",
     sv ? "Inga dolda kostnader" : "No hidden costs",
   ];
@@ -101,9 +106,10 @@ export default function LandingPage() {
             {/* Right - Contact Form */}
             <div>
               <ContactForm
-                title={sv ? "Få ett prisförslag" : "Get a price quote"}
+                title={sv ? "Boka din kostnadsfria konsultation" : "Book your free consultation"}
                 subtitle={sv ? "Svar inom 24 timmar. Kostnadsfritt och utan bindning." : "Response within 24 hours. Free and non-binding."}
-                buttonText={sv ? "Få prisförslag" : "Get quote"}
+                buttonText={sv ? "Boka konsultation" : "Book consultation"}
+                messageRequired={false}
               />
 
               {/* Trust signals under form */}

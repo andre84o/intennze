@@ -13,9 +13,11 @@ type Props = {
   title?: string;
   subtitle?: string;
   buttonText?: string;
+  /** When false, the message field is optional (default: true). */
+  messageRequired?: boolean;
 };
 
-const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Props) => {
+const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, messageRequired = true }: Props) => {
   const { lang } = useLanguage();
   const t = (k: string) => dict[lang][k];
   const sv = lang === "sv";
@@ -56,6 +58,13 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Pr
     try {
       const form = e.currentTarget;
       const formData = new FormData(form);
+
+      // When the message is optional (e.g. the ad landing page) and left blank,
+      // send a short placeholder so the lead still has context in email/CRM and
+      // passes the server's required-message check.
+      if (!messageRequired && !String(formData.get("message") || "").trim()) {
+        formData.set("message", "(Inget meddelande – vill bli kontaktad)");
+      }
 
       // Shared dedup id + browser identity, so the server CAPI Lead (fired from
       // /api/contact) collapses into the same conversion as this browser event.
@@ -256,11 +265,14 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText }: Pr
             className="block text-sm font-medium text-slate-300 mb-2"
           >
             {t("message_label")}
+            {!messageRequired && (
+              <span className="text-slate-500 font-normal"> {sv ? "(valfritt)" : "(optional)"}</span>
+            )}
           </label>
           <textarea
             id="message"
             name="message"
-            required
+            required={messageRequired}
             rows={5}
             className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none"
             placeholder={t("message_placeholder")}
