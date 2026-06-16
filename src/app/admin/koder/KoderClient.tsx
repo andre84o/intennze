@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { CodeSnippet } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
 
@@ -137,6 +137,29 @@ export default function KoderClient({ initialSnippets, error }: Props) {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // Inline editing of free-text fields directly in the card ------------------
+  const dirtyFields = useRef<Set<string>>(new Set());
+
+  const updateSnippetLocal = (id: string, patch: Partial<CodeSnippet>) => {
+    setSnippets((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  };
+
+  const editField = (snippet: CodeSnippet, field: keyof CodeSnippet, value: CodeSnippet[keyof CodeSnippet]) => {
+    dirtyFields.current.add(`${snippet.id}:${String(field)}`);
+    updateSnippetLocal(snippet.id, { [field]: value });
+  };
+
+  const persistField = async (snippet: CodeSnippet, field: keyof CodeSnippet) => {
+    const key = `${snippet.id}:${String(field)}`;
+    if (!dirtyFields.current.has(key)) return;
+    dirtyFields.current.delete(key);
+    const supabase = createClient();
+    await supabase
+      .from("code_snippets")
+      .update({ [field]: snippet[field], updated_at: new Date().toISOString() })
+      .eq("id", snippet.id);
+  };
+
   return (
     <div className="text-gray-900">
       {/* Header */}
@@ -244,17 +267,15 @@ export default function KoderClient({ initialSnippets, error }: Props) {
                   </div>
 
                   {/* Code */}
-                  <div
-                    className="relative bg-slate-50 border border-slate-100 rounded-xl overflow-hidden cursor-pointer"
-                    onClick={() => setExpandedSnippet(isExpanded ? null : snippet.id)}
-                  >
-                    <pre className={`p-3 text-xs font-mono text-slate-700 overflow-x-auto transition-all duration-300 ${isExpanded ? "max-h-[500px]" : "max-h-24"}`}>
-                      <code>{snippet.code}</code>
-                    </pre>
-                    {!isExpanded && snippet.code.split("\n").length > 4 && (
-                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-50 to-transparent" />
-                    )}
-                  </div>
+                  <textarea
+                    value={snippet.code}
+                    onChange={(e) => editField(snippet, "code", e.target.value)}
+                    onFocus={() => setExpandedSnippet(snippet.id)}
+                    onBlur={() => persistField(snippet, "code")}
+                    spellCheck={false}
+                    placeholder="Klistra in din kod här..."
+                    className={`w-full p-3 text-xs font-mono text-slate-700 bg-slate-50 border border-slate-100 rounded-xl resize-y focus:outline-none focus:ring-1 focus:ring-blue-400 focus:bg-white transition-all ${isExpanded ? "h-72" : "h-24"}`}
+                  />
 
                   {/* Footer */}
                   <div className="flex items-center justify-between mt-3">
@@ -271,7 +292,7 @@ export default function KoderClient({ initialSnippets, error }: Props) {
                           </svg>
                         )}
                       </button>
-                      <button onClick={() => openEditModal(snippet)} className="p-1.5 text-gray-400 hover:text-indigo-500 rounded-lg hover:bg-indigo-50 transition-colors" title="Redigera">
+                      <button onClick={() => openEditModal(snippet)} className="p-1.5 text-gray-400 hover:text-indigo-500 rounded-lg hover:bg-indigo-50 transition-colors" title="Redigera språk/taggar">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
                         </svg>
