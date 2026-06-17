@@ -47,7 +47,7 @@ export default function HomeContent() {
       border: "hover:border-cyan-500/50"
     },
     {
-      url: "/demo/barber",
+      url: "https://demo-barber-seven.vercel.app/",
       screenshotUrl: "https://demo-barber-seven.vercel.app/",
       title: sv ? "Barber" : "Barber",
       desc: sv ? "Stilren design för salong" : "Sleek design for salons",
@@ -71,7 +71,7 @@ export default function HomeContent() {
       border: "hover:border-amber-500/50"
     },
     {
-      url: "/demo/health",
+      url: "https://demo-health-red.vercel.app/",
       screenshotUrl: "https://demo-health-red.vercel.app/",
       title: sv ? "Hälsa" : "Health",
       desc: sv ? "Fräsch design för hälsobranschen" : "Fresh design for health industry",
@@ -87,8 +87,8 @@ export default function HomeContent() {
       border: "hover:border-indigo-500/50"
     },
     {
-      url: "/demo/clinic",
-      screenshotUrl: "https://clinic-two-omega.vercel.app",
+      url: "https://clinic-two-omega.vercel.app/",
+      screenshotUrl: "https://clinic-two-omega.vercel.app/",
       title: sv ? "Klinik" : "Clinic",
       desc: sv ? "Modern design för vårdmottagning" : "Modern design for healthcare",
       gradient: "from-rose-500/50 to-rose-500/20",
@@ -110,6 +110,22 @@ export default function HomeContent() {
       desc: sv ? "Smart bokning för företag" : "Smart booking for businesses",
       gradient: "from-sky-500/50 to-sky-500/20",
       border: "hover:border-sky-500/50"
+    },
+    {
+      url: "https://www.collectedhomes.com/",
+      screenshotUrl: "https://www.collectedhomes.com/",
+      title: "Collected Homes",
+      desc: sv ? "Stilren sida för hem & fastigheter" : "Sleek site for homes & real estate",
+      gradient: "from-teal-500/50 to-teal-500/20",
+      border: "hover:border-teal-500/50"
+    },
+    {
+      url: "https://www.costalivingrentals.com/",
+      screenshotUrl: "https://www.costalivingrentals.com/",
+      title: "Costa Living Rentals",
+      desc: sv ? "Modern sida för uthyrning" : "Modern site for rentals",
+      gradient: "from-orange-500/50 to-orange-500/20",
+      border: "hover:border-orange-500/50"
     }
   ];
 
