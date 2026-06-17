@@ -1,21 +1,30 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { CodeSnippet } from "@/types/database";
+import { CodeSnippet, Attachment } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
+import { AttachmentUploader } from "@/components/attachments/AttachmentUploader";
+import { ImageGalleryModal } from "@/components/attachments/ImageGalleryModal";
+import { DocumentListModal } from "@/components/attachments/DocumentListModal";
 
 interface Props {
   initialSnippets: CodeSnippet[];
+  initialAttachments?: Attachment[];
   error?: string;
 }
+
+const ENTITY_TYPE = "code_snippet";
 
 const languageOptions = [
   "JavaScript", "TypeScript", "Python", "HTML", "CSS", "SQL",
   "Bash", "JSON", "React/JSX", "PHP", "C#", "Java", "Go", "Rust", "Annat",
 ];
 
-export default function KoderClient({ initialSnippets, error }: Props) {
+export default function KoderClient({ initialSnippets, initialAttachments = [], error }: Props) {
   const [snippets, setSnippets] = useState(initialSnippets);
+  const [attachments, setAttachments] = useState<Attachment[]>(initialAttachments);
+  const [galleryFor, setGalleryFor] = useState<string | null>(null);
+  const [docsFor, setDocsFor] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [languageFilter, setLanguageFilter] = useState<string>("all");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -160,6 +169,21 @@ export default function KoderClient({ initialSnippets, error }: Props) {
       .eq("id", snippet.id);
   };
 
+  // Attachments grouped per snippet ------------------------------------------
+  const attachmentsBySnippet = useMemo(() => {
+    const map: Record<string, { images: Attachment[]; documents: Attachment[] }> = {};
+    for (const a of attachments) {
+      const group = (map[a.entity_id] ??= { images: [], documents: [] });
+      if (a.kind === "image") group.images.push(a);
+      else group.documents.push(a);
+    }
+    return map;
+  }, [attachments]);
+
+  const onAttachmentUploaded = (att: Attachment) => setAttachments((prev) => [...prev, att]);
+  const onAttachmentDeleted = (att: Attachment) =>
+    setAttachments((prev) => prev.filter((a) => a.id !== att.id));
+
   return (
     <div className="text-gray-900">
       {/* Header */}
@@ -231,6 +255,7 @@ export default function KoderClient({ initialSnippets, error }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredSnippets.map((snippet) => {
             const isExpanded = expandedSnippet === snippet.id;
+            const att = attachmentsBySnippet[snippet.id] ?? { images: [], documents: [] };
             return (
               <div key={snippet.id} className="bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-blue-200/60 group">
                 {/* Colored top accent */}
@@ -279,8 +304,27 @@ export default function KoderClient({ initialSnippets, error }: Props) {
 
                   {/* Footer */}
                   <div className="flex items-center justify-between mt-3">
-                    <span className="text-[10px] text-gray-400">{new Date(snippet.created_at).toLocaleDateString("sv-SE")}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">{new Date(snippet.created_at).toLocaleDateString("sv-SE")}</span>
+                      {att.images.length > 0 && (
+                        <button onClick={() => setGalleryFor(snippet.id)} className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 text-[10px] font-medium hover:bg-blue-100 transition-colors" title="Visa bilder">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                          </svg>
+                          {att.images.length}
+                        </button>
+                      )}
+                      {att.documents.length > 0 && (
+                        <button onClick={() => setDocsFor(snippet.id)} className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-500 text-[10px] font-medium hover:bg-indigo-100 transition-colors" title="Visa dokument">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                          </svg>
+                          {att.documents.length}
+                        </button>
+                      )}
+                    </div>
                     <div className="flex items-center gap-0.5">
+                      <AttachmentUploader entityType={ENTITY_TYPE} entityId={snippet.id} onUploaded={onAttachmentUploaded} />
                       <button onClick={() => copyToClipboard(snippet.code, snippet.id)} className="p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition-colors" title="Kopiera">
                         {copiedId === snippet.id ? (
                           <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -398,6 +442,22 @@ export default function KoderClient({ initialSnippets, error }: Props) {
           </div>
         </div>
       )}
+
+      {/* Image gallery */}
+      <ImageGalleryModal
+        open={galleryFor !== null}
+        images={galleryFor ? attachmentsBySnippet[galleryFor]?.images ?? [] : []}
+        onClose={() => setGalleryFor(null)}
+        onDeleted={onAttachmentDeleted}
+      />
+
+      {/* Document list */}
+      <DocumentListModal
+        open={docsFor !== null}
+        documents={docsFor ? attachmentsBySnippet[docsFor]?.documents ?? [] : []}
+        onClose={() => setDocsFor(null)}
+        onDeleted={onAttachmentDeleted}
+      />
     </div>
   );
 }
