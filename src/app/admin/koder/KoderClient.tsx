@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { AttachmentUploader } from "@/components/attachments/AttachmentUploader";
 import { ImageGalleryModal } from "@/components/attachments/ImageGalleryModal";
 import { DocumentListModal } from "@/components/attachments/DocumentListModal";
+import { deleteAttachment } from "@/lib/attachments/storage";
 
 interface Props {
   initialSnippets: CodeSnippet[];
@@ -127,8 +128,15 @@ export default function KoderClient({ initialSnippets, initialAttachments = [], 
   const handleDelete = async () => {
     if (!snippetToDelete) return;
     const supabase = createClient();
+    // Remove this snippet's attachments first (Storage files + DB rows) so we
+    // don't orphan files in Supabase when the whole card is deleted.
+    const related = attachments.filter((a) => a.entity_id === snippetToDelete);
+    await Promise.all(related.map((a) => deleteAttachment(a)));
     const { error } = await supabase.from("code_snippets").delete().eq("id", snippetToDelete);
-    if (!error) setSnippets((prev) => prev.filter((s) => s.id !== snippetToDelete));
+    if (!error) {
+      setSnippets((prev) => prev.filter((s) => s.id !== snippetToDelete));
+      setAttachments((prev) => prev.filter((a) => a.entity_id !== snippetToDelete));
+    }
     setShowDeleteModal(false);
     setSnippetToDelete(null);
   };
