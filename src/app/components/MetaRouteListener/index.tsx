@@ -8,9 +8,8 @@ import { trackPageView } from "@/utils/metaPixel";
 // first page load is already tracked by the inline pixel script in the root
 // layout, so we skip the initial render to avoid a double-count.
 //
-// Excludes admin/login/token-bearing paths (no PII in tracking) and /demo
-// (client showcase sites must not pollute the intenzze ad dataset).
-const EXCLUDED = ["/admin", "/login", "/offert/", "/formular/", "/demo/"];
+// Excludes admin/login/token-bearing paths (no PII in tracking).
+const EXCLUDED = ["/admin", "/login", "/offert/", "/formular/"];
 
 export default function MetaRouteListener() {
   const pathname = usePathname();
