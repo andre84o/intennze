@@ -10,6 +10,7 @@ import {
   MAX_ATTACHMENT_SIZE,
   fileExt,
   formatBytes,
+  isAllowedUpload,
   isImageMime,
   stripExt,
 } from "@/lib/attachments/constants";
@@ -86,6 +87,10 @@ export function AttachmentUploader({
     for (const file of Array.from(files)) {
       if (file.size > MAX_ATTACHMENT_SIZE) {
         setError(`"${file.name}" är för stor (max ${formatBytes(MAX_ATTACHMENT_SIZE)}).`);
+        continue;
+      }
+      if (!isAllowedUpload(file.type, file.name)) {
+        setError(`"${file.name}" är inte en tillåten filtyp.`);
         continue;
       }
       const kind: AttachmentKind = isImageMime(file.type) ? "image" : "document";

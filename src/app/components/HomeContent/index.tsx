@@ -8,12 +8,17 @@ export default function HomeContent() {
   const { lang } = useLanguage();
   const sv = lang === "sv";
   const [showContactModal, setShowContactModal] = useState(false);
+  // Prefilled message for the contact form (e.g. when opened from a pricing card).
+  const [contactIntro, setContactIntro] = useState<string | undefined>(undefined);
 
   // Contact-intent signal (replaces the old "boka möte" Event Setup Tool rule).
   // The Lead still fires on actual form submit inside ContactForm.
   const fireContact = () => trackContact();
-  const openContactModal = () => {
+  // `intro` is ignored when not a string so existing `onClick={openContactModal}`
+  // handlers (which receive the click event) keep working unchanged.
+  const openContactModal = (intro?: string) => {
     fireContact();
+    setContactIntro(typeof intro === "string" ? intro : undefined);
     setShowContactModal(true);
   };
 
@@ -98,10 +103,9 @@ export default function HomeContent() {
       url: "https://mugg.vercel.app/",
       screenshotUrl: "https://mugg.vercel.app/",
       title: sv ? "Mugg Shop" : "Mug Shop",
-      desc: sv ? "E-handel byggt på Shopify" : "E-commerce built on Shopify",
+      desc: sv ? "Modern e-handel med smidig kassa" : "Modern e-commerce with smooth checkout",
       gradient: "from-green-500/50 to-green-500/20",
-      border: "hover:border-green-500/50",
-      platform: "shopify"
+      border: "hover:border-green-500/50"
     },
     {
       url: "https://booking-ten-psi.vercel.app/",
@@ -394,7 +398,7 @@ export default function HomeContent() {
                 : "We help you find the right path forward – book a free consultation today."}
             </p>
             <button
-              onClick={openContactModal}
+              onClick={() => openContactModal()}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full font-medium hover:opacity-90 transition-opacity"
             >
               {sv ? "Kontakta oss idag" : "Contact us today"}
@@ -407,7 +411,7 @@ export default function HomeContent() {
       </section>
 
       {/* Demo Examples */}
-      <section className="relative py-24 px-6">
+      <section className="relative pt-2 pb-24 md:py-24 px-6">
         <div className="max-w-7xl mx-auto">
           {/* Header - Centered */}
           <div className="text-center mb-16">
@@ -461,11 +465,6 @@ export default function HomeContent() {
                         <h3 className="text-xl font-bold text-slate-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-slate-300 transition-all">
                           {demo.title}
                         </h3>
-                        {"platform" in demo && demo.platform === "shopify" && (
-                          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="#96BF48" aria-label="Shopify">
-                            <path d="M15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.73c-.018-.116-.114-.192-.211-.192s-1.929-.136-1.929-.136-1.275-1.274-1.439-1.411c-.045-.037-.075-.057-.121-.074l-.914 21.104h.023zM11.71 11.305s-.81-.424-1.774-.424c-1.447 0-1.504.906-1.504 1.141 0 1.232 3.24 1.715 3.24 4.629 0 2.295-1.44 3.76-3.406 3.76-2.354 0-3.54-1.465-3.54-1.465l.646-2.086s1.245 1.066 2.28 1.066c.675 0 .975-.545.975-.932 0-1.619-2.654-1.694-2.654-4.359-.034-2.237 1.571-4.416 4.827-4.416 1.257 0 1.875.361 1.875.361l-.945 2.715-.02.01zM11.17.83c.136 0 .271.038.405.135-.984.465-2.064 1.639-2.508 3.992-.656.213-1.293.405-1.889.578C7.697 3.75 8.951.84 11.17.84V.83zm1.235 2.949v.135c-.754.232-1.583.484-2.394.736.466-1.777 1.333-2.645 2.085-2.971.193.501.309 1.176.309 2.1zm.539-2.234c.694.074 1.141.867 1.429 1.755-.349.114-.735.231-1.158.366v-.252c0-.752-.096-1.371-.271-1.871v.002zm2.992 1.289c-.02 0-.06.021-.078.021s-.289.075-.714.21c-.423-1.233-1.176-2.37-2.508-2.37h-.115C12.135.209 11.669 0 11.265 0 8.159 0 6.675 3.877 6.21 5.846c-1.194.365-2.063.636-2.16.674-.675.213-.694.232-.772.87-.075.462-1.83 14.063-1.83 14.063L15.009 24l.927-21.166z"/>
-                          </svg>
-                        )}
                       </div>
                       <p className="text-sm text-slate-400 leading-relaxed">{demo.desc}</p>
                     </div>
@@ -482,6 +481,129 @@ export default function HomeContent() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section id="priser" className="relative pt-2 pb-24 md:py-24 px-6 scroll-mt-24">
+        <div className="max-w-7xl mx-auto">
+          {/* Header - Centered */}
+          <div className="text-center mb-16">
+            <span className="inline-block px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-slate-400 font-mono mb-4">
+              {sv ? "Priser" : "Pricing"}
+            </span>
+            <h2 className="text-3xl md:text-5xl font-bold">
+              {sv ? "Välj paket som passar dig" : "Choose the package that fits you"}
+            </h2>
+            <p className="text-slate-400 mt-4 max-w-xl mx-auto">
+              {sv
+                ? "Exempelpriser – kontakta oss för en offert anpassad efter dina behov."
+                : "Example prices – contact us for a quote tailored to your needs."}
+            </p>
+          </div>
+
+          {/* Pricing grid */}
+          <div className="flex flex-wrap justify-center gap-6">
+            {[
+              {
+                name: sv ? "Start" : "Start",
+                price: "5 000",
+                tagline: sv ? "Perfekt för en enkel närvaro" : "Perfect for a simple presence",
+                gradient: "from-cyan-500/50 to-cyan-500/20",
+                border: "hover:border-cyan-500/50",
+                popular: false,
+                features: sv
+                  ? ["Landningssida (one-pager)", "Responsiv design", "Kontaktformulär", "Grundläggande SEO", "Koppling till sociala medier", "Driftsättning", "14 dagars support"]
+                  : ["Landing page (one-pager)", "Responsive design", "Contact form", "Basic SEO", "Social media links", "Deployment", "14 days of support"],
+              },
+              {
+                name: sv ? "Standard" : "Standard",
+                price: "10 000",
+                tagline: sv ? "För växande företag" : "For growing businesses",
+                gradient: "from-purple-500/50 to-purple-500/20",
+                border: "hover:border-purple-500/50",
+                popular: true,
+                features: sv
+                  ? ["Upp till 5 sidor", "Anpassad design", "CMS för egen redigering", "Utökad SEO", "Google Maps & företagsprofil", "Bildoptimering & snabb laddning", "30 dagars support"]
+                  : ["Up to 5 pages", "Custom design", "CMS for self-editing", "Advanced SEO", "Google Maps & business profile", "Image optimization & fast loading", "30 days of support"],
+              },
+              {
+                name: sv ? "Premium" : "Premium",
+                price: "25 000",
+                tagline: sv ? "Skräddarsydd lösning" : "Tailored solution",
+                gradient: "from-fuchsia-500/50 to-fuchsia-500/20",
+                border: "hover:border-fuchsia-500/50",
+                popular: false,
+                features: sv
+                  ? ["Upp till 15 sidor", "E-handel eller bokningssystem", "Skräddarsydd funktionalitet", "Integrationer & API", "Avancerad SEO & analys", "Flerspråkig sida", "Prioriterad support i 60 dagar"]
+                  : ["Up to 15 pages", "E-commerce or booking system", "Custom functionality", "Integrations & API", "Advanced SEO & analytics", "Multilingual site", "Priority support for 60 days"],
+              },
+            ].map((plan, i) => (
+              <div
+                key={i}
+                className={`group relative w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] bg-slate-900/40 backdrop-blur-md border rounded-3xl p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 ${plan.border} ${
+                  plan.popular ? "border-purple-500/50" : "border-slate-800/50"
+                }`}
+              >
+                {plan.popular && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-cyan-500 to-purple-500 text-white">
+                    {sv ? "Populärast" : "Most popular"}
+                  </span>
+                )}
+
+                {/* Gradient line top */}
+                <div className={`absolute top-0 left-8 right-8 h-px bg-gradient-to-r ${plan.gradient} opacity-30`} />
+
+                <h3 className="text-xl font-bold text-slate-100">{plan.name}</h3>
+                <p className="text-sm text-slate-400 mt-1">{plan.tagline}</p>
+
+                <div className="mt-6 mb-8">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-white">{plan.price}</span>
+                    <span className="text-lg text-slate-400">kr</span>
+                  </div>
+                  <span className="text-xs text-slate-500">{sv ? "exkl. moms" : "excl. VAT"}</span>
+                </div>
+
+                <ul className="space-y-3 mb-8">
+                  {plan.features.map((feature, fi) => (
+                    <li key={fi} className="flex items-start gap-3 text-sm text-slate-300">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 shrink-0 text-cyan-400">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() =>
+                    openContactModal(
+                      sv
+                        ? `Hej! Jag är intresserad av paketet "${plan.name}" (${plan.price} kr exkl. moms). Berätta gärna mer.`
+                        : `Hi! I'm interested in the "${plan.name}" package (${plan.price} kr excl. VAT). Please tell me more.`
+                    )
+                  }
+                  className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium transition-all ${
+                    plan.popular
+                      ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:opacity-90"
+                      : "border border-slate-700 text-slate-200 hover:border-slate-500 hover:bg-slate-800/50"
+                  }`}
+                >
+                  {sv ? "Kom igång" : "Get started"}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                <p className="mt-4 text-xs text-slate-500 leading-relaxed text-center">
+                  {sv
+                    ? "Webbhotell, domän samt färdiga bilder och texter ingår ej."
+                    : "Web hosting, domain and ready-made images and copy are not included."}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="relative py-24 px-6 pt-5">
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
@@ -492,7 +614,7 @@ export default function HomeContent() {
             </span>
           </h2>
           <button
-            onClick={openContactModal}
+            onClick={() => openContactModal()}
             className="inline-flex items-center gap-3 px-10 py-5 bg-white text-slate-950 rounded-full font-bold text-lg hover:scale-105 transition-transform"
           >
             {sv ? "Starta nu" : "Start now"}
@@ -528,7 +650,7 @@ export default function HomeContent() {
               </svg>
             </button>
 
-            <ContactForm onSent={() => setShowContactModal(false)} />
+            <ContactForm initialMessage={contactIntro} onSent={() => setShowContactModal(false)} />
           </div>
         </div>
       )}
