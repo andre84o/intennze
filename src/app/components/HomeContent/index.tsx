@@ -3,11 +3,17 @@ import { useState } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import ContactForm from "../contactForm";
 import { trackContact } from "@/utils/metaPixel";
+import { useEngagementTracking } from "@/lib/useEngagementTracking";
 
 export default function HomeContent() {
   const { lang } = useLanguage();
   const sv = lang === "sv";
   const [showContactModal, setShowContactModal] = useState(false);
+
+  // Scroll depth, dwell time and nav clicks → Meta Pixel + GA4 + GTM. Lets us
+  // see whether traffic-ad visitors actually engage with the home page or
+  // bounce. PII-free (page name, scroll %, dwell seconds, clicked href only).
+  useEngagementTracking("Home");
 
   // Contact-intent signal (replaces the old "boka möte" Event Setup Tool rule).
   // The Lead still fires on actual form submit inside ContactForm.
