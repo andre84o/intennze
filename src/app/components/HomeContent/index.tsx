@@ -45,7 +45,8 @@ export default function HomeContent() {
       title: sv ? "Barber" : "Barber",
       desc: sv ? "Stilren design för salong" : "Sleek design for salons",
       gradient: "from-purple-500/50 to-purple-500/20",
-      border: "hover:border-purple-500/50"
+      border: "hover:border-purple-500/50",
+      tag: sv ? "Landningssida (One-page)" : "Landing page (One-page)"
     },
     {
       url: "https://demo-redovisning.vercel.app/",
@@ -71,7 +72,8 @@ export default function HomeContent() {
       title: sv ? "Hälsa" : "Health",
       desc: sv ? "Fräsch design för hälsobranschen" : "Fresh design for health industry",
       gradient: "from-emerald-500/50 to-emerald-500/20",
-      border: "hover:border-emerald-500/50"
+      border: "hover:border-emerald-500/50",
+      tag: sv ? "Upp till 5 sidor" : "Up to 5 pages"
     },
     {
       url: "https://clinic-two-omega.vercel.app/",
@@ -79,7 +81,8 @@ export default function HomeContent() {
       title: sv ? "Klinik" : "Clinic",
       desc: sv ? "Modern design för vårdmottagning" : "Modern design for healthcare",
       gradient: "from-rose-500/50 to-rose-500/20",
-      border: "hover:border-rose-500/50"
+      border: "hover:border-rose-500/50",
+      tag: sv ? "Landningssida (One-page)" : "Landing page (One-page)"
     },
   ];
 
@@ -405,10 +408,15 @@ export default function HomeContent() {
                   
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
                         <h3 className="text-xl font-bold text-slate-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-slate-300 transition-all">
                           {demo.title}
                         </h3>
+                        {(demo as { tag?: string }).tag && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800/70 border border-slate-700 text-slate-400 whitespace-nowrap">
+                            {(demo as { tag?: string }).tag}
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-slate-400 leading-relaxed">{demo.desc}</p>
                     </div>
@@ -521,7 +529,23 @@ export default function HomeContent() {
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 shrink-0 text-cyan-400">
                         <path d="M20 6L9 17l-5-5" />
                       </svg>
-                      {feature}
+                      <span>
+                        {feature}
+                        {(feature === "Upp till 5 sidor" || feature === "Up to 5 pages") && (
+                          <span className="mt-1 block text-xs text-slate-500 leading-relaxed">
+                            {sv
+                              ? "Exempel: Startsida, Om oss, Tjänster, Priser, Kontakt"
+                              : "Example: Home, About, Services, Pricing, Contact"}
+                          </span>
+                        )}
+                        {(feature === "Landningssida (one-page)" || feature === "Landing page (one-page)") && (
+                          <span className="mt-1 block text-xs text-slate-500 leading-relaxed">
+                            {sv
+                              ? "Exempel: Allt innehåll visas på startsidan."
+                              : "Example: All content is shown on the homepage."}
+                          </span>
+                        )}
+                      </span>
                     </li>
                   ))}
                 </ul>
