@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
       `👤 <b>Kund:</b> ${customerName}\n` +
       `📧 <b>E-post:</b> ${customerData?.email || "—"}\n` +
       `📞 <b>Telefon:</b> ${customerData?.phone || "—"}\n\n` +
-      `🔗 <a href="https://intenzze.com/admin/crm">Öppna CRM</a>`
+      `🔗 <a href="https://www.intenzze.com/admin/crm">Öppna CRM</a>`
     );
 
     return NextResponse.json({

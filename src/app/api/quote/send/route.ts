@@ -110,7 +110,7 @@ export async function POST(req: Request) {
 
     // Generate public token for customer response
     const publicToken = quote.public_token || generateToken();
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://intenzze.com";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.intenzze.com";
     const quoteUrl = `${baseUrl}/offert/${publicToken}`;
 
     // Prepare attachments (Logo)

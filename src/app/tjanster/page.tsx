@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ServicesPage() {
   const c = await cookies();
   const lang = c.get("lang")?.value === "en" ? "en" : "sv";
-  const base = "https://intenzze.com";
+  const base = "https://www.intenzze.com";
   const currency = "SEK";
 
   const tiers = {

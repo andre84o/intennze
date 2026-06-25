@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
             `👤 <b>Namn:</b> ${name}\n` +
             `📞 <b>Telefon:</b> ${phone}\n` +
             `📧 <b>E-post:</b> ${email}\n\n` +
-            `🔗 <a href="https://intenzze.com/admin/crm">Öppna CRM</a>`
+            `🔗 <a href="https://www.intenzze.com/admin/crm">Öppna CRM</a>`
           );
         } else {
           // Skicka notifiering även om vi inte kunde hämta full data
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
             `🔔 <b>Ny lead från Facebook!</b>\n\n` +
             `Lead ID: ${metadata.leadgen_id}\n\n` +
             `⚠️ Kunde inte hämta kontaktinfo.\n` +
-            `🔗 <a href="https://intenzze.com/admin/crm">Öppna CRM</a>`
+            `🔗 <a href="https://www.intenzze.com/admin/crm">Öppna CRM</a>`
           );
         }
       }

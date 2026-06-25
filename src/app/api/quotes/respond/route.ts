@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       `${emoji} <b>Offert ${status}!</b>\n\n` +
       `👤 <b>Kund:</b> ${customerName}\n` +
       (note ? `💬 <b>Kommentar:</b> ${note}\n\n` : "\n") +
-      `🔗 <a href="https://intenzze.com/admin/crm">Öppna CRM</a>`
+      `🔗 <a href="https://www.intenzze.com/admin/crm">Öppna CRM</a>`
     );
 
     return NextResponse.json({

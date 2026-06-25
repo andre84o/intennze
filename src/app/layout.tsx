@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://intenzze.com"),
+  metadataBase: new URL("https://www.intenzze.com"),
   title: {
     default: "Web development by intenzze",
     template: "%s | intenzze",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     title: "intenzze webbstudio",
     description:
       "Snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
-    url: "https://intenzze.com",
+    url: "https://www.intenzze.com",
     siteName: "intenzze",
     locale: "sv_SE",
     type: "website",
@@ -92,8 +92,8 @@ export default async function RootLayout({
             "@context": "https://schema.org",
             "@type": "Organization",
             name: "intenzze",
-            url: "https://intenzze.com",
-            logo: "https://intenzze.com/logo.png",
+            url: "https://www.intenzze.com",
+            logo: "https://www.intenzze.com/logo.png",
             sameAs: [],
           })}
         </Script>

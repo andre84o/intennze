@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = "https://intenzze.com";
+  const base = "https://www.intenzze.com";
   const now = new Date();
   return [
     { url: `${base}/`, lastModified: now },

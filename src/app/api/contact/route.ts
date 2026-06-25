@@ -224,7 +224,7 @@ export async function POST(req: Request) {
       `📞 <b>Telefon:</b> ${phone}\n` +
       `📧 <b>E-post:</b> ${email}\n\n` +
       `💬 <b>Meddelande:</b>\n${message}\n\n` +
-      `🔗 <a href="https://intenzze.com/admin/crm">Öppna CRM</a>`
+      `🔗 <a href="https://www.intenzze.com/admin/crm">Öppna CRM</a>`
     );
 
     // Save into the CRM (Supabase). Best-effort — never block or fail the user

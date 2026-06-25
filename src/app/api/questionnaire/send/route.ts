@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
     // Generate public token
     const publicToken = generateToken();
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://intenzze.com";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.intenzze.com";
     const formUrl = `${baseUrl}/formular/${publicToken}`;
 
     // Prepare attachments (Logo)
