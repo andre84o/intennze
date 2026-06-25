@@ -1,21 +1,31 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { CodeSnippet } from "@/types/database";
+import { useState, useMemo, useRef } from "react";
+import { CodeSnippet, Attachment } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
+import { AttachmentUploader } from "@/components/attachments/AttachmentUploader";
+import { ImageGalleryModal } from "@/components/attachments/ImageGalleryModal";
+import { DocumentListModal } from "@/components/attachments/DocumentListModal";
+import { deleteAttachment } from "@/lib/attachments/storage";
 
 interface Props {
   initialSnippets: CodeSnippet[];
+  initialAttachments?: Attachment[];
   error?: string;
 }
+
+const ENTITY_TYPE = "code_snippet";
 
 const languageOptions = [
   "JavaScript", "TypeScript", "Python", "HTML", "CSS", "SQL",
   "Bash", "JSON", "React/JSX", "PHP", "C#", "Java", "Go", "Rust", "Annat",
 ];
 
-export default function KoderClient({ initialSnippets, error }: Props) {
+export default function KoderClient({ initialSnippets, initialAttachments = [], error }: Props) {
   const [snippets, setSnippets] = useState(initialSnippets);
+  const [attachments, setAttachments] = useState<Attachment[]>(initialAttachments);
+  const [galleryFor, setGalleryFor] = useState<string | null>(null);
+  const [docsFor, setDocsFor] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [languageFilter, setLanguageFilter] = useState<string>("all");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -118,8 +128,15 @@ export default function KoderClient({ initialSnippets, error }: Props) {
   const handleDelete = async () => {
     if (!snippetToDelete) return;
     const supabase = createClient();
+    // Remove this snippet's attachments first (Storage files + DB rows) so we
+    // don't orphan files in Supabase when the whole card is deleted.
+    const related = attachments.filter((a) => a.entity_id === snippetToDelete);
+    await Promise.all(related.map((a) => deleteAttachment(a)));
     const { error } = await supabase.from("code_snippets").delete().eq("id", snippetToDelete);
-    if (!error) setSnippets((prev) => prev.filter((s) => s.id !== snippetToDelete));
+    if (!error) {
+      setSnippets((prev) => prev.filter((s) => s.id !== snippetToDelete));
+      setAttachments((prev) => prev.filter((a) => a.entity_id !== snippetToDelete));
+    }
     setShowDeleteModal(false);
     setSnippetToDelete(null);
   };
@@ -136,6 +153,44 @@ export default function KoderClient({ initialSnippets, error }: Props) {
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  // Inline editing of free-text fields directly in the card ------------------
+  const dirtyFields = useRef<Set<string>>(new Set());
+
+  const updateSnippetLocal = (id: string, patch: Partial<CodeSnippet>) => {
+    setSnippets((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  };
+
+  const editField = (snippet: CodeSnippet, field: keyof CodeSnippet, value: CodeSnippet[keyof CodeSnippet]) => {
+    dirtyFields.current.add(`${snippet.id}:${String(field)}`);
+    updateSnippetLocal(snippet.id, { [field]: value });
+  };
+
+  const persistField = async (snippet: CodeSnippet, field: keyof CodeSnippet) => {
+    const key = `${snippet.id}:${String(field)}`;
+    if (!dirtyFields.current.has(key)) return;
+    dirtyFields.current.delete(key);
+    const supabase = createClient();
+    await supabase
+      .from("code_snippets")
+      .update({ [field]: snippet[field], updated_at: new Date().toISOString() })
+      .eq("id", snippet.id);
+  };
+
+  // Attachments grouped per snippet ------------------------------------------
+  const attachmentsBySnippet = useMemo(() => {
+    const map: Record<string, { images: Attachment[]; documents: Attachment[] }> = {};
+    for (const a of attachments) {
+      const group = (map[a.entity_id] ??= { images: [], documents: [] });
+      if (a.kind === "image") group.images.push(a);
+      else group.documents.push(a);
+    }
+    return map;
+  }, [attachments]);
+
+  const onAttachmentUploaded = (att: Attachment) => setAttachments((prev) => [...prev, att]);
+  const onAttachmentDeleted = (att: Attachment) =>
+    setAttachments((prev) => prev.filter((a) => a.id !== att.id));
 
   return (
     <div className="text-gray-900">
@@ -208,6 +263,7 @@ export default function KoderClient({ initialSnippets, error }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredSnippets.map((snippet) => {
             const isExpanded = expandedSnippet === snippet.id;
+            const att = attachmentsBySnippet[snippet.id] ?? { images: [], documents: [] };
             return (
               <div key={snippet.id} className="bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-blue-200/60 group">
                 {/* Colored top accent */}
@@ -244,22 +300,39 @@ export default function KoderClient({ initialSnippets, error }: Props) {
                   </div>
 
                   {/* Code */}
-                  <div
-                    className="relative bg-slate-50 border border-slate-100 rounded-xl overflow-hidden cursor-pointer"
-                    onClick={() => setExpandedSnippet(isExpanded ? null : snippet.id)}
-                  >
-                    <pre className={`p-3 text-xs font-mono text-slate-700 overflow-x-auto transition-all duration-300 ${isExpanded ? "max-h-[500px]" : "max-h-24"}`}>
-                      <code>{snippet.code}</code>
-                    </pre>
-                    {!isExpanded && snippet.code.split("\n").length > 4 && (
-                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-50 to-transparent" />
-                    )}
-                  </div>
+                  <textarea
+                    value={snippet.code}
+                    onChange={(e) => editField(snippet, "code", e.target.value)}
+                    onFocus={() => setExpandedSnippet(snippet.id)}
+                    onBlur={() => { persistField(snippet, "code"); setExpandedSnippet(null); }}
+                    spellCheck={false}
+                    placeholder="Klistra in din kod här..."
+                    className={`w-full p-3 text-xs font-mono text-slate-700 bg-slate-50 border border-slate-100 rounded-xl resize-y focus:outline-none focus:ring-1 focus:ring-blue-400 focus:bg-white transition-all ${isExpanded ? "h-72" : "h-24"}`}
+                  />
 
                   {/* Footer */}
                   <div className="flex items-center justify-between mt-3">
-                    <span className="text-[10px] text-gray-400">{new Date(snippet.created_at).toLocaleDateString("sv-SE")}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">{new Date(snippet.created_at).toLocaleDateString("sv-SE")}</span>
+                      {att.images.length > 0 && (
+                        <button onClick={() => setGalleryFor(snippet.id)} className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 text-[10px] font-medium hover:bg-blue-100 transition-colors" title="Visa bilder">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                          </svg>
+                          {att.images.length}
+                        </button>
+                      )}
+                      {att.documents.length > 0 && (
+                        <button onClick={() => setDocsFor(snippet.id)} className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-500 text-[10px] font-medium hover:bg-indigo-100 transition-colors" title="Visa dokument">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                          </svg>
+                          {att.documents.length}
+                        </button>
+                      )}
+                    </div>
                     <div className="flex items-center gap-0.5">
+                      <AttachmentUploader entityType={ENTITY_TYPE} entityId={snippet.id} onUploaded={onAttachmentUploaded} />
                       <button onClick={() => copyToClipboard(snippet.code, snippet.id)} className="p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition-colors" title="Kopiera">
                         {copiedId === snippet.id ? (
                           <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -271,7 +344,7 @@ export default function KoderClient({ initialSnippets, error }: Props) {
                           </svg>
                         )}
                       </button>
-                      <button onClick={() => openEditModal(snippet)} className="p-1.5 text-gray-400 hover:text-indigo-500 rounded-lg hover:bg-indigo-50 transition-colors" title="Redigera">
+                      <button onClick={() => openEditModal(snippet)} className="p-1.5 text-gray-400 hover:text-indigo-500 rounded-lg hover:bg-indigo-50 transition-colors" title="Redigera språk/taggar">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
                         </svg>
@@ -377,6 +450,22 @@ export default function KoderClient({ initialSnippets, error }: Props) {
           </div>
         </div>
       )}
+
+      {/* Image gallery */}
+      <ImageGalleryModal
+        open={galleryFor !== null}
+        images={galleryFor ? attachmentsBySnippet[galleryFor]?.images ?? [] : []}
+        onClose={() => setGalleryFor(null)}
+        onDeleted={onAttachmentDeleted}
+      />
+
+      {/* Document list */}
+      <DocumentListModal
+        open={docsFor !== null}
+        documents={docsFor ? attachmentsBySnippet[docsFor]?.documents ?? [] : []}
+        onClose={() => setDocsFor(null)}
+        onDeleted={onAttachmentDeleted}
+      />
     </div>
   );
 }

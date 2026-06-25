@@ -380,3 +380,23 @@ export interface CodeSnippet {
   is_favorite: boolean;
   created_by: string | null;
 }
+
+// Attachments — generic file/image storage reusable across entities
+export type AttachmentKind = "image" | "document";
+
+export interface Attachment {
+  id: string;
+  created_at: string;
+  created_by: string | null;
+  entity_type: string;
+  entity_id: string;
+  kind: AttachmentKind;
+  name: string;
+  file_name: string;
+  mime_type: string;
+  file_ext: string | null;
+  file_size: number;
+  storage_path: string;
+  width: number | null;
+  height: number | null;
+}

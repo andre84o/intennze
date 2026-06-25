@@ -16,6 +16,17 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+function hasCRLF(s: string): boolean {
+  return s.includes("\r") || s.includes("\n");
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 interface EmailAttachment {
   filename: string;
   content: string; // Base64
@@ -36,6 +47,14 @@ export async function POST(req: Request) {
     if (!to || !subject || !body) {
       return NextResponse.json(
         { error: "Mottagare, ämne och meddelande krävs" },
+        { status: 400 }
+      );
+    }
+
+    // Guard against header injection (CRLF) in recipient and subject.
+    if (hasCRLF(to) || hasCRLF(subject)) {
+      return NextResponse.json(
+        { error: "Ogiltig mottagare eller ämne" },
         { status: 400 }
       );
     }
@@ -76,8 +95,9 @@ export async function POST(req: Request) {
       console.error("Kunde inte läsa logon:", logoError);
     }
 
-    // Konvertera radbrytningar till <br> för korrekt visning
-    const formattedSignature = signature ? signature.replace(/\n/g, "<br>") : "";
+    // Konvertera radbrytningar till <br> för korrekt visning.
+    // Escapa FÖRST, konvertera sedan radbrytningar så att <br> inte escapas bort.
+    const formattedSignature = signature ? escapeHtml(signature).replace(/\n/g, "<br>") : "";
     const signatureHtml = signature
       ? `<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
           <div style="white-space: pre-wrap;">${formattedSignature}</div>
@@ -94,13 +114,13 @@ export async function POST(req: Request) {
         <meta charset="utf-8">
         <meta http-equiv="Content-Language" content="sv">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${subject}</title>
+        <title>${escapeHtml(subject)}</title>
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="display:none; font-size:0; line-height:0; max-height:0; mso-hide:all;">
           Detta är ett meddelande från Intenzze Webbstudio. Vi bygger skräddarsydda webbplatser.
         </div>
-        <div style="white-space: pre-wrap;">${body}</div>
+        <div style="white-space: pre-wrap;">${escapeHtml(body)}</div>
         ${signatureHtml}
       </body>
       </html>

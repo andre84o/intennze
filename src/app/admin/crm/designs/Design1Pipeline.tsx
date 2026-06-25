@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -363,6 +363,9 @@ export default function Design1Pipeline(p: DesignProps) {
           {selected && (
             <>
               <SheetHeader className="mb-6">
+                <SheetDescription className="sr-only">
+                  Kunddetaljer, status och åtgärder för {selected.first_name} {selected.last_name}.
+                </SheetDescription>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-12 w-12">
                     <AvatarFallback className="bg-blue-50 text-blue-600 font-bold text-lg">

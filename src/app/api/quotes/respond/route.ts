@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     // First, verify the quote exists and hasn't been responded to
     const { data: quote, error: fetchError } = await supabase
       .from("quotes")
-      .select("id, status, customer_id")
+      .select("id, status, customer_id, valid_until")
       .eq("public_token", token)
       .single();
 
@@ -63,6 +63,14 @@ export async function POST(request: NextRequest) {
     if (quote.status === "accepted" || quote.status === "declined") {
       return NextResponse.json(
         { error: "Quote has already been responded to" },
+        { status: 400 }
+      );
+    }
+
+    // Enforce expiry server-side — never trust the client-side check.
+    if (quote.valid_until && new Date(quote.valid_until) < new Date()) {
+      return NextResponse.json(
+        { error: "Quote has expired" },
         { status: 400 }
       );
     }
