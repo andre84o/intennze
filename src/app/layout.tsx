@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
-import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/app/components/Header";
@@ -9,9 +8,8 @@ import Footer from "@/app/components/Footer";
 import CookieBanner from "@/app/components/CookieBanner";
 import ConditionalLayout from "@/app/components/ConditionalLayout";
 import { LanguageProvider } from "@/app/i18n/LanguageProvider";
-import GAListener from "./components/GAListener";
-import MetaRouteListener from "./components/MetaRouteListener";
-import Analytics from "./components/Analytics";
+import TrackingScripts from "@/app/components/TrackingScripts";
+import { CONSENT_COOKIE, parseConsent } from "@/lib/consent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -67,59 +65,14 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies();
   const lang = cookieStore.get("lang")?.value === "en" ? "en" : "sv";
+  // Read consent server-side so already-consented returning visitors load
+  // tracking on first paint, and everyone else loads nothing until they accept.
+  const initialConsent = parseConsent(cookieStore.get(CONSENT_COOKIE)?.value);
   return (
     <html lang={lang}>
-      <head>
-        {/* Google Tag Manager */}
-        <Script id="gtm" strategy="afterInteractive">
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-NFH22L5G');`}
-        </Script>
-
-        <Script id="meta-pixel" strategy="afterInteractive">
-          {`
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1537867027358765');
-    if (!/^\\/(offert|formular|admin|login|demo)\\//.test(window.location.pathname)) {
-      fbq('track', 'PageView');
-    }
-  `}
-        </Script>
-
-        <noscript>
-          <img
-            height="1"
-            width="1"
-            style={{ display: "none" }}
-            src="https://www.facebook.com/tr?id=1537867027358765&ev=PageView&noscript=1"
-            referrerPolicy="no-referrer"
-          />
-        </noscript>
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-950`}
       >
-        {/* Google Tag Manager (noscript) */}
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-NFH22L5G"
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-            referrerPolicy="no-referrer"
-          />
-        </noscript>
-
         <LanguageProvider>
           <ConditionalLayout
             header={
@@ -132,9 +85,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             {children}
           </ConditionalLayout>
           <CookieBanner />
-          <Suspense fallback={null}>
-            <Analytics />
-          </Suspense>
         </LanguageProvider>
 
         <Script id="ld-org" type="application/ld+json">
@@ -147,26 +97,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             sameAs: [],
           })}
         </Script>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-EQ9TD4N13S"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            // Suppress automatic page_view on initial load — GAListener emits
-            // it manually and skips token-bearing paths to avoid token leaks.
-            gtag('config', 'G-EQ9TD4N13S', { send_page_view: false });
-            gtag('config', 'AW-17863845026');
-          `}
-        </Script>
-        {/* Track client-side route changes */}
-        <GAListener />
-        <Suspense fallback={null}>
-          <MetaRouteListener />
-        </Suspense>
+
+        {/* All analytics/marketing tags + route trackers, gated on consent. */}
+        <TrackingScripts initialConsent={initialConsent} />
       </body>
     </html>
   );

@@ -3,6 +3,7 @@ import CookieConsent from "react-cookie-consent";
 import Link from "next/link";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
+import { emitConsentChange } from "@/lib/consent";
 
 export default function CookieBanner() {
   const { lang } = useLanguage();
@@ -13,6 +14,11 @@ export default function CookieBanner() {
       location="bottom"
       cookieName="intenzze-consent"
       expires={180}
+      // react-cookie-consent has already written the cookie by the time these
+      // fire; we just signal <TrackingScripts /> to load (or stay unloaded)
+      // immediately, no reload needed.
+      onAccept={() => emitConsentChange("granted")}
+      onDecline={() => emitConsentChange("denied")}
       disableStyles
       overlay={false}
       containerClasses="fixed left-4 right-4 bottom-4 sm:left-6 sm:right-6 sm:bottom-6 z-40 mx-auto max-w-2xl rounded-2xl border border-slate-700/50 bg-slate-900/95 backdrop-blur-xl shadow-2xl shadow-black/50"
