@@ -15,9 +15,11 @@ type Props = {
   buttonText?: string;
   /** When false, the message field is optional (default: true). */
   messageRequired?: boolean;
+  /** When true, drop the card chrome (bg/border/rounded) so a parent can provide it — e.g. a scrollable modal wrapper. */
+  embedded?: boolean;
 };
 
-const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, messageRequired = true }: Props) => {
+const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, messageRequired = true, embedded = false }: Props) => {
   const { lang } = useLanguage();
   const t = (k: string) => dict[lang][k];
   const sv = lang === "sv";
@@ -28,6 +30,10 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
   );
+
+  // Card surface. Dropped when embedded so a parent (e.g. the scrollable modal
+  // wrapper) owns the bg/border/rounding and the scrollbar stays inside it.
+  const chrome = embedded ? "" : "bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl";
 
   // Fire Google tracking when the form is successfully sent. The Meta `Lead`
   // is fired inside onSubmit instead, where we still have the form values for
@@ -113,7 +119,7 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
     return (
       <div className="w-full">
         <div
-          className="flex flex-col items-center justify-center gap-6 p-8 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl min-h-[400px]"
+          className={`flex flex-col items-center justify-center gap-6 p-8 min-h-[400px] ${chrome}`}
           data-conversion="success"
           data-form-submitted="true"
           id="contact-form-success"
@@ -197,7 +203,7 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
     <div className="w-full">
       <form
         onSubmit={onSubmit}
-        className="flex flex-col gap-5 p-8 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl"
+        className={`flex flex-col gap-5 p-8 ${chrome}`}
       >
         <div className="text-center mb-2">
           <h2 className="text-2xl font-bold">{formTitle}</h2>
