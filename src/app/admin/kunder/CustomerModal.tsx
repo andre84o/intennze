@@ -82,6 +82,13 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
     setError(null);
 
     const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      setError("Du måste vara inloggad.");
+      setLoading(false);
+      return;
+    }
+
     const data = {
       ...formData,
       budget: formData.budget ? parseInt(formData.budget) : null,
@@ -126,7 +133,7 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
     } else {
       const { data: created, error } = await supabase
         .from("customers")
-        .insert(data)
+        .insert({ ...data, owner_user_id: user.id, created_by: user.id })
         .select()
         .single();
 

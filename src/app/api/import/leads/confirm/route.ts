@@ -208,6 +208,7 @@ export async function POST(req: NextRequest) {
     const chunk = rowsToInsert.slice(i, i + CHUNK_SIZE).map((row) => ({
       ...row,
       source: "xml_import",
+      owner_user_id: user.id,
       created_by: user.id,
       has_purchased: false,
       has_service_agreement: false,
