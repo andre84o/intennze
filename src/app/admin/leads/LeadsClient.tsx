@@ -10,6 +10,13 @@ import {
   findDuplicateCustomers,
   type DuplicateCustomer,
 } from "./actions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface Lead {
   id: string;
@@ -307,20 +314,28 @@ function LeadDetailModal({
 
               <label className="text-sm block">
                 <span className="block text-xs text-gray-500 mb-1">Tilldela till</span>
-                <select
-                  value={staffId}
-                  onChange={(e) => setStaffId(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 bg-white"
-                >
-                  {assignableUsers.length === 0 && (
-                    <option value="">Inga aktiva användare</option>
-                  )}
-                  {assignableUsers.map((u) => (
-                    <option key={u.user_id} value={u.user_id}>
-                      {u.email} ({u.role})
-                    </option>
-                  ))}
-                </select>
+                {assignableUsers.length === 0 ? (
+                  <div className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-400">
+                    Inga aktiva användare
+                  </div>
+                ) : (
+                  <Select value={staffId} onValueChange={setStaffId}>
+                    <SelectTrigger className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200">
+                      <SelectValue placeholder="Välj mottagare..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {assignableUsers.map((u) => (
+                        <SelectItem
+                          key={u.user_id}
+                          value={u.user_id}
+                          className="rounded-lg"
+                        >
+                          {u.email} ({u.role})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </label>
             </>
           ) : (
