@@ -143,9 +143,9 @@ export async function POST(request: NextRequest) {
           page_id: change.value?.page_id,
         };
 
-        const customerId = await saveBasicLead(metadata);
+        const leadInboxId = await saveBasicLead(metadata);
 
-        if (!customerId) {
+        if (!leadInboxId) {
           continue;
         }
 
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
         const leadData = await fetchLeadData(metadata.leadgen_id);
 
         if (leadData) {
-          await updateLeadWithContactInfo(customerId, leadData);
+          await updateLeadWithContactInfo(metadata.leadgen_id, leadData);
 
           // Skicka Telegram-notifiering
           const fields = leadData.field_data || [];
@@ -235,7 +235,10 @@ async function fetchLeadData(leadgenId: string) {
   }
 }
 
-// Spara basdata från webhook
+// Spara basdata från webhook into the admin-only `lead_inbox` table. A partial
+// unique index on (source, external_id) makes a repeated webhook for the same
+// leadgen_id idempotent — the upsert ignores duplicates so no second row is
+// created. Contact fields arrive later via updateLeadWithContactInfo.
 async function saveBasicLead(metadata: {
   leadgen_id: string;
   form_id: string;
@@ -244,31 +247,29 @@ async function saveBasicLead(metadata: {
   page_id: string;
 }): Promise<string | null> {
   try {
-    const { data: existing } = await supabaseAdmin
-      .from("customers")
+    // `raw` holds ONLY the lead metadata — never access tokens, app secrets,
+    // or signatures.
+    const { data, error } = await supabaseAdmin
+      .from("lead_inbox")
+      .upsert(
+        {
+          source: "facebook",
+          external_id: metadata.leadgen_id,
+          name: "Facebook Lead",
+          raw: {
+            leadgen_id: metadata.leadgen_id,
+            form_id: metadata.form_id,
+            ad_id: metadata.ad_id,
+            adgroup_id: metadata.adgroup_id,
+            page_id: metadata.page_id,
+          },
+        },
+        { onConflict: "source,external_id", ignoreDuplicates: true }
+      )
       .select("id")
-      .eq("facebook_lead_id", metadata.leadgen_id)
-      .single();
+      .maybeSingle();
 
-    if (existing) {
-      return null;
-    }
-
-    const { data, error } = await supabaseAdmin.from("customers").insert({
-      first_name: "Facebook",
-      last_name: "Lead",
-      status: "lead",
-      source: "facebook_ads",
-      facebook_lead_id: metadata.leadgen_id,
-      is_read: false,
-      notes: `Facebook Lead Ad
-Lead ID: ${metadata.leadgen_id}
-Form ID: ${metadata.form_id}
-Ad ID: ${metadata.ad_id}
-Mottagen: ${new Date().toLocaleString("sv-SE")}`,
-    }).select("id").single();
-
-    if (error) {
+    if (error || !data) {
       return null;
     }
 
@@ -278,15 +279,20 @@ Mottagen: ${new Date().toLocaleString("sv-SE")}`,
   }
 }
 
-// Uppdatera lead med kontaktinfo från Facebook API
-async function updateLeadWithContactInfo(customerId: string, leadData: any) {
+// Uppdatera lead_inbox-raden med kontaktinfo från Facebook API. Matchar på
+// (source='facebook', external_id=leadgen_id) och rör bara rader som fortfarande
+// är i status 'new' — en redan tilldelad lead klobbras aldrig.
+async function updateLeadWithContactInfo(
+  leadgenId: string,
+  leadData: any
+) {
   try {
     const fieldData = leadData.field_data || [];
     const fields: Record<string, string> = {};
 
     // Log only field names (not values) — values contain PII (email, phone, name).
     console.log(
-      `[Facebook Lead] Customer ${customerId} - Mottagna fältnamn:`,
+      `[Facebook Lead] Lead ${leadgenId} - Mottagna fältnamn:`,
       fieldData.map((f: { name?: string }) => f.name).join(", ")
     );
 
@@ -306,10 +312,10 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
                   fields.tel || fields.telephone || fields.telefonnummer ||
                   fields.cell_phone || fields.cellphone || null;
 
-    console.log(`[Facebook Lead] Customer ${customerId} - Telefon: ${phone ? "extraherat" : "SAKNAS"}`);
+    console.log(`[Facebook Lead] Lead ${leadgenId} - Telefon: ${phone ? "extraherat" : "SAKNAS"}`);
 
     if (!phone) {
-      console.warn(`[Facebook Lead] Customer ${customerId} - VARNING: Inget telefonnummer hittades! Tillgängliga fältnamn: ${Object.keys(fields).join(', ')}`);
+      console.warn(`[Facebook Lead] Lead ${leadgenId} - VARNING: Inget telefonnummer hittades! Tillgängliga fältnamn: ${Object.keys(fields).join(', ')}`);
     }
     const companyName = fields.company_name || fields.company || fields.företag || null;
     const city = fields.city || fields.stad || null;
@@ -329,42 +335,42 @@ async function updateLeadWithContactInfo(customerId: string, leadData: any) {
       customAnswers.push(`${label}: ${value}`);
     }
 
-    const wishes = customAnswers.length > 0 ? customAnswers.join('\n') : null;
+    const message = customAnswers.length > 0 ? customAnswers.join('\n') : null;
 
-    const updateData: Record<string, any> = {};
-    if (firstName) updateData.first_name = firstName;
-    if (lastName) updateData.last_name = lastName;
+    // `raw` holds ONLY the lead field answers — never access tokens, app
+    // secrets, or signatures.
+    const rawFieldData = fieldData.map((f: { name?: string; values?: string[] }) => ({
+      name: f.name,
+      values: f.values,
+    }));
+
+    const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
+
+    const updateData: Record<string, any> = {
+      raw: { leadgen_id: leadgenId, field_data: rawFieldData },
+    };
+    if (fullName) updateData.name = fullName;
     if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
-    if (companyName) updateData.company_name = companyName;
-    if (city) updateData.city = city;
-    if (wishes) updateData.wishes = wishes;
-
-    const { data: currentCustomer } = await supabaseAdmin
-      .from("customers")
-      .select("notes")
-      .eq("id", customerId)
-      .single();
-
-    updateData.notes = (currentCustomer?.notes || "").replace(
-      "(väntar på kontaktinfo)",
-      `(kontaktinfo hämtad ${new Date().toLocaleString("sv-SE")})`
-    );
+    if (companyName) updateData.company = companyName;
+    if (message) updateData.message = message;
 
     const { error: updateError } = await supabaseAdmin
-      .from("customers")
+      .from("lead_inbox")
       .update(updateData)
-      .eq("id", customerId);
+      .eq("source", "facebook")
+      .eq("external_id", leadgenId)
+      .eq("status", "new");
 
     if (updateError) {
-      console.error(`[Facebook Lead] Customer ${customerId} - Fel vid uppdatering:`, updateError);
+      console.error(`[Facebook Lead] Lead ${leadgenId} - Fel vid uppdatering:`, updateError);
     } else {
       console.log(
-        `[Facebook Lead] Customer ${customerId} - Uppdaterad fält:`,
+        `[Facebook Lead] Lead ${leadgenId} - Uppdaterad fält:`,
         Object.keys(updateData).join(", ")
       );
     }
   } catch (error) {
-    console.error(`[Facebook Lead] Customer ${customerId} - Oväntat fel:`, error);
+    console.error(`[Facebook Lead] Lead ${leadgenId} - Oväntat fel:`, error);
   }
 }

@@ -251,6 +251,13 @@ export default function QuoteCatalogModal({ customer, onClose, onCreated, onSent
     setError(null);
 
     const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      setError("Du måste vara inloggad.");
+      setSaving(false);
+      return;
+    }
+
     const today = new Date();
     const validFrom = today.toISOString().split("T")[0];
     const validUntil = new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
@@ -259,6 +266,8 @@ export default function QuoteCatalogModal({ customer, onClose, onCreated, onSent
       const { data: created, error: createError } = await supabase
         .from("quotes")
         .insert({
+          owner_user_id: user.id,
+          created_by: user.id,
           customer_id: customer.id,
           title: title.trim() || "Offert",
           description: null,

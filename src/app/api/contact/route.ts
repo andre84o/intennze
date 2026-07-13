@@ -61,10 +61,11 @@ const escapeHtml = (s: string) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-// Write a website contact submission into the same `customers` CRM table the
-// Facebook leads use, so web leads show up alongside them (source "website").
-// Server-side only — the service-role key never reaches the client. Best-effort:
-// callers wrap this so a CRM failure never blocks the user's confirmation.
+// Write a website contact submission into the admin-only `lead_inbox` table.
+// Public leads land in this inbox — a customer is created later, only when an
+// Admin assigns the lead. Server-side only — the service-role key never reaches
+// the client. Best-effort: callers wrap this so an inbox failure never blocks
+// the user's confirmation.
 async function saveContactLead(input: {
   name: string;
   email: string;
@@ -79,40 +80,21 @@ async function saveContactLead(input: {
   }
 
   const supabaseAdmin = createClient(url, serviceKey);
-  const [firstName, ...rest] = input.name.split(/\s+/);
-  const lastName = rest.join(" ");
-  const receivedAt = new Date().toLocaleString("sv-SE");
 
-  // Avoid duplicate CRM rows: if this email already exists, append the new
-  // inquiry to that customer's notes and flag it unread instead of inserting.
-  const { data: existing } = await supabaseAdmin
-    .from("customers")
-    .select("id, notes")
-    .eq("email", input.email)
-    .limit(1)
-    .maybeSingle();
-
-  if (existing?.id) {
-    const appended =
-      `${existing.notes ? existing.notes + "\n\n" : ""}` +
-      `Ny förfrågan via webbformulär (${receivedAt}):\n${input.message}`;
-    await supabaseAdmin
-      .from("customers")
-      .update({ notes: appended, is_read: false })
-      .eq("id", existing.id);
-    return;
-  }
-
-  await supabaseAdmin.from("customers").insert({
-    first_name: firstName || input.name,
-    last_name: lastName || null,
+  // `raw` holds ONLY the submitted form fields — never tokens/secrets/headers.
+  await supabaseAdmin.from("lead_inbox").insert({
+    source: "contact_form",
+    external_id: null,
+    name: input.name,
     email: input.email,
     phone: input.phone,
-    wishes: input.message,
-    status: "lead",
-    source: "website",
-    is_read: false,
-    notes: `Webbformulär (kontakta-oss-idag)\nMottagen: ${receivedAt}`,
+    message: input.message,
+    raw: {
+      name: input.name,
+      email: input.email,
+      phone: input.phone,
+      message: input.message,
+    },
   });
 }
 
