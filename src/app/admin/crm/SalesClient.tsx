@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Customer, CustomerStatus, Reminder, CustomerInteraction, InteractionType } from "@/types/database";
+import { Customer, CustomerStatus, Reminder, CustomerInteraction, InteractionType, Quote } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
 import { buildCallQueue, stockholmToday, type QueueReminder } from "@/lib/nextLead";
 import { DesignProps, Questionnaire, ReminderFormData } from "./designs/types";
@@ -23,6 +23,7 @@ interface Props {
   reminders: Reminder[];
   interactions: CustomerInteraction[];
   questionnaires: Questionnaire[];
+  quotes: Quote[];
   error?: string;
 }
 
@@ -34,11 +35,12 @@ const isServiceExpired = (c: Customer) => {
   return d < today;
 };
 
-export default function SalesClient({ customers: init, reminders: initR, interactions: initI, questionnaires: initQ, error }: Props) {
+export default function SalesClient({ customers: init, reminders: initR, interactions: initI, questionnaires: initQ, quotes: initQuotes, error }: Props) {
   const [customers, setCustomers] = useState(init);
   const [reminders, setReminders] = useState(initR);
   const [interactions, setInteractions] = useState(initI);
   const [questionnaires, setQuestionnaires] = useState(initQ);
+  const [quotes, setQuotes] = useState(initQuotes);
   const [savingCustomer, setSavingCustomer] = useState<string | null>(null);
   const [sendingQuestionnaire, setSendingQuestionnaire] = useState<string | null>(null);
   const [showSuccessPopup, setShowSuccessPopup] = useState<{ show: boolean; email?: string }>({ show: false });
@@ -79,6 +81,7 @@ export default function SalesClient({ customers: init, reminders: initR, interac
   const getCustomerReminders = (id: string) => reminders.filter(r => r.customer_id === id && !r.is_completed).sort((a, b) => a.reminder_date.localeCompare(b.reminder_date));
   const getNextReminder = (id: string) => getCustomerReminders(id)[0] || null;
   const getCustomerInteractions = (id: string) => interactions.filter(i => i.customer_id === id).slice(0, 8);
+  const getCustomerQuotes = (id: string) => quotes.filter(q => q.customer_id === id);
   const hasOverdueReminder = (id: string) => reminders.some(r => r.customer_id === id && !r.is_completed && r.reminder_date < today);
   const hasTodayReminder = (id: string) => reminders.some(r => r.customer_id === id && !r.is_completed && r.reminder_date === today);
   const hasQuestionnaire = (id: string) => questionnaires.some(q => q.customer_id === id);
@@ -189,16 +192,33 @@ export default function SalesClient({ customers: init, reminders: initR, interac
     }
   };
 
+  const onQuoteCreated = (quote: Quote) => {
+    setQuotes(p => [quote, ...p]);
+  };
+
+  const onDeleteQuote = async (id: string) => {
+    const sb = createClient();
+    const { error } = await sb.from("quotes").delete().eq("id", id);
+    if (!error) setQuotes(p => p.filter(q => q.id !== id));
+  };
+
+  const onQuoteSent = (id: string, email: string) => {
+    setQuotes(p => p.map(q => q.id === id
+      ? { ...q, status: "sent", sent_at: new Date().toISOString(), sent_to_email: email }
+      : q));
+  };
+
   const designProps: DesignProps = {
-    customers, reminders, interactions, questionnaires, today,
+    customers, reminders, interactions, questionnaires, quotes, today,
     savingCustomer, sendingQuestionnaire,
     getCustomerReminders, getCustomerInteractions, getNextReminder,
-    hasOverdueReminder, hasTodayReminder, hasQuestionnaire, getCallQueue, isServiceExpired,
+    hasOverdueReminder, hasTodayReminder, hasQuestionnaire, getCallQueue, getCustomerQuotes, isServiceExpired,
     formatDate, formatDateTime,
     onUpdateCustomer, onUpdateCustomerBoolean,
     onAddInteraction, onAddReminder, onCompleteReminder,
     onSendQuestionnaire, onViewResponses, onMarkRead,
     onDeleteInteraction, onReplaceCustomer,
+    onQuoteCreated, onDeleteQuote, onQuoteSent,
   };
 
   return (

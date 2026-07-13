@@ -1,39 +1,5 @@
 "use client";
 
-import * as React from "react";
-import {
-  Area,
-  AreaChart,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Cell,
-  BarChart,
-  Bar,
-} from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 interface AnalyticsData {
   dailyVisitors: { date: string; mobile: number; desktop: number }[];
   deviceStats: { name: string; value: number }[];
@@ -53,38 +19,7 @@ interface Props {
   quotesCount: number;
 }
 
-const SOURCE_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
-
-const sourceLabels: Record<string, string> = {
-  direct: "Direkt",
-  google: "Google",
-  facebook: "Facebook",
-  instagram: "Instagram",
-  linkedin: "LinkedIn",
-  other: "Annan",
-};
-
-const chartConfig = {
-  mobile: {
-    label: "Mobil",
-    color: "#60a5fa", // blue-400
-  },
-  desktop: {
-    label: "Desktop",
-    color: "#2563eb", // blue-600
-  },
-} satisfies ChartConfig;
-
-export default function DashboardClient({ analytics, customersCount, remindersCount, quotesCount }: Props) {
-  const { dailyVisitors, sourceStats, totals } = analytics;
-  const [timeRange, setTimeRange] = React.useState("30d");
-
-  const filteredData = React.useMemo(() => {
-    if (!dailyVisitors.length) return [];
-    const daysToShow = timeRange === "7d" ? 7 : timeRange === "14d" ? 14 : 30;
-    return dailyVisitors.slice(-daysToShow);
-  }, [dailyVisitors, timeRange]);
-
+export default function DashboardClient({ customersCount, remindersCount }: Props) {
   return (
     <div className="text-gray-900">
       {/* Background effects */}
@@ -104,36 +39,6 @@ export default function DashboardClient({ analytics, customersCount, remindersCo
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          {/* Today's Visitors */}
-          <div className="p-3 sm:p-5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-blue-50 rounded-lg sm:rounded-xl">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-gray-500 text-[10px] sm:text-xs">Besökare idag</p>
-                <p className="text-lg sm:text-xl font-bold text-gray-900">{totals.todayVisitors}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Total Visitors */}
-          <div className="p-3 sm:p-5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-purple-50 rounded-lg sm:rounded-xl">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-gray-500 text-[10px] sm:text-xs">Totalt (30 dagar)</p>
-                <p className="text-lg sm:text-xl font-bold text-gray-900">{totals.totalVisitors}</p>
-              </div>
-            </div>
-          </div>
-
           {/* Customers */}
           <div className="p-3 sm:p-5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
@@ -165,156 +70,6 @@ export default function DashboardClient({ analytics, customersCount, remindersCo
           </div>
         </div>
 
-        {/* Charts */}
-        <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Interactive Area Chart */}
-          <Card className="lg:col-span-2 bg-white border-gray-200 shadow-sm">
-            <CardHeader className="flex items-center gap-2 space-y-0 border-b border-gray-100 py-5 sm:flex-row">
-              <div className="grid flex-1 gap-1 text-center sm:text-left">
-                <CardTitle className="text-gray-900">Besökare per dag</CardTitle>
-                <CardDescription className="text-gray-500">
-                  Visar besökare uppdelat på Mobil och Desktop
-                </CardDescription>
-              </div>
-              <Select value={timeRange} onValueChange={setTimeRange}>
-                <SelectTrigger
-                  className="w-[140px] sm:w-[160px] rounded-lg bg-gray-50 border-gray-200 text-gray-900"
-                  aria-label="Välj tidsperiod"
-                >
-                  <SelectValue placeholder="Senaste 30 dagarna" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl bg-white border-gray-200">
-                  <SelectItem value="30d" className="rounded-lg text-gray-900 focus:bg-gray-100 focus:text-gray-900">
-                    Senaste 30 dagarna
-                  </SelectItem>
-                  <SelectItem value="14d" className="rounded-lg text-gray-900 focus:bg-gray-100 focus:text-gray-900">
-                    Senaste 14 dagarna
-                  </SelectItem>
-                  <SelectItem value="7d" className="rounded-lg text-gray-900 focus:bg-gray-100 focus:text-gray-900">
-                    Senaste 7 dagarna
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </CardHeader>
-            <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-              {filteredData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
-                  <AreaChart data={filteredData}>
-                    <defs>
-                      <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.1} />
-                      </linearGradient>
-                      <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0.1} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid vertical={false} stroke="#e2e8f0" />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      minTickGap={32}
-                      tick={{ fill: "#64748b", fontSize: 12 }}
-                      tickFormatter={(value) => {
-                        const date = new Date(value);
-                        return date.toLocaleDateString("sv-SE", {
-                          month: "short",
-                          day: "numeric",
-                        });
-                      }}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      tick={{ fill: "#64748b", fontSize: 12 }}
-                      width={40}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={
-                        <ChartTooltipContent
-                          labelFormatter={(value) => {
-                            return new Date(value).toLocaleDateString("sv-SE", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            });
-                          }}
-                          indicator="dot"
-                        />
-                      }
-                    />
-                    <Area
-                      dataKey="desktop"
-                      type="natural"
-                      fill="url(#fillDesktop)"
-                      stroke="#2563eb"
-                      stackId="a"
-                      name="Desktop"
-                    />
-                    <Area
-                      dataKey="mobile"
-                      type="natural"
-                      fill="url(#fillMobile)"
-                      stroke="#60a5fa"
-                      stackId="a"
-                      name="Mobil"
-                    />
-                    <ChartLegend content={<ChartLegendContent />} />
-                  </AreaChart>
-                </ChartContainer>
-              ) : (
-                <div className="h-[250px] flex items-center justify-center text-gray-400">
-                  Ingen data ännu
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Source Stats - Bar Chart */}
-          <Card className="lg:col-span-2 bg-white border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Trafikkällor</CardTitle>
-              <CardDescription className="text-gray-500">Var dina besökare kommer ifrån</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}} className="aspect-auto h-[250px] w-full">
-                <BarChart
-                  accessibilityLayer
-                  data={sourceStats}
-                  layout="vertical"
-                  margin={{
-                    left: 0,
-                  }}
-                >
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => sourceLabels[value] || value}
-                    width={100}
-                  />
-                  <XAxis dataKey="value" type="number" hide />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Bar dataKey="value" layout="vertical" radius={5}>
-                    {sourceStats.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={SOURCE_COLORS[index % SOURCE_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );

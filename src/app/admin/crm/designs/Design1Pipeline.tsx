@@ -15,12 +15,25 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Customer, CustomerStatus, customerStatusLabels, InteractionType, ReminderType, reminderTypeLabels } from "@/types/database";
+import { Customer, CustomerStatus, customerStatusLabels, InteractionType, ReminderType, reminderTypeLabels, Quote, QuoteStatus, quoteStatusLabels } from "@/types/database";
 import { LeadSourceIcon } from "@/components/lead-source-icon";
 import { useAgentCallSession } from "@/lib/useAgentCallSession";
 import { DesignProps, ReminderFormData, statusColors, statusDot, interactionIcons } from "./types";
 import dynamic from "next/dynamic";
 const CustomerModal = dynamic(() => import("@/app/admin/kunder/CustomerModal"), { ssr: false });
+const QuoteCatalogModal = dynamic(() => import("@/app/admin/crm/QuoteCatalogModal"), { ssr: false });
+import SendQuoteModal from "@/app/admin/crm/SendQuoteModal";
+
+const quoteStatusColors: Record<QuoteStatus, string> = {
+  draft: "bg-slate-100 text-slate-600 border-slate-200",
+  sent: "bg-blue-50 text-blue-700 border-blue-200",
+  accepted: "bg-green-50 text-green-700 border-green-200",
+  declined: "bg-rose-50 text-rose-600 border-rose-200",
+  expired: "bg-amber-50 text-amber-700 border-amber-200",
+};
+
+const formatQuoteCurrency = (n: number) =>
+  new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 }).format(n);
 
 export default function Design1Pipeline(p: DesignProps) {
   const router = useRouter();
@@ -43,6 +56,35 @@ export default function Design1Pipeline(p: DesignProps) {
   const [suggestions, setSuggestions] = useState<{ tone: string; subject: string; message: string; provider: string }[] | null>(null);
   const [suggestError, setSuggestError] = useState<string | null>(null);
   const [customerEmails, setCustomerEmails] = useState<EmailPreview[]>([]);
+  const [showQuote, setShowQuote] = useState(false);
+  const [quoteToSend, setQuoteToSend] = useState<Quote | null>(null);
+  const [sendingQuoteId, setSendingQuoteId] = useState<string | null>(null);
+  const [quoteToDelete, setQuoteToDelete] = useState<Quote | null>(null);
+
+  async function confirmSendQuote() {
+    if (!quoteToSend || !selected?.email) return;
+    const id = quoteToSend.id;
+    const email = selected.email;
+    setSendingQuoteId(id);
+    try {
+      const res = await fetch("/api/quote/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quoteId: id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        p.onQuoteSent(id, email);
+        setQuoteToSend(null);
+      } else {
+        alert(data.error || "Kunde inte skicka offerten");
+      }
+    } catch {
+      alert("Nätverksfel — försök igen");
+    } finally {
+      setSendingQuoteId(null);
+    }
+  }
 
   function closeCompose() {
     setShowComposeModal(false);
@@ -176,6 +218,7 @@ export default function Design1Pipeline(p: DesignProps) {
 
   const customerInteractions = selected ? p.getCustomerInteractions(selected.id) : [];
   const customerReminders = selected ? p.getCustomerReminders(selected.id) : [];
+  const customerQuotes = selected ? p.getCustomerQuotes(selected.id) : [];
 
   // ── Mobile Call Companion (desktop side) ─────────────────────────────────────
   const { session: callSession, conn: callConn } = useAgentCallSession();
@@ -355,10 +398,10 @@ export default function Design1Pipeline(p: DesignProps) {
       </Card>
 
       {/* Detail Sheet */}
-      <Sheet open={!!selected} onOpenChange={(o) => { if (!o) { setSelected(null); setShowReminderForm(false); setShowEdit(false); setReminderForm({ title: "", date: "", time: "", type: "follow_up" }); closeCompose(); } }}>
+      <Sheet open={!!selected} onOpenChange={(o) => { if (!o) { setSelected(null); setShowReminderForm(false); setShowEdit(false); setShowQuote(false); setQuoteToSend(null); setQuoteToDelete(null); setReminderForm({ title: "", date: "", time: "", type: "follow_up" }); closeCompose(); } }}>
         <SheetContent
           className="w-full sm:max-w-lg overflow-y-auto bg-white p-6"
-          onInteractOutside={(e) => { if (showReminderForm || showComposeModal) e.preventDefault(); }}
+          onInteractOutside={(e) => { if (showReminderForm || showComposeModal || showQuote || quoteToSend || quoteToDelete) e.preventDefault(); }}
         >
           {selected && (
             <>
@@ -403,6 +446,15 @@ export default function Design1Pipeline(p: DesignProps) {
 
                 <Separator />
 
+                {/* Primär åtgärd: skapa offert */}
+                <button
+                  onClick={() => setShowQuote(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors"
+                >
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Skapa offert
+                </button>
+
                 {/* Actions */}
                 <div className="grid grid-cols-2 gap-2">
                   {selected.phone && <a href={`tel:${selected.phone}`} className="flex items-center justify-center gap-1.5 px-2 py-2 bg-green-50 text-green-700 border border-green-200 rounded-xl text-xs font-medium hover:bg-green-100 transition-colors"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>Ring</a>}
@@ -414,6 +466,52 @@ export default function Design1Pipeline(p: DesignProps) {
                   <button onClick={() => setShowReminderForm(true)} className="flex items-center justify-center gap-1.5 px-2 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-xs font-medium hover:bg-amber-100 transition-colors"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>Påminnelse</button>
                   {p.hasQuestionnaire(selected.id) && <button onClick={() => p.onViewResponses(selected.id)} className="flex items-center justify-center gap-1.5 px-2 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-medium hover:bg-indigo-100 transition-colors"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Formulärsvar</button>}
                 </div>
+
+                {/* Offerter */}
+                {customerQuotes.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Offerter</p>
+                    <div className="space-y-2">
+                      {customerQuotes.map((q) => (
+                        <div key={q.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-800 truncate">{q.title}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-slate-400 font-mono">#{q.quote_number}</span>
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${quoteStatusColors[q.status]}`}>
+                                {quoteStatusLabels[q.status]}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-sm font-semibold text-slate-800 flex-shrink-0">{formatQuoteCurrency(q.total)}</span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {q.status === "draft" && selected.email && (
+                              <button
+                                onClick={() => setQuoteToSend(q)}
+                                disabled={sendingQuoteId === q.id}
+                                title="Skicka via e-post"
+                                className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                              >
+                                {sendingQuoteId === q.id ? (
+                                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                                )}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setQuoteToDelete(q)}
+                              title="Ta bort"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <Separator />
 
@@ -774,6 +872,60 @@ export default function Design1Pipeline(p: DesignProps) {
                 setShowEdit(false);
               }}
             />
+          )}
+
+          {/* Skapa offert — tjänstekatalog */}
+          {showQuote && selected && (
+            <QuoteCatalogModal
+              customer={{
+                id: selected.id,
+                first_name: selected.first_name,
+                last_name: selected.last_name,
+                company_name: selected.company_name,
+                email: selected.email,
+              }}
+              onClose={() => setShowQuote(false)}
+              onCreated={(q) => { p.onQuoteCreated(q); setShowQuote(false); }}
+            />
+          )}
+
+          {/* Skicka offert */}
+          {quoteToSend && selected?.email && (
+            <SendQuoteModal
+              quote={quoteToSend}
+              email={selected.email}
+              onClose={() => setQuoteToSend(null)}
+              onConfirm={confirmSendQuote}
+              isSending={sendingQuoteId === quoteToSend.id}
+            />
+          )}
+
+          {/* Ta bort offert — bekräftelse */}
+          {quoteToDelete && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setQuoteToDelete(null)} />
+              <div className="relative w-full max-w-[260px] bg-white rounded-2xl shadow-2xl p-4 text-center">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-rose-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                </div>
+                <p className="text-xs font-semibold text-slate-900">Ta bort offert #{quoteToDelete.quote_number}?</p>
+                <p className="text-xs text-slate-500 mt-1">Detta går inte att ångra.</p>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => setQuoteToDelete(null)}
+                    className="flex-1 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    Avbryt
+                  </button>
+                  <button
+                    onClick={() => { p.onDeleteQuote(quoteToDelete.id); setQuoteToDelete(null); }}
+                    className="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-medium transition-colors"
+                  >
+                    Ta bort
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </SheetContent>
       </Sheet>

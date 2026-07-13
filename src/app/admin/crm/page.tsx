@@ -32,12 +32,19 @@ export default async function SalesPage() {
     .select("id, customer_id, status")
     .order("created_at", { ascending: false });
 
+  // Hämta alla offerter med rader och kund
+  const { data: quotes } = await supabase
+    .from("quotes")
+    .select("*, customer:customers(*), items:quote_items(*)")
+    .order("created_at", { ascending: false });
+
   return (
     <SalesClient
       customers={customers || []}
       reminders={reminders || []}
       interactions={interactions || []}
       questionnaires={questionnaires || []}
+      quotes={quotes || []}
       error={error?.message}
     />
   );

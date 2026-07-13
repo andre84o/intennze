@@ -442,10 +442,9 @@ export default function CustomerDetailClient({
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Offerter</h2>
               <div className="space-y-2">
                 {quotes.map((quote) => (
-                  <Link
+                  <div
                     key={quote.id}
-                    href={`/admin/offerter/${quote.id}`}
-                    className="block p-3 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-lg transition-colors"
+                    className="block p-3 bg-gray-50 border border-gray-100 rounded-lg"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -461,7 +460,7 @@ export default function CustomerDetailClient({
                         </span>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             </div>

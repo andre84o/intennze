@@ -11,6 +11,8 @@ export default function HomeContent() {
   const [showContactModal, setShowContactModal] = useState(false);
   // Prefilled message for the contact form (e.g. when opened from a pricing card).
   const [contactIntro, setContactIntro] = useState<string | undefined>(undefined);
+  // Which pricing/offer card is currently marked (highlighted).
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
   // Scroll depth, dwell time and nav clicks → Meta Pixel + GA4 + GTM. Lets us
   // see whether traffic-ad visitors actually engage with the home page or
@@ -27,6 +29,31 @@ export default function HomeContent() {
     setContactIntro(typeof intro === "string" ? intro : undefined);
     setShowContactModal(true);
   };
+
+  // Mark a card and open the contact form prefilled with the given message.
+  const chooseCard = (key: string, message: string) => {
+    setSelectedCard(key);
+    openContactModal(message);
+  };
+
+  // Mark a pricing card and open the contact form prefilled with that package.
+  const choosePlan = (plan: { name: string; price: string }, i: number) =>
+    chooseCard(
+      `plan-${i}`,
+      sv
+        ? `Hej! Jag är intresserad av paketet "${plan.name}" (${plan.price} kr exkl. moms + 299 kr/mån Drift & support + Hosting). Berätta gärna mer.`
+        : `Hi! I'm interested in the "${plan.name}" package (${plan.price} kr excl. VAT + 299 kr/mo Operations & support + Hosting). Please tell me more.`
+    );
+
+  const careMessage = sv
+    ? `Hej! Jag är intresserad av "Drift & support" (299 kr/mån exkl. moms). Berätta gärna mer.`
+    : `Hi! I'm interested in "Operations & support" (299 kr/mo excl. VAT). Please tell me more.`;
+  const addonsMessage = sv
+    ? `Hej! Jag är intresserad av tilläggen (Företagsmail och/eller Flytt av befintlig e-post). Berätta gärna mer.`
+    : `Hi! I'm interested in the add-ons (Business email and/or Migration of existing email). Please tell me more.`;
+  const customMessage = sv
+    ? `Hej! Inget av era paket passar riktigt mina behov. Jag skulle vilja ha en skräddarsydd lösning och en kostnadsfri offert.`
+    : `Hi! None of your packages quite fit my needs. I'd like a tailored solution and a free quote.`;
 
   // Demo examples
   const DEMO_SECTION_TAG = sv ? "Exempel" : "Examples";
@@ -455,6 +482,11 @@ export default function HomeContent() {
                 ? "Exempelpriser – kontakta oss för en offert anpassad efter dina behov."
                 : "Example prices – contact us for a quote tailored to your needs."}
             </p>
+            <p className="text-xs text-slate-500 mt-2 max-w-xl mx-auto">
+              {sv
+                ? "Alla priser på sidan är exklusive moms."
+                : "All prices on this page are excluding VAT."}
+            </p>
           </div>
 
           {/* Pricing grid */}
@@ -499,8 +531,11 @@ export default function HomeContent() {
             ].map((plan, i) => (
               <div
                 key={i}
-                className={`group relative flex flex-col w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] bg-slate-900/40 backdrop-blur-md border rounded-3xl p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 ${plan.border} ${
-                  plan.popular ? "border-purple-500/50" : "border-slate-800/50"
+                onClick={() => choosePlan(plan, i)}
+                className={`group relative flex flex-col w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] bg-slate-900/40 backdrop-blur-md border rounded-3xl p-8 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 ${plan.border} ${
+                  selectedCard === `plan-${i}`
+                    ? "border-cyan-400 ring-2 ring-cyan-400/50"
+                    : plan.popular ? "border-purple-500/50" : "border-slate-800/50"
                 }`}
               >
                 {plan.popular && (
@@ -525,7 +560,7 @@ export default function HomeContent() {
                   <div className="mt-3 flex items-center gap-2 text-sm">
                     <span className="text-slate-400">+</span>
                     <span className="font-semibold text-cyan-300">299 kr/mån</span>
-                    <span className="text-slate-400">{sv ? "Drift & support" : "Operations & support"}</span>
+                    <span className="text-slate-400">{sv ? "Drift & support + Hosting" : "Operations & support + Hosting"}</span>
                   </div>
                 </div>
 
@@ -557,13 +592,7 @@ export default function HomeContent() {
                 </ul>
 
                 <button
-                  onClick={() =>
-                    openContactModal(
-                      sv
-                        ? `Hej! Jag är intresserad av paketet "${plan.name}" (${plan.price} kr exkl. moms + 299 kr/mån Drift & support). Berätta gärna mer.`
-                        : `Hi! I'm interested in the "${plan.name}" package (${plan.price} kr excl. VAT + 299 kr/mo Operations & support). Please tell me more.`
-                    )
-                  }
+                  onClick={(e) => { e.stopPropagation(); choosePlan(plan, i); }}
                   className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium transition-all ${
                     plan.popular
                       ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:opacity-90"
@@ -580,13 +609,18 @@ export default function HomeContent() {
             ))}
           </div>
 
-          {/* Drift & support - monthly subscription */}
-          <div className="mt-6 flex justify-center">
-            <div className="group relative w-full lg:w-[calc(66.666%-0.5rem)] bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-3xl p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 hover:border-cyan-500/50">
+          {/* Drift & support + skräddarsydd lösning */}
+          <div className="mt-6 flex flex-wrap justify-center gap-6 items-stretch">
+            <div
+              onClick={() => chooseCard("care", careMessage)}
+              className={`group relative flex flex-col w-full lg:w-[calc(50%-0.75rem)] bg-slate-900/40 backdrop-blur-md border rounded-3xl p-8 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 ${
+                selectedCard === "care" ? "border-cyan-400 ring-2 ring-cyan-400/50" : "border-slate-800/50 hover:border-cyan-500/50"
+              }`}
+            >
               <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-cyan-500/50 to-cyan-500/20 opacity-30" />
 
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-                <div className="md:max-w-xs">
+              <div className="flex flex-1 flex-col md:flex-row md:items-stretch md:justify-between gap-6">
+                <div className="md:max-w-xs flex flex-col">
                   <h3 className="text-xl font-bold text-slate-100">
                     {sv ? "Drift & support" : "Operations & support"}
                   </h3>
@@ -603,14 +637,8 @@ export default function HomeContent() {
                   </div>
 
                   <button
-                    onClick={() =>
-                      openContactModal(
-                        sv
-                          ? `Hej! Jag är intresserad av "Drift & support" (299 kr/mån exkl. moms). Berätta gärna mer.`
-                          : `Hi! I'm interested in "Operations & support" (299 kr/mo excl. VAT). Please tell me more.`
-                      )
-                    }
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium transition-all border border-slate-700 text-slate-200 hover:border-slate-500 hover:bg-slate-800/50"
+                    onClick={(e) => { e.stopPropagation(); chooseCard("care", careMessage); }}
+                    className="self-start md:mt-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium transition-all border border-slate-700 text-slate-200 hover:border-slate-500 hover:bg-slate-800/50"
                   >
                     {sv ? "Kom igång" : "Get started"}
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -619,10 +647,10 @@ export default function HomeContent() {
                   </button>
                 </div>
 
-                <ul className="grid sm:grid-cols-2 gap-3 flex-1">
+                <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2.5 self-start flex-1">
                   {(sv
-                    ? ["Hemsidan hålls online dygnet runt", "Säkerhetsuppdateringar", "Automatisk backup", "SSL-certifikat ingår", "Teknisk support vid problem", "Hjälp med domänkoppling"]
-                    : ["Website kept online around the clock", "Security updates", "Automatic backup", "SSL certificate included", "Technical support when issues arise", "Help with domain connection"]
+                    ? ["Hemsidan hålls online dygnet runt", "Säkerhetsuppdateringar", "Automatisk backup", "SSL-certifikat ingår", "Teknisk support vid problem", "Hjälp med domänkoppling", "Hosting"]
+                    : ["Website kept online around the clock", "Security updates", "Automatic backup", "SSL certificate included", "Technical support when issues arise", "Help with domain connection", "Hosting"]
                   ).map((feature, fi) => (
                     <li key={fi} className="flex items-start gap-3 text-sm text-slate-300">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 shrink-0 text-cyan-400">
@@ -634,11 +662,59 @@ export default function HomeContent() {
                 </ul>
               </div>
             </div>
+
+            {/* Skräddarsydd lösning */}
+            <div
+              onClick={() => chooseCard("custom", customMessage)}
+              className={`group relative flex flex-col w-full lg:w-[calc(50%-0.75rem)] bg-slate-900/40 backdrop-blur-md border rounded-3xl p-8 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 ${
+                selectedCard === "custom" ? "border-cyan-400 ring-2 ring-cyan-400/50" : "border-slate-800/50 hover:border-cyan-500/50"
+              }`}
+            >
+              <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-cyan-500/50 to-cyan-500/20 opacity-30" />
+
+              <h3 className="text-xl font-bold text-slate-100">
+                {sv ? "Hittar du inte rätt paket?" : "Can't find the right package?"}
+              </h3>
+              <p className="text-sm text-slate-400 mt-3">
+                {sv
+                  ? "Alla företag är olika. Om inget av våra paket passar dina behov tar vi gärna fram en skräddarsydd lösning och en kostnadsfri offert."
+                  : "Every business is different. If none of our packages fit your needs, we'll gladly create a tailored solution and a free quote."}
+              </p>
+
+              <ul className="mt-6 mb-8 space-y-3 flex-1">
+                {(sv
+                  ? ["Anpassad lösning efter dina behov", "Fast pris utan dolda avgifter", "Personlig rådgivning", "Kostnadsfri offert"]
+                  : ["Tailored solution for your needs", "Fixed price with no hidden fees", "Personal advice", "Free quote"]
+                ).map((feature, fi) => (
+                  <li key={fi} className="flex items-start gap-3 text-sm text-slate-300">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 shrink-0 text-cyan-400">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); chooseCard("custom", customMessage); }}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium transition-all border border-slate-700 text-slate-200 hover:border-slate-500 hover:bg-slate-800/50"
+              >
+                {sv ? "Kontakta oss" : "Contact us"}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Tillägg - add-ons */}
           <div className="mt-12 flex justify-center">
-            <div className="group relative w-full lg:w-[calc(66.666%-0.5rem)] bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-3xl p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 hover:border-cyan-500/50">
+            <div
+              onClick={() => chooseCard("addons", addonsMessage)}
+              className={`group relative w-full lg:w-[calc(66.666%-0.5rem)] bg-slate-900/40 backdrop-blur-md border rounded-3xl p-8 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 ${
+                selectedCard === "addons" ? "border-cyan-400 ring-2 ring-cyan-400/50" : "border-slate-800/50 hover:border-cyan-500/50"
+              }`}
+            >
               <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-cyan-500/50 to-cyan-500/20 opacity-30" />
 
               <div className="mb-8">
@@ -690,13 +766,7 @@ export default function HomeContent() {
               </div>
 
               <button
-                onClick={() =>
-                  openContactModal(
-                    sv
-                      ? `Hej! Jag är intresserad av tilläggen (Företagsmail och/eller Flytt av befintlig e-post). Berätta gärna mer.`
-                      : `Hi! I'm interested in the add-ons (Business email and/or Migration of existing email). Please tell me more.`
-                  )
-                }
+                onClick={(e) => { e.stopPropagation(); chooseCard("addons", addonsMessage); }}
                 className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium transition-all border border-slate-700 text-slate-200 hover:border-slate-500 hover:bg-slate-800/50"
               >
                 {sv ? "Kom igång" : "Get started"}

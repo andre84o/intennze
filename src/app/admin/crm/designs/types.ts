@@ -1,4 +1,4 @@
-import { Customer, CustomerStatus, Reminder, CustomerInteraction, InteractionType, ReminderType } from "@/types/database";
+import { Customer, CustomerStatus, Reminder, CustomerInteraction, InteractionType, ReminderType, Quote } from "@/types/database";
 
 export interface Questionnaire {
   id: string;
@@ -18,6 +18,7 @@ export interface DesignProps {
   reminders: Reminder[];
   interactions: CustomerInteraction[];
   questionnaires: Questionnaire[];
+  quotes: Quote[];
   today: string;
   savingCustomer: string | null;
   sendingQuestionnaire: string | null;
@@ -31,6 +32,7 @@ export interface DesignProps {
   // seed the Mobile Call Companion session. Returns customer ids in order.
   getCallQueue: () => string[];
   hasQuestionnaire: (id: string) => boolean;
+  getCustomerQuotes: (id: string) => Quote[];
   isServiceExpired: (c: Customer) => boolean;
   formatDate: (s: string) => string;
   formatDateTime: (s: string) => string;
@@ -45,6 +47,9 @@ export interface DesignProps {
   onViewResponses: (id: string) => void;
   onMarkRead: (id: string) => void;
   onReplaceCustomer: (customer: Customer) => void;
+  onQuoteCreated: (quote: Quote) => void;
+  onDeleteQuote: (id: string) => void;
+  onQuoteSent: (id: string, email: string) => void;
 }
 
 export const statusLabels: Record<CustomerStatus, string> = {
