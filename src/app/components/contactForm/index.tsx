@@ -143,14 +143,14 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
           </div>
 
           {/* Thank you message */}
-          <div className="text-center">
+          <div className="text-center" role="status" aria-live="polite">
             <h2 className="text-2xl font-bold text-white mb-2">
-              {sv ? "Tack för ditt meddelande!" : "Thank you for your message!"}
+              {sv ? "Tack för din förfrågan!" : "Thank you for your request!"}
             </h2>
             <p className="text-slate-400 max-w-sm">
               {sv
-                ? "Vi återkommer inom 24 timmar."
-                : "We'll get back to you within 24 hours."}
+                ? "Vi återkommer vanligtvis inom en arbetsdag."
+                : "We usually get back to you within one business day."}
             </p>
           </div>
 
@@ -165,7 +165,7 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
                   <span className="text-cyan-400 text-xs font-bold">1</span>
                 </div>
                 <p className="text-sm text-slate-400">
-                  {sv ? "Vi granskar din förfrågan" : "We review your request"}
+                  {sv ? "Vi går igenom din förfrågan" : "We review your request"}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -173,7 +173,7 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
                   <span className="text-purple-400 text-xs font-bold">2</span>
                 </div>
                 <p className="text-sm text-slate-400">
-                  {sv ? "Vi kontaktar dig för att diskutera ditt projekt" : "We contact you to discuss your project"}
+                  {sv ? "Vi kontaktar dig om vi behöver mer information" : "We contact you if we need more information"}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -181,18 +181,18 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
                   <span className="text-fuchsia-400 text-xs font-bold">3</span>
                 </div>
                 <p className="text-sm text-slate-400">
-                  {sv ? "Du får en kostnadsfri offert" : "You receive a free quote"}
+                  {sv ? "Du får ett tydligt förslag och nästa steg" : "You receive a clear proposal and the next step"}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Send another message button */}
+          {/* Send another request button */}
           <button
             onClick={() => setStatus("idle")}
             className="text-sm text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-4"
           >
-            {sv ? "Skicka ett nytt meddelande" : "Send another message"}
+            {sv ? "Skicka en ny förfrågan" : "Send another request"}
           </button>
         </div>
       </div>
@@ -252,13 +252,13 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
             className="block text-sm font-medium text-slate-300 mb-2"
           >
             {t("phone_label")}
+            <span className="text-slate-500 font-normal"> {sv ? "(valfritt)" : "(optional)"}</span>
           </label>
           <input
             id="phone"
             name="phone"
             type="tel"
             inputMode="tel"
-            required
             autoComplete="tel"
             className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
             placeholder={t("phone_placeholder")}
@@ -305,6 +305,7 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
         <button
           type="submit"
           disabled={status === "sending"}
+          aria-busy={status === "sending"}
           className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 disabled:opacity-70 disabled:hover:scale-100"
         >
           {status === "sending" ? (
@@ -325,8 +326,15 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
           )}
         </button>
 
+        {/* Screen-reader status while the request is in flight */}
+        <p className="sr-only" role="status" aria-live="polite">
+          {status === "sending" ? t("sending") : ""}
+        </p>
+
         {status === "error" && (
-          <p className="text-center text-sm text-red-400">{t("error_msg")}</p>
+          <p className="text-center text-sm text-red-400" role="alert">
+            {t("error_msg")}
+          </p>
         )}
       </form>
     </div>

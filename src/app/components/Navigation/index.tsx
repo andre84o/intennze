@@ -10,9 +10,9 @@ export default function Navigation() {
 
   const items = [
     { name: dict[lang].nav_home, href: "/" },
-    { name: dict[lang].nav_about, href: "/om-oss" },
     { name: dict[lang].nav_services, href: "/tjanster" },
     { name: dict[lang].nav_pricing, href: "/#priser" },
+    { name: dict[lang].nav_about, href: "/om-oss" },
     { name: dict[lang].nav_contact, href: "/kontakt" },
   ];
 

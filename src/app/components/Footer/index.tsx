@@ -11,8 +11,9 @@ export default function Footer() {
 
   const navLinks = [
     { href: "/", label: t.nav_home },
-    { href: "/om-oss", label: t.nav_about },
     { href: "/tjanster", label: t.nav_services },
+    { href: "/#priser", label: t.nav_pricing },
+    { href: "/om-oss", label: t.nav_about },
     { href: "/kontakt", label: t.nav_contact },
   ];
 
