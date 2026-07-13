@@ -7,13 +7,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const lang = c.get("lang")?.value === "en" ? "en" : "sv";
   return lang === "en"
     ? {
-        title: "Contact",
-        description: "Contact Intenzze — we will get back to you as soon as we can.",
+        title: "Contact | Get a website quote | Intenzze",
+        description:
+          "Contact Intenzze for a free quote on a business website, booking system, customer portal or another digital solution.",
         alternates: { canonical: "/kontakt" },
       }
     : {
-        title: "Kontakt",
-        description: "Kontakta Intenzze – vi hör av oss så snart vi kan.",
+        title: "Kontakt | Få offert på hemsida | Intenzze",
+        description:
+          "Kontakta Intenzze för en kostnadsfri offert på företagshemsida, bokningssystem, kundportal eller annan digital lösning.",
         alternates: { canonical: "/kontakt" },
       };
 }
@@ -25,7 +27,11 @@ const ContactPage = async () => {
     const contactLd = {
       "@context": "https://schema.org",
       "@type": "ContactPage",
-      name: "Kontakt",
+      name: lang === "en" ? "Contact" : "Kontakt",
+      description:
+        lang === "en"
+          ? "Contact Intenzze for websites, booking systems, customer portals and tailored digital solutions."
+          : "Kontakta Intenzze för hemsidor, bokningssystem, kundportaler och skräddarsydda digitala lösningar.",
       url: `${base}/kontakt`,
     };
     const breadcrumbs = {

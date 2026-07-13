@@ -7,13 +7,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const lang = c.get("lang")?.value === "en" ? "en" : "sv";
   return lang === "en"
     ? {
-        title: "About us",
-        description: "Get to know Intenzze — we create modern, fast and sustainable web experiences.",
+        title: "About Intenzze | Personal web studio for businesses",
+        description:
+          "Learn more about Intenzze and André Torabpour. We build modern business websites, booking systems and digital solutions with personal contact and a clear scope.",
         alternates: { canonical: "/om-oss" },
       }
     : {
-        title: "Om oss",
-        description: "Lär känna Intenzze – vi skapar moderna, snabba och hållbara webbupplevelser.",
+        title: "Om Intenzze | Personlig webbstudio för företag",
+        description:
+          "Lär känna Intenzze och André Torabpour. Vi bygger moderna företagshemsidor, bokningssystem och digitala lösningar med personlig kontakt och tydlig omfattning.",
         alternates: { canonical: "/om-oss" },
       };
 }
@@ -25,7 +27,11 @@ export default async function AboutPage() {
   const aboutLd = {
     "@context": "https://schema.org",
     "@type": "AboutPage",
-    name: "Om oss",
+    name: lang === "en" ? "About Intenzze" : "Om Intenzze",
+    description:
+      lang === "en"
+        ? "Learn more about Intenzze, a personal web studio that builds websites and digital solutions for businesses."
+        : "Lär känna Intenzze, en personlig webbstudio som bygger hemsidor och digitala lösningar för företag.",
     url: `${base}/om-oss`,
   };
   const breadcrumbs = {

@@ -76,7 +76,7 @@ export default async function RootLayout({
         <LanguageProvider>
           <ConditionalLayout
             header={
-              <div className="relative z-10">
+              <div className="relative z-40">
                 <Header />
               </div>
             }
