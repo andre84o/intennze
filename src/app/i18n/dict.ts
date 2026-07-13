@@ -64,7 +64,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     sent_msg: "Tack! Ditt meddelande har skickats.",
     error_msg: "Något gick fel. Försök igen.",
 
-    footer_tagline: "Struktur före glitter",
+    footer_tagline: "Keep it simple. Make it smart",
     footer_nav_title: "Navigation",
     footer_contact_title: "Kontakt",
     footer_follow_title: "Följ oss",
@@ -135,7 +135,7 @@ export const dict: Record<Lang, Record<string, string>> = {
     sent_msg: "Thanks! Your message has been sent.",
     error_msg: "Something went wrong. Please try again.",
 
-    footer_tagline: "Structure before glitter",
+    footer_tagline: "Keep it simple. Make it smart",
     footer_nav_title: "Navigation",
     footer_contact_title: "Contact",
     footer_follow_title: "Follow us",

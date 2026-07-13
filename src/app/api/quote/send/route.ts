@@ -86,27 +86,39 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `Intenzze <${email}>`;
+    // FROM_EMAIL kan vara antingen "info@..." eller "Namn <info@...>".
+    // Plocka ut den rena adressen så vi inte dubbel-wrappar avsändaren
+    // (vilket annars ger t.ex. "Intenzze>" i mottagarens inkorg).
+    const fromAddress = (email.match(/<([^>]+)>/)?.[1] || email).trim();
+    const from = `Intenzze <${fromAddress}>`;
 
     // Build items HTML
     const itemsHtml = (quote.items || [])
       .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
       .map(
-        (item: { description: string; details: string | null; quantity: number; unit: string; unit_price: number; total: number }) => `
+        (item: { description: string; details: string | null; quantity: number; unit: string; unit_price: number; total: number }) => {
+          const gross = item.unit_price * item.quantity;
+          const disc = gross - item.total;
+          return `
         <tr>
           <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
             <strong>${escapeHtml(item.description)}</strong>
             ${item.details ? `<p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280; white-space: pre-line;">${escapeHtml(item.details)}</p>` : ""}
+            ${disc > 0 ? `<p style="margin: 4px 0 0 0; font-size: 13px; color: #15803d;">Rabatt −${formatCurrency(disc)}</p>` : ""}
           </td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center; vertical-align: top;">${item.quantity} ${escapeHtml(item.unit)}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right; vertical-align: top;">${formatCurrency(item.unit_price)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center; vertical-align: top;">${item.unit === "mån" ? "Löpande" : `${item.quantity} ${escapeHtml(item.unit)}`}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right; vertical-align: top;">${formatCurrency(item.unit_price)}${item.unit === "mån" ? "/mån" : ""}</td>
           <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right; vertical-align: top;">${formatCurrency(item.total)}</td>
         </tr>
-      `
+      `;
+        }
       )
       .join("");
 
-    const customerName = escapeHtml(`${quote.customer.first_name} ${quote.customer.last_name}`);
+    const customerName = escapeHtml(
+      (quote.customer.company_name && quote.customer.company_name.trim())
+        || `${quote.customer.first_name} ${quote.customer.last_name}`
+    );
 
     // Generate public token for customer response
     const publicToken = quote.public_token || generateToken();
@@ -143,8 +155,8 @@ export async function POST(req: Request) {
         <div style="display:none; font-size:0; line-height:0; max-height:0; mso-hide:all;">
           Här kommer din offert från Intenzze Webbstudio. Vi ser fram emot att samarbeta med dig.
         </div>
-        <div style="background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%); padding: 30px; border-radius: 12px 12px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">Offert #${quote.quote_number}</h1>
+        <div style="background-color: #7c3aed; background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Offert #${quote.quote_number}</h1>
           <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0;">${escapeHtml(quote.title)}</p>
         </div>
 
@@ -204,7 +216,7 @@ export async function POST(req: Request) {
 
           <div style="margin-top: 32px; text-align: center; padding: 24px; background: #f0fdf4; border-radius: 12px;">
             <p style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #166534;">Är du redo att gå vidare?</p>
-            <a href="${quoteUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Se offert och godkänn</a>
+            <a href="${quoteUrl}" style="display: inline-block; padding: 14px 32px; background-color: #16a34a; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Se offert och godkänn</a>
             <p style="margin: 16px 0 0 0; font-size: 14px; color: #6b7280;">Eller <a href="${quoteUrl}" style="color: #2563eb;">klicka här</a> för att avböja</p>
           </div>
 

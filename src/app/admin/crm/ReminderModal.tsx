@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Reminder, ReminderFormData, ReminderType, RecurringInterval, reminderTypeLabels, Customer } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Props {
   reminder: Reminder | null;
@@ -122,19 +123,22 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Kund (valfritt)
             </label>
-            <select
+            <Select
               value={formData.customer_id}
-              onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onValueChange={(value) => setFormData({ ...formData, customer_id: value })}
             >
-              <option value="">Ingen kund vald</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.first_name} {customer.last_name}
-                  {customer.company_name && ` - ${customer.company_name}`}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                <SelectValue placeholder="Ingen kund vald" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {customers.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id} className="rounded-lg">
+                    {customer.first_name} {customer.last_name}
+                    {customer.company_name && ` - ${customer.company_name}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -214,17 +218,21 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Typ
             </label>
-            <select
+            <Select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as ReminderType })}
-              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onValueChange={(value) => setFormData({ ...formData, type: value as ReminderType })}
             >
-              {Object.entries(reminderTypeLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                <SelectValue placeholder="Välj typ" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {Object.entries(reminderTypeLabels).map(([key, label]) => (
+                  <SelectItem key={key} value={key} className="rounded-lg">
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-3">
@@ -243,17 +251,20 @@ export default function ReminderModal({ reminder, customers, onClose, onSave }: 
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Intervall
                 </label>
-                <select
+                <Select
                   value={formData.recurring_interval}
-                  onChange={(e) => setFormData({ ...formData, recurring_interval: e.target.value as RecurringInterval })}
-                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onValueChange={(value) => setFormData({ ...formData, recurring_interval: value as RecurringInterval })}
                 >
-                  <option value="">Välj intervall</option>
-                  <option value="weekly">Varje vecka</option>
-                  <option value="monthly">Varje månad</option>
-                  <option value="quarterly">Varje kvartal</option>
-                  <option value="yearly">Varje år</option>
-                </select>
+                  <SelectTrigger className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                    <SelectValue placeholder="Välj intervall" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="weekly" className="rounded-lg">Varje vecka</SelectItem>
+                    <SelectItem value="monthly" className="rounded-lg">Varje månad</SelectItem>
+                    <SelectItem value="quarterly" className="rounded-lg">Varje kvartal</SelectItem>
+                    <SelectItem value="yearly" className="rounded-lg">Varje år</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>

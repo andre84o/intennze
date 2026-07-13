@@ -68,7 +68,7 @@ export default function ContactContent() {
             </div>
 
             {/* Right side - Form */}
-            <div>
+            <div id="form" className="scroll-mt-24">
               <ContactForm />
             </div>
           </div>

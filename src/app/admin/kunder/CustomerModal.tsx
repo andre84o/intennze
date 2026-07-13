@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Customer, CustomerFormData, CustomerStatus, customerStatusLabels, leadSourceLabels, LeadSource } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Props {
   customer: Customer | null;
@@ -412,43 +413,34 @@ export default function CustomerModal({ customer, onClose, onSave }: Props) {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="group">
                       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">Status</label>
-                      <div className="relative">
-                        <select
-                          value={formData.status}
-                          onChange={(e) => setFormData({ ...formData, status: e.target.value as CustomerStatus })}
-                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
-                        >
+                      <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as CustomerStatus })}>
+                        <SelectTrigger className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl rounded-lg text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200">
+                          <SelectValue placeholder="Välj status..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
                           {Object.entries(customerStatusLabels).map(([key, label]) => (
-                            <option key={key} value={key}>
+                            <SelectItem key={key} value={key} className="rounded-lg">
                               {label}
-                            </option>
+                            </SelectItem>
                           ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                      </div>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="group">
                       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 group-focus-within:text-blue-600 transition-colors">Källa</label>
-                      <div className="relative">
-                        <select
-                          value={formData.source}
-                          onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
-                        >
-                          <option value="">Välj källa...</option>
+                      <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
+                        <SelectTrigger className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl rounded-lg text-gray-900 appearance-none focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200">
+                          <SelectValue placeholder="Välj källa..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
                           {Object.entries(leadSourceLabels).map(([key, label]) => (
-                            <option key={key} value={key}>
+                            <SelectItem key={key} value={key} className="rounded-lg">
                               {label}
-                            </option>
+                            </SelectItem>
                           ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                      </div>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 

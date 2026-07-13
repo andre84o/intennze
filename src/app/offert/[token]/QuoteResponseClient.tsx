@@ -127,25 +127,34 @@ export default function QuoteResponseClient({ quote: initialQuote, token }: Prop
           <div className="p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Specifikation</h3>
             <div className="space-y-3">
-              {quote.items?.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-start justify-between gap-4 p-4 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{item.description}</p>
-                    {item.details && (
-                      <p className="text-sm text-gray-500 mt-1">{item.details}</p>
-                    )}
-                    <p className="text-sm text-gray-500 mt-1">
-                      {item.quantity} {item.unit} × {Number(item.unit_price).toLocaleString("sv-SE")} kr
+              {quote.items?.map((item) => {
+                const gross = Number(item.unit_price) * Number(item.quantity);
+                const disc = gross - Number(item.total);
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between gap-4 p-4 rounded-lg bg-gray-50"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{item.description}</p>
+                      {item.details && (
+                        <p className="text-sm text-gray-500 mt-1">{item.details}</p>
+                      )}
+                      <p className="text-sm text-gray-500 mt-1">
+                        {item.unit === "mån"
+                          ? `Löpande abonnemang · ${Number(item.unit_price).toLocaleString("sv-SE")} kr/mån`
+                          : `${item.quantity} ${item.unit} × ${Number(item.unit_price).toLocaleString("sv-SE")} kr`}
+                      </p>
+                      {disc > 0 && (
+                        <p className="text-sm text-green-700 mt-1">Rabatt −{disc.toLocaleString("sv-SE")} kr</p>
+                      )}
+                    </div>
+                    <p className="font-semibold text-gray-900 whitespace-nowrap">
+                      {Number(item.total).toLocaleString("sv-SE")} kr
                     </p>
                   </div>
-                  <p className="font-semibold text-gray-900 whitespace-nowrap">
-                    {Number(item.total).toLocaleString("sv-SE")} kr
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Totals */}

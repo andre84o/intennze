@@ -7,6 +7,7 @@ import { AttachmentUploader } from "@/components/attachments/AttachmentUploader"
 import { ImageGalleryModal } from "@/components/attachments/ImageGalleryModal";
 import { DocumentListModal } from "@/components/attachments/DocumentListModal";
 import { deleteAttachment } from "@/lib/attachments/storage";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Props {
   initialSnippets: CodeSnippet[];
@@ -393,11 +394,14 @@ export default function KoderClient({ initialSnippets, initialAttachments = [], 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">Språk</label>
-                    <select value={formLanguage} onChange={(e) => setFormLanguage(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all">
-                      <option value="">Välj språk...</option>
-                      {languageOptions.map((lang) => <option key={lang} value={lang}>{lang}</option>)}
-                    </select>
+                    <Select value={formLanguage} onValueChange={(value) => setFormLanguage(value)}>
+                      <SelectTrigger className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all rounded-lg">
+                        <SelectValue placeholder="Välj språk..." />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {languageOptions.map((lang) => <SelectItem key={lang} value={lang} className="rounded-lg">{lang}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">Taggar</label>

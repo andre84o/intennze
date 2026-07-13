@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { createClient } from "@/utils/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string) => {
@@ -859,15 +860,19 @@ export default function MessagesPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Logotypens position</label>
-                  <select
+                  <Select
                     value={logoPosition}
-                    onChange={(e) => setLogoPosition(e.target.value as 'left' | 'center' | 'right')}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none"
+                    onValueChange={(value) => setLogoPosition(value as 'left' | 'center' | 'right')}
                   >
-                    <option value="left">Vänster</option>
-                    <option value="center">Mitten</option>
-                    <option value="right">Höger</option>
-                  </select>
+                    <SelectTrigger className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none rounded-lg">
+                      <SelectValue placeholder="Välj position" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem key="left" value="left" className="rounded-lg">Vänster</SelectItem>
+                      <SelectItem key="center" value="center" className="rounded-lg">Mitten</SelectItem>
+                      <SelectItem key="right" value="right" className="rounded-lg">Höger</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Customer, CustomerStatus, customerStatusLabels, InteractionType, ReminderType, reminderTypeLabels, Quote, QuoteStatus, quoteStatusLabels } from "@/types/database";
 import { LeadSourceIcon } from "@/components/lead-source-icon";
 import { useAgentCallSession } from "@/lib/useAgentCallSession";
@@ -422,9 +423,16 @@ export default function Design1Pipeline(p: DesignProps) {
                 </div>
                 <div className="flex items-center gap-2 mt-3">
                   <Badge variant="outline" className={`${statusColors[selected.status]} text-xs`}>{customerStatusLabels[selected.status]}</Badge>
-                  <select value={selected.status} onChange={e => { p.onUpdateCustomer(selected.id, "status", e.target.value); setSelected({ ...selected, status: e.target.value as CustomerStatus }); }} className="text-xs border border-slate-200 rounded-lg px-2 py-1 text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    {Object.entries(customerStatusLabels).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-                  </select>
+                  <Select value={selected.status} onValueChange={(v) => { p.onUpdateCustomer(selected.id, "status", v); setSelected({ ...selected, status: v as CustomerStatus }); }}>
+                    <SelectTrigger className="h-auto w-auto gap-1 rounded-lg border-slate-200 px-2 py-1 text-xs text-slate-600">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {Object.entries(customerStatusLabels).map(([k, l]) => (
+                        <SelectItem key={k} value={k} className="rounded-lg text-xs">{l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <button onClick={() => setShowEdit(true)} className="ml-auto flex items-center gap-1 px-2.5 py-1 text-xs text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
                     Redigera
@@ -885,7 +893,14 @@ export default function Design1Pipeline(p: DesignProps) {
                 email: selected.email,
               }}
               onClose={() => setShowQuote(false)}
-              onCreated={(q) => { p.onQuoteCreated(q); setShowQuote(false); }}
+              onCreated={(q) => p.onQuoteCreated(q)}
+              onSent={(id, email) => p.onQuoteSent(id, email)}
+              onDiscard={(id) => p.onDeleteQuote(id)}
+              onCompanyUpdated={(name) => {
+                const updated = { ...selected, company_name: name };
+                setSelected(updated);
+                p.onReplaceCustomer(updated);
+              }}
             />
           )}
 

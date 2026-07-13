@@ -358,7 +358,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `${company.company_name || "Företag"} <${email}>`;
+    // FROM_EMAIL kan vara "info@..." eller "Namn <info@...>" — plocka ut den
+    // rena adressen så avsändaren inte dubbel-wrappas.
+    const fromAddress = (email.match(/<([^>]+)>/)?.[1] || email).trim();
+    const from = `${company.company_name || "Företag"} <${fromAddress}>`;
     const customerName = escapeHtml(`${invoice.customer.first_name} ${invoice.customer.last_name}`);
     const companyNameHtml = escapeHtml(company.company_name || "");
     const companyNameOrFallbackHtml = escapeHtml(company.company_name || "oss");

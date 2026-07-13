@@ -69,7 +69,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `Intenzze <${email}>`;
+    // FROM_EMAIL kan vara "info@..." eller "Namn <info@...>" — plocka ut den
+    // rena adressen så avsändaren inte dubbel-wrappas ("Intenzze>").
+    const fromAddress = (email.match(/<([^>]+)>/)?.[1] || email).trim();
+    const from = `Intenzze <${fromAddress}>`;
 
     // Generate public token
     const publicToken = generateToken();

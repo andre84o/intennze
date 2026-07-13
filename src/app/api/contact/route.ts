@@ -181,7 +181,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const from = `Intenzze <${emailConfig}>`;
+    // FROM_EMAIL kan vara "info@..." eller "Namn <info@...>" — plocka ut den
+    // rena adressen så avsändaren inte dubbel-wrappas ("Intenzze>").
+    const fromAddress = (emailConfig.match(/<([^>]+)>/)?.[1] || emailConfig).trim();
+    const from = `Intenzze <${fromAddress}>`;
 
     const info = await transporter.sendMail({
       from,

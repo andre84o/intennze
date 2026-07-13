@@ -68,7 +68,10 @@ export async function POST(req: Request) {
     }
 
     const fromName = "Intenzze";
-    const from = `${fromName} <${email}>`;
+    // FROM_EMAIL kan vara "info@..." eller "Namn <info@...>" — plocka ut den
+    // rena adressen så avsändaren inte dubbel-wrappas ("Intenzze>").
+    const fromAddress = (email.match(/<([^>]+)>/)?.[1] || email).trim();
+    const from = `${fromName} <${fromAddress}>`;
 
     // Förbered bilagor
     const mailAttachments: any[] = (attachments || []).map((att: EmailAttachment) => ({

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EmailInteractionItem, type EmailPreview } from "@/app/admin/crm/components/EmailInteractionItem";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from "@/utils/supabase/client";
 import {
   Customer,
@@ -151,18 +152,24 @@ export default function CustomerDetailClient({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <select
+          <Select
             value={customer.status}
-            onChange={(e) => handleUpdateStatus(e.target.value as CustomerStatus)}
+            onValueChange={(value) => handleUpdateStatus(value as CustomerStatus)}
             disabled={saving}
-            className={`px-3 py-2 rounded-lg text-sm font-medium border ${statusColors[customer.status]} focus:outline-none focus:ring-2 focus:ring-blue-500`}
           >
-            {Object.entries(customerStatusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              className={`px-3 py-2 rounded-lg text-sm font-medium border ${statusColors[customer.status]} focus:outline-none focus:ring-2 focus:ring-blue-500`}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {Object.entries(customerStatusLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value} className="rounded-lg">
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <button
             onClick={handleDelete}
             className="p-2 text-red-400 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
@@ -318,17 +325,21 @@ export default function CustomerDetailClient({
             {showInteractionForm && (
               <form onSubmit={handleAddInteraction} className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <div className="flex gap-3 mb-3">
-                  <select
+                  <Select
                     value={newInteraction.type}
-                    onChange={(e) => setNewInteraction((prev) => ({ ...prev, type: e.target.value as InteractionType }))}
-                    className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onValueChange={(value) => setNewInteraction((prev) => ({ ...prev, type: value as InteractionType }))}
                   >
-                    {Object.entries(interactionTypeLabels).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {Object.entries(interactionTypeLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value} className="rounded-lg">
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <textarea
                   value={newInteraction.description}
