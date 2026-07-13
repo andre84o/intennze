@@ -10,11 +10,18 @@ interface AdminContextType {
   setSidebarState: (state: SidebarState) => void;
   toggleSidebar: () => void;
   openSidebar: () => void;
+  role: "admin" | "staff";
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-export function AdminProvider({ children }: { children: ReactNode }) {
+export function AdminProvider({
+  children,
+  role,
+}: {
+  children: ReactNode;
+  role: "admin" | "staff";
+}) {
   const [sidebarState, setSidebarState] = useState<SidebarState>("collapsed");
 
   // Cycle: open -> collapsed -> hidden -> open
@@ -30,7 +37,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   return (
     <AdminContext.Provider
-      value={{ sidebarState, setSidebarState, toggleSidebar, openSidebar }}
+      value={{ sidebarState, setSidebarState, toggleSidebar, openSidebar, role }}
     >
       {children}
     </AdminContext.Provider>
