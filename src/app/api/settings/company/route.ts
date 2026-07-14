@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { requireAdminApi } from "@/lib/auth/apiAuth";
 
 export interface CompanySettings {
   id?: string;
@@ -25,12 +25,9 @@ export interface CompanySettings {
 // GET - Fetch company settings
 export async function GET() {
   try {
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Ej autentiserad" }, { status: 401 });
-    }
+    const auth = await requireAdminApi();
+    if (!auth.ok) return auth.response;
+    const { supabase } = auth;
 
     const { data, error } = await supabase
       .from("company_settings")
@@ -53,12 +50,9 @@ export async function GET() {
 // POST - Save company settings
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Ej autentiserad" }, { status: 401 });
-    }
+    const auth = await requireAdminApi();
+    if (!auth.ok) return auth.response;
+    const { supabase } = auth;
 
     const settings: CompanySettings = await req.json();
 

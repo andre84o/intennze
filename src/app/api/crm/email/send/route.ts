@@ -3,7 +3,7 @@ import "server-only";
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { requireActiveProfileApi } from "@/lib/auth/apiAuth";
 import nodemailer from "nodemailer";
 import { crmEmailSendLimiter, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 
@@ -29,12 +29,9 @@ function extractEmail(s: string): string {
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireActiveProfileApi();
+    if (!auth.ok) return auth.response;
+    const { user, supabase } = auth;
 
     // Rate limit by user ID: 10 emails/minute per authenticated user
     const limitResult = await tryLimit(crmEmailSendLimiter, user.id);

@@ -7,7 +7,7 @@ import nodemailer from "nodemailer";
 import { jsPDF } from "jspdf";
 import path from "path";
 import fs from "fs";
-import { createClient } from "@/utils/supabase/server";
+import { requireAdminApi } from "@/lib/auth/apiAuth";
 
 interface CompanySettings {
   company_name: string | null;
@@ -294,12 +294,9 @@ function generateInvoicePDF(invoice: {
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAdminApi();
+    if (!auth.ok) return auth.response;
+    const { supabase } = auth;
 
     const { invoiceId } = await req.json();
 
