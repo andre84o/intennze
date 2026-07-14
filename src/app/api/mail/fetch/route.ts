@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { requireAdminApi } from "@/lib/auth/apiAuth";
 import Imap from "imap-simple";
 import { simpleParser, ParsedMail } from "mailparser";
 
@@ -19,12 +19,9 @@ const IMAP_CONFIG = {
 };
 
 export async function POST() {
-  const supabase = await createClient();
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   if (!IMAP_CONFIG.imap.user || !IMAP_CONFIG.imap.password) {
     return NextResponse.json(

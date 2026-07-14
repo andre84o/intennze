@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { requireAdminApi } from "@/lib/auth/apiAuth";
 import nodemailer from "nodemailer";
 import path from "path";
 import fs from "fs";
@@ -35,12 +35,9 @@ interface EmailAttachment {
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAdminApi();
+    if (!auth.ok) return auth.response;
+    const { supabase } = auth;
 
     const { to, subject, body, signature, logoHeight = 32, logoPosition = "left", replyToMessageId, attachments } = await req.json();
 

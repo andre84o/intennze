@@ -5,7 +5,7 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
-import { createClient } from "@/utils/supabase/server";
+import { requireActiveProfileApi } from "@/lib/auth/apiAuth";
 
 // Generate a secure random token
 function generateToken(): string {
@@ -24,12 +24,9 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireActiveProfileApi();
+    if (!auth.ok) return auth.response;
+    const { supabase } = auth;
 
     const { customerId } = await req.json();
 

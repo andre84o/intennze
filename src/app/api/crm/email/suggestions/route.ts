@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { requireActiveProfileApi } from "@/lib/auth/apiAuth";
 import { generateText, AIError } from "@/lib/ai/client";
 import { crmEmailSuggestionsLimiter, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 
@@ -43,12 +43,9 @@ function validateSuggestions(raw: unknown, provider: ProviderLabel): Suggestion[
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireActiveProfileApi();
+    if (!auth.ok) return auth.response;
+    const { user, supabase } = auth;
 
     const limitResult = await tryLimit(crmEmailSuggestionsLimiter, user.id);
     if (limitResult && !limitResult.success) {
