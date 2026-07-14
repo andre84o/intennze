@@ -22,7 +22,7 @@ export default async function AdminLayout({
   // presentation-layer gate so inactive users never reach the admin UI.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, is_active, account_status, employment_start, employment_end")
+    .select("role, is_active, account_status, employment_start, employment_end, commission_eligible")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -44,9 +44,14 @@ export default async function AdminLayout({
   }
 
   const role: "admin" | "staff" = profile.role === "admin" ? "admin" : "staff";
+  const commissionEligible = profile.commission_eligible === true;
 
   return (
-    <AdminLayoutClient userEmail={user.email} role={role}>
+    <AdminLayoutClient
+      userEmail={user.email}
+      role={role}
+      commissionEligible={commissionEligible}
+    >
       <AdminIdleLogout />
       {children}
     </AdminLayoutClient>

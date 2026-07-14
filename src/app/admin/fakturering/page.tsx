@@ -1,11 +1,15 @@
 import { createClient } from "@/utils/supabase/server";
 import { requireAdminPage } from "@/lib/auth/adminGuard";
+import { getEligibleSalespeople } from "./actions";
 import InvoicesClient from "./InvoicesClient";
 
 export default async function InvoicesPage() {
   await requireAdminPage();
 
   const supabase = await createClient();
+
+  // Active, commission-eligible sellers for the "confirm paid" dialog.
+  const eligible = await getEligibleSalespeople();
 
   // Fetch all invoices with customer data
   const { data: invoices, error: invoicesError } = await supabase
@@ -31,6 +35,7 @@ export default async function InvoicesPage() {
       initialInvoices={invoices || []}
       customersWithService={customersWithService || []}
       allCustomers={allCustomers || []}
+      salespeople={eligible.ok ? eligible.salespeople : []}
       error={invoicesError?.message || customersError?.message}
     />
   );
