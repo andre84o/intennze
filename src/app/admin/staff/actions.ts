@@ -220,13 +220,43 @@ export async function inviteStaff(input: InviteStaffInput): Promise<InviteStaffR
 
   const newId = invited.user.id;
 
-  // Helper: best-effort compensation — remove the orphaned auth user.
-  const compensate = async () => {
-    try {
-      await admin.auth.admin.deleteUser(newId);
-    } catch (e) {
-      console.error("[staff.invite] compensation deleteUser failed:", e);
+  // Ordered compensation for a partially-completed invite. Rolls back ONLY the
+  // just-created user (newId) — NEVER any existing staff. Order (required):
+  //   1) delete user_permissions  2) delete the profiles row (session/admin
+  //      context)  3) delete the Auth user (service role).
+  // profiles has an ON DELETE RESTRICT FK to auth.users, so the profile row and
+  // its permissions MUST be removed before the auth user. Returns a clear note
+  // when cleanup only partially succeeds so the caller can surface it.
+  const compensate = async (profileCreated: boolean): Promise<string | null> => {
+    const failures: string[] = [];
+
+    if (profileCreated) {
+      const { error: permDelErr } = await guard.supabase
+        .from("user_permissions")
+        .delete()
+        .eq("user_id", newId);
+      if (permDelErr) failures.push(`user_permissions (${permDelErr.message})`);
+
+      const { error: profDelErr } = await guard.supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", newId);
+      if (profDelErr) failures.push(`profiles row (${profDelErr.message})`);
     }
+
+    try {
+      const { error: authDelErr } = await admin.auth.admin.deleteUser(newId);
+      if (authDelErr) failures.push(`auth user (${authDelErr.message})`);
+    } catch (e) {
+      failures.push(`auth user (${e instanceof Error ? e.message : "unknown error"})`);
+    }
+
+    if (failures.length === 0) return null;
+    const note =
+      `Cleanup incomplete — manual removal required for user ${newId}: ` +
+      failures.join("; ");
+    console.error("[staff.invite]", note);
+    return note;
   };
 
   // --- 4. insert profile via SESSION client (audit → 'staff.invited') -----
@@ -250,8 +280,12 @@ export async function inviteStaff(input: InviteStaffInput): Promise<InviteStaffR
   });
 
   if (profileError) {
-    await compensate();
-    return { ok: false, error: profileError.message };
+    // profile was NOT created -> only the auth user needs removing.
+    const cleanupNote = await compensate(false);
+    return {
+      ok: false,
+      error: profileError.message + (cleanupNote ? ` — ${cleanupNote}` : ""),
+    };
   }
 
   // --- 5. permissions (atomic RPC) ----------------------------------------
@@ -261,8 +295,12 @@ export async function inviteStaff(input: InviteStaffInput): Promise<InviteStaffR
   });
 
   if (permError) {
-    await compensate();
-    return { ok: false, error: permError.message };
+    // profile WAS created -> remove permissions, then profile, then auth user.
+    const cleanupNote = await compensate(true);
+    return {
+      ok: false,
+      error: permError.message + (cleanupNote ? ` — ${cleanupNote}` : ""),
+    };
   }
 
   revalidatePath("/admin/staff");
