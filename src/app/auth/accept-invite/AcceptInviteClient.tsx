@@ -25,12 +25,10 @@ export default function AcceptInviteClient() {
     (async () => {
       try {
         const url = new URL(window.location.href);
-        const hasCode = url.searchParams.has("code");
+        const code = url.searchParams.get("code");
 
-        if (hasCode) {
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
-            window.location.href
-          );
+        if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
             // Fall through to the session check below; if that also fails we
             // show the expired-link message.
