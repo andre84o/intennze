@@ -6,3 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# commission harness scaffolding (local only; contains live schema dump)
+test/.harness/
