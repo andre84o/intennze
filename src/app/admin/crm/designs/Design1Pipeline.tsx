@@ -578,7 +578,7 @@ export default function Design1Pipeline(p: DesignProps) {
                               description={ia.description}
                               email={email}
                               formatDateTime={p.formatDateTime}
-                              onDelete={() => p.onDeleteInteraction(ia.id)}
+                              onDelete={p.canDeleteInteraction ? () => p.onDeleteInteraction(ia.id) : undefined}
                             />
                           );
                         }
@@ -591,13 +591,15 @@ export default function Design1Pipeline(p: DesignProps) {
                               <p className="text-xs text-slate-400">{p.formatDateTime(ia.created_at)}</p>
                               <p className="text-sm text-slate-700">{ia.description}</p>
                             </div>
-                            <button
-                              onClick={() => p.onDeleteInteraction(ia.id)}
-                              className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1 text-slate-300 hover:text-rose-500 transition-all rounded"
-                              title="Radera"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
+                            {p.canDeleteInteraction && (
+                              <button
+                                onClick={() => p.onDeleteInteraction(ia.id)}
+                                className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1 text-slate-300 hover:text-rose-500 transition-all rounded"
+                                title="Radera"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                              </button>
+                            )}
                           </div>
                         );
                       })}
