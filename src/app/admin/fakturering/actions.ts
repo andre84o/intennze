@@ -172,7 +172,7 @@ export async function confirmInvoicePaid(
   const rpc = (data ?? {}) as Partial<ConfirmInvoicePaidRpc>;
 
   revalidatePath("/admin/fakturering");
-  revalidatePath("/admin/provision");
+  revalidatePath("/admin/sales");
 
   return {
     ok: true,

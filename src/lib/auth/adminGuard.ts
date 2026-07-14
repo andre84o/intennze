@@ -56,7 +56,7 @@ export type CommissionAccessResult = {
 };
 
 /**
- * Presentation-layer gate for the /admin/provision (commission) area.
+ * Presentation-layer gate for the /admin/sales (commission) area.
  *
  * Access rule (RESOLVED): an ACTIVE admin always has access; an ACTIVE staff
  * member has access ONLY if commission_eligible === true. Everyone else is
