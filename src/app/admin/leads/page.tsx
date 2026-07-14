@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { requireAdminPage } from "@/lib/auth/adminGuard";
 import LeadsClient, { Lead, AssignableUser } from "./LeadsClient";
 
 export const metadata = {
@@ -8,27 +8,10 @@ export const metadata = {
 };
 
 export default async function LeadsPage() {
+  // Server-side admin gate: unauthenticated -> /login, non-admin -> /admin.
+  await requireAdminPage();
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  // Server-side admin gate. The admin layout only checks that a user is
-  // logged in, so we MUST verify the role here ourselves.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, is_active")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!profile || profile.role !== "admin" || profile.is_active !== true) {
-    redirect("/admin");
-  }
 
   // Fetch leads. RLS also enforces admin-only SELECT on lead_inbox.
   const { data: leads, error } = await supabase

@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { requireAdminPage } from "@/lib/auth/adminGuard";
 import { Attachment } from "@/types/database";
 import KoderClient from "./KoderClient";
 
@@ -7,6 +8,8 @@ export const metadata = {
 };
 
 export default async function KoderPage() {
+  await requireAdminPage();
+
   const supabase = await createClient();
 
   const { data: snippets, error } = await supabase

@@ -1,17 +1,11 @@
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+import { requireAdminPage } from "@/lib/auth/adminGuard";
 import InvoicesClient from "./InvoicesClient";
 
 export default async function InvoicesPage() {
+  await requireAdminPage();
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   // Fetch all invoices with customer data
   const { data: invoices, error: invoicesError } = await supabase
