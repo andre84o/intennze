@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 import { useAdmin } from "./AdminContext";
 
 interface MenuItem {
@@ -83,9 +83,32 @@ function filterMenuByRole(
   return items.filter((item) => STAFF_VISIBLE_HREFS.has(item.href));
 }
 
+function initialsOf(name: string, email: string): string {
+  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (email || "?").slice(0, 2).toUpperCase();
+}
+
+// Active nav pill — violet gradient (design token #6E5CF3 → #8b7bff). Shadow is
+// kept soft + tight so it doesn't bleed onto neighbouring items.
+const ACTIVE_NAV_STYLE = {
+  background: "linear-gradient(135deg,#6E5CF3,#8b7bff)",
+  color: "#fff",
+  boxShadow: "0 6px 14px -8px rgba(109,94,246,0.5), inset 0 1px 0 rgba(255,255,255,0.25)",
+} as const;
+
+// Uniform hover for all neutral (non-active) items so every button reacts the
+// same way — an even, clearly-visible violet-grey tint.
+const NEUTRAL_ITEM =
+  "group flex items-center rounded-[13px] px-3 py-2.5 text-[13.5px] font-semibold transition-colors";
+const NEUTRAL_HOVER = "text-[#67637E] hover:bg-[#F1EFFA] hover:text-[#211D33]";
+
 export default function AdminSidebar() {
-  const { sidebarState, setSidebarState, openSidebar, role, commissionEligible } = useAdmin();
+  const { sidebarState, setSidebarState, openSidebar, role, commissionEligible, userEmail, userName } =
+    useAdmin();
   const pathname = usePathname();
+  const router = useRouter();
   const asideRef = useRef<HTMLElement>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() =>
     filterMenuByRole(defaultMenuItems, role, commissionEligible)
@@ -100,6 +123,13 @@ export default function AdminSidebar() {
 
   // Expand only when explicitly opened (click), not on hover
   const shouldExpand = isOpen;
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  };
 
   // Close (collapse) when clicking outside the sidebar while it's open
   useEffect(() => {
@@ -122,12 +152,12 @@ export default function AdminSidebar() {
           const data = await response.json();
           if (data.sidebarOrder && Array.isArray(data.sidebarOrder)) {
             const orderedItems = data.sidebarOrder
-              .map((href: string) => defaultMenuItems.find(item => item.href === href))
+              .map((href: string) => defaultMenuItems.find((item) => item.href === href))
               .filter(Boolean) as MenuItem[];
 
             // Add any new items that weren't in the saved order
             const savedHrefs = new Set(data.sidebarOrder);
-            const newItems = defaultMenuItems.filter(item => !savedHrefs.has(item.href));
+            const newItems = defaultMenuItems.filter((item) => !savedHrefs.has(item.href));
 
             // Apply the role filter AFTER building the list so staff never see
             // hidden items even when a saved order includes them.
@@ -147,11 +177,11 @@ export default function AdminSidebar() {
   // Save sidebar order to database
   const saveSidebarOrder = useCallback(async (items: MenuItem[]) => {
     try {
-      const sidebarOrder = items.map(item => item.href);
+      const sidebarOrder = items.map((item) => item.href);
       await fetch("/api/preferences/sidebar-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sidebarOrder })
+        body: JSON.stringify({ sidebarOrder }),
       });
     } catch (error) {
       console.error("Failed to save sidebar order:", error);
@@ -179,50 +209,67 @@ export default function AdminSidebar() {
     setDragOverItem(null);
   };
 
+  const labelHidden = `whitespace-nowrap transition-all duration-300 ${
+    shouldExpand ? "opacity-100" : "w-0 overflow-hidden opacity-0"
+  }`;
+
   return (
     <aside
       ref={asideRef}
       onClick={isCollapsed ? openSidebar : undefined}
-      className={`fixed top-0 left-0 h-full bg-white/95 backdrop-blur-xl border-r border-gray-200 z-40 transition-all duration-300 ease-in-out overflow-hidden ${
-        shouldExpand ? "w-52 sm:w-64" : isCollapsed ? "w-14 sm:w-20 cursor-pointer" : "w-0 -translate-x-full"
+      style={{ borderRight: "1px solid #EFEDF6" }}
+      className={`fixed left-0 top-0 z-40 flex h-full flex-col overflow-hidden bg-white [font-family:var(--font-jakarta)] transition-all duration-300 ease-in-out ${
+        shouldExpand ? "w-52 sm:w-64" : isCollapsed ? "w-14 cursor-pointer sm:w-20" : "w-0 -translate-x-full"
       }`}
     >
-      <div className={`${isHidden ? "opacity-0" : "opacity-100"} transition-opacity duration-200`}>
+      <div
+        className={`flex h-full flex-col ${isHidden ? "opacity-0" : "opacity-100"} transition-opacity duration-200`}
+      >
         {/* Logo */}
-        <div className="h-14 sm:h-16 flex items-center px-3 sm:px-6 border-b border-gray-200">
-          <Link href="/admin" onClick={(e) => { if (isCollapsed) e.preventDefault(); }} className="flex items-center gap-2 sm:gap-3 p-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 relative">
-              <Image
-                src="/favicon20.png"
-                alt="Intenzze Logo"
-                fill
-                sizes="40px"
-                className="object-contain"
-              />
-            </div>
+        <div className="flex h-14 items-center px-3 sm:h-16 sm:px-5" style={{ borderBottom: "1px solid #EFEDF6" }}>
+          <Link
+            href="/admin"
+            onClick={(e) => {
+              if (isCollapsed) e.preventDefault();
+            }}
+            className={`flex items-center ${shouldExpand ? "gap-3" : "w-full justify-center"}`}
+          >
             <span
-              className={`font-bold text-sm sm:text-base text-gray-900 transition-opacity duration-300 ${
-                shouldExpand ? "opacity-100" : "opacity-0 w-0"
-              }`}
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[11px]"
+              style={{
+                background: "linear-gradient(135deg,#6E5CF3,#9E8CFF)",
+                boxShadow: "0 6px 14px -8px rgba(109,94,246,0.45), inset 0 1px 0 rgba(255,255,255,0.35)",
+              }}
             >
-              intenzze
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 13l4 4 12-12" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className={labelHidden}>
+              <span className="block text-[15.5px] font-extrabold leading-tight tracking-[-0.3px]" style={{ color: "#211D33" }}>
+                Intenzze
+              </span>
+              <span className="block text-[9.5px] font-bold uppercase leading-tight tracking-[1.2px]" style={{ color: "#A7A3BD" }}>
+                Dashbord
+              </span>
             </span>
           </Link>
         </div>
 
         {/* Edit mode toggle */}
         {shouldExpand && (
-          <div className="px-2 sm:px-4 pt-2">
+          <div className="px-3 pt-3 sm:px-4">
             <button
               onClick={() => setIsEditMode(!isEditMode)}
               title={isEditMode ? "Klar" : "Ändra ordning"}
-              className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all ${
+              className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-all"
+              style={
                 isEditMode
-                  ? "bg-blue-100 text-blue-600 border border-blue-200"
-                  : "bg-gray-50 text-gray-500 hover:bg-gray-100"
-              }`}
+                  ? { background: "#EDE9FC", color: "#6E5CF3", border: "1px solid #DDD6F7" }
+                  : { background: "#F4F2FB", color: "#8A87A0" }
+              }
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
@@ -230,7 +277,15 @@ export default function AdminSidebar() {
         )}
 
         {/* Navigation */}
-        <nav className="p-2 sm:p-4 space-y-1 sm:space-y-2">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3 sm:p-4">
+          {shouldExpand && (
+            <div
+              className="px-3 pb-2 pt-1 text-[9.5px] font-bold uppercase tracking-[1.4px]"
+              style={{ color: "#BBB7CC" }}
+            >
+              Meny
+            </div>
+          )}
           {menuItems.map((item, index) => {
             const isActive = pathname === item.href;
             const isDragging = draggedItem === index;
@@ -243,49 +298,32 @@ export default function AdminSidebar() {
                 onDragStart={() => handleDragStart(index)}
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDragEnd={handleDragEnd}
-                className={`${isDragging ? "opacity-50" : ""} ${isDragOver ? "border-t-2 border-blue-400" : ""}`}
+                className={`${isDragging ? "opacity-50" : ""} ${isDragOver ? "border-t-2 border-[#9E8CFF]" : ""}`}
               >
                 <Link
                   href={isEditMode ? "#" : item.href}
-                  onClick={(e) => { if (isEditMode || isCollapsed) e.preventDefault(); }}
-                  className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-200 group ${
-                    isActive
-                      ? "bg-blue-50 text-blue-600 border border-blue-100"
-                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                  onClick={(e) => {
+                    if (isEditMode || isCollapsed) e.preventDefault();
+                  }}
+                  style={isActive ? ACTIVE_NAV_STYLE : undefined}
+                  className={`${NEUTRAL_ITEM} ${shouldExpand ? "gap-3" : "justify-center"} ${
+                    isActive ? "" : NEUTRAL_HOVER
                   } ${isEditMode ? "cursor-grab active:cursor-grabbing" : ""}`}
                 >
-                  {isEditMode && (
-                    <span className="text-gray-400 flex-shrink-0">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  {isEditMode && shouldExpand && (
+                    <span className="flex-shrink-0 text-[#B4B0C7]">
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
                       </svg>
                     </span>
                   )}
-                  <span
-                    className={`flex-shrink-0 ${
-                      isActive ? "text-blue-600" : "text-gray-400 group-hover:text-blue-600"
-                    } transition-colors`}
-                  >
-                    <svg
-                      className="w-4 h-4 sm:w-5 sm:h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                    >
+                  <span className={`flex-shrink-0 ${isActive ? "text-white" : "text-[#8A87A0] group-hover:text-[#6E5CF3]"} transition-colors`}>
+                    <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.7">
                       <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath} />
-                      {item.iconPath2 && (
-                        <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath2} />
-                      )}
+                      {item.iconPath2 && <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath2} />}
                     </svg>
                   </span>
-                  <span
-                    className={`whitespace-nowrap text-sm sm:text-base transition-all duration-300 ${
-                      shouldExpand ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
+                  <span className={labelHidden}>{item.label}</span>
                 </Link>
               </div>
             );
@@ -293,33 +331,72 @@ export default function AdminSidebar() {
         </nav>
 
         {/* Bottom section */}
-        <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 border-t border-gray-200">
+        <div className="space-y-2 p-3 sm:p-4" style={{ borderTop: "1px solid #EFEDF6" }}>
+          {/* View public site */}
           <Link
             href="/"
-            onClick={(e) => { if (isCollapsed) e.preventDefault(); }}
-            className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 group"
+            onClick={(e) => {
+              if (isCollapsed) e.preventDefault();
+            }}
+            className={`${NEUTRAL_ITEM} ${NEUTRAL_HOVER} ${shouldExpand ? "gap-3" : "justify-center"}`}
           >
-            <svg
-              className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-gray-400 group-hover:text-blue-600 transition-colors"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-              />
-            </svg>
-            <span
-              className={`whitespace-nowrap text-sm sm:text-base transition-all duration-300 ${
-                shouldExpand ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
-              }`}
-            >
-              Visa sidan
+            <span className="flex-shrink-0 text-[#8A87A0] transition-colors group-hover:text-[#6E5CF3]">
+              <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.7">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                />
+              </svg>
             </span>
+            <span className={labelHidden}>Visa sidan</span>
           </Link>
+
+          {/* User card — the lavender card chrome only shows when expanded; when
+              collapsed it's just the centered avatar (no oblong box around it). */}
+          <div
+            className={`flex items-center rounded-[16px] ${shouldExpand ? "gap-3 p-3" : "justify-center"}`}
+            style={
+              shouldExpand
+                ? { background: "linear-gradient(160deg,#F8F6FD,#F3F1FA)", border: "1px solid #EEECF7" }
+                : undefined
+            }
+          >
+            <span
+              className={`flex flex-shrink-0 items-center justify-center rounded-[12px] font-bold text-white ${
+                shouldExpand ? "h-10 w-10 text-[14px]" : "h-9 w-9 text-[13px]"
+              }`}
+              style={{ background: "linear-gradient(135deg,#c9c2ff,#8b7bff)", boxShadow: "0 6px 12px -8px rgba(109,94,246,0.4)" }}
+            >
+              {initialsOf(userName, userEmail)}
+            </span>
+            <span className={`min-w-0 ${labelHidden}`}>
+              <span className="block truncate text-[13px] font-bold" style={{ color: "#211D33" }}>
+                {userName || "Konto"}
+              </span>
+              <span className="block truncate text-[11px] font-medium" style={{ color: "#A7A3BD" }}>
+                {userEmail}
+              </span>
+            </span>
+          </div>
+
+          {/* Logout */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Logga ut"
+            className={`${NEUTRAL_ITEM} w-full text-[#C05470] hover:bg-[#FBEEF1] ${
+              shouldExpand ? "gap-3" : "justify-center"
+            }`}
+          >
+            <span className="flex-shrink-0">
+              <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.9">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 5V4a2 2 0 00-2-2H6a2 2 0 00-2 2v16a2 2 0 002 2h7a2 2 0 002-2v-1" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 12h11m0 0l-3.5-3.5M21 12l-3.5 3.5" />
+              </svg>
+            </span>
+            <span className={labelHidden}>Logga ut</span>
+          </button>
         </div>
       </div>
     </aside>

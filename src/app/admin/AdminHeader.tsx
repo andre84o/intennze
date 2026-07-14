@@ -8,13 +8,24 @@ interface AdminHeaderProps {
   userEmail?: string;
 }
 
+function initialsOf(name: string, email: string): string {
+  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (email || "?").slice(0, 2).toUpperCase();
+}
+
 export default function AdminHeader({ userEmail }: AdminHeaderProps) {
-  const { sidebarState, toggleSidebar, openSidebar } = useAdmin();
+  const { sidebarState, toggleSidebar, openSidebar, userName, userEmail: ctxEmail } = useAdmin();
   const router = useRouter();
 
   const isOpen = sidebarState === "open";
   const isCollapsed = sidebarState === "collapsed";
   const isHidden = sidebarState === "hidden";
+
+  const email = ctxEmail || userEmail || "";
+  const displayName = userName || "Konto";
+  const initials = initialsOf(userName, email);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -27,13 +38,7 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
   const getToggleIcon = () => {
     if (isOpen) {
       // Chevron left (will collapse)
-      return (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M15.75 19.5L8.25 12l7.5-7.5"
-        />
-      );
+      return <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />;
     }
     if (isCollapsed) {
       // Sidebar hide icon (panel with arrow left)
@@ -47,11 +52,7 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
     }
     // Menu icon (will open)
     return (
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
     );
   };
 
@@ -62,48 +63,35 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
         <button
           onClick={openSidebar}
           type="button"
-          className="fixed top-3.5 sm:top-4 left-3 sm:left-4 z-50 w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 active:scale-95 transition-all duration-150 cursor-pointer shadow-sm"
+          className="fixed left-3 top-3.5 z-50 flex h-8 w-8 items-center justify-center rounded-[10px] bg-white text-[#6A6683] shadow-sm transition-all duration-150 hover:bg-[#F5F4FB] hover:text-[#6E5CF3] active:scale-95 sm:left-4 sm:top-4 sm:h-9 sm:w-9"
+          style={{ border: "1px solid #ECEAF5" }}
           aria-label="Öppna sidofält"
         >
-          <svg
-            className="w-4 h-4 sm:w-5 sm:h-5 pointer-events-none"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            strokeWidth="1.5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-            />
+          <svg className="pointer-events-none h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
           </svg>
         </button>
       )}
 
       {/* Main header */}
       <header
-        className={`fixed top-0 right-0 h-14 sm:h-16 bg-white/80 backdrop-blur-md border-b border-gray-200 z-30 transition-all duration-300 ease-in-out ${
+        style={{ borderBottom: "1px solid #ECEAF5" }}
+        className={`fixed right-0 top-0 z-30 h-14 bg-white/80 backdrop-blur-md [font-family:var(--font-jakarta)] transition-all duration-300 ease-in-out sm:h-16 ${
           isOpen ? "left-52 sm:left-64" : isCollapsed ? "left-14 sm:left-20" : "left-0"
         }`}
       >
-        <div className="h-full px-3 sm:px-6 flex items-center justify-between">
+        <div className="flex h-full items-center justify-between px-3 sm:px-6">
           {/* Left side - Toggle button */}
           <div className="flex items-center gap-2 sm:gap-4">
             {!isHidden && !isOpen && (
               <button
                 onClick={toggleSidebar}
                 type="button"
-                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 active:scale-95 border border-gray-200 hover:border-gray-300 transition-all duration-150 cursor-pointer select-none"
+                className="flex h-8 w-8 select-none items-center justify-center rounded-[10px] bg-white text-[#6A6683] transition-all duration-150 hover:bg-[#F5F4FB] hover:text-[#6E5CF3] active:scale-95 sm:h-10 sm:w-10"
+                style={{ border: "1px solid #ECEAF5" }}
                 aria-label={isOpen ? "Minimera sidofält" : "Dölj sidofält"}
               >
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                >
+                <svg className="pointer-events-none h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
                   {getToggleIcon()}
                 </svg>
               </button>
@@ -112,28 +100,31 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
 
           {/* Right side - User & Actions */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* User profile */}
-            <div className="flex items-center gap-3 pl-3 sm:pl-4 border-l border-gray-200">
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-gray-900">Admin</p>
-                <p className="text-xs text-gray-500">{userEmail || "admin@intenzze.se"}</p>
+            <div className="flex items-center gap-3 pl-3 sm:pl-4" style={{ borderLeft: "1px solid #ECEAF5" }}>
+              <div className="hidden text-right sm:block">
+                <p className="text-[13px] font-bold" style={{ color: "#211D33" }}>
+                  {displayName}
+                </p>
+                <p className="text-[11px] font-medium" style={{ color: "#A7A3BD" }}>
+                  {email || "admin@intenzze.se"}
+                </p>
               </div>
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px]">
-                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  <span className="font-bold text-transparent bg-clip-text bg-gradient-to-br from-blue-500 to-purple-500 text-xs sm:text-sm">
-                    A
-                  </span>
-                </div>
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-[12px] text-[13px] font-bold text-white sm:h-10 sm:w-10"
+                style={{ background: "linear-gradient(135deg,#c9c2ff,#8b7bff)", boxShadow: "0 10px 20px -8px rgba(109,94,246,0.6)" }}
+              >
+                {initials}
               </div>
-              
+
               {/* Logout button */}
               <button
                 onClick={handleLogout}
-                className="ml-2 p-2 text-gray-400 hover:text-red-500 transition-colors"
+                className="ml-1 flex h-9 w-9 items-center justify-center rounded-[10px] text-[#C05470] transition-colors hover:bg-[#FBEEF1]"
                 title="Logga ut"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.9">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 5V4a2 2 0 00-2-2H6a2 2 0 00-2 2v16a2 2 0 002 2h7a2 2 0 002-2v-1" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 12h11m0 0l-3.5-3.5M21 12l-3.5 3.5" />
                 </svg>
               </button>
             </div>

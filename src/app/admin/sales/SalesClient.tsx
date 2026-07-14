@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useId, useState, useTransition } from "react";
 import {
-  getMyCommissionSummary,
-  getMyCommissionBreakdown,
   getCompanyCommissionOverview,
   getSalespeopleCommission,
   getSalesTrend,
@@ -11,13 +9,16 @@ import {
   markPeriodPaid,
   createAdjustment,
   getInvoiceBacking,
-  type CommissionFigures,
   type CommissionEntryItem,
-  type CommissionAdjustmentItem,
   type CompanyCommissionOverviewResult,
   type SalespersonCommissionRow,
   type TrendPoint,
 } from "./actions";
+
+// "Mina siffror" (the logged-in user's own panel) is the redesigned dashboard
+// from design_handoff_mina_siffror — kept in its own module. Re-exported here so
+// the existing import site (src/app/admin/page.tsx) stays unchanged.
+export { MyCommission } from "./MinaSiffror";
 
 // ---------------------------------------------------------------------------
 // Formatting
@@ -164,7 +165,7 @@ function BarChart({ points }: { points: { label: string; value: number }[] }) {
         <div key={i} className="flex h-full flex-1 flex-col items-center">
           <div className="flex w-full flex-1 flex-col items-center justify-end">
             {p.value > 0 && (
-              <span className="mb-1.5 text-[10px] font-semibold tabular-nums text-slate-600">
+              <span className="mb-1.5 text-[10px] font-semibold tabular-nums text-slate-600 [font-family:var(--font-numbers)]">
                 {compactAmount(p.value)}
               </span>
             )}
@@ -262,7 +263,9 @@ function StatCard({
         {right}
       </div>
       <p className="mt-4 text-sm text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{value}</p>
+      <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900 [font-family:var(--font-numbers)]">
+        {value}
+      </p>
       {children}
     </div>
   );
@@ -403,144 +406,6 @@ function MonthSelector({ month, onChange }: { month: string; onChange: (next: st
 }
 
 // ---------------------------------------------------------------------------
-// "Mina siffror"
-// ---------------------------------------------------------------------------
-
-function MyNumbersSection({ month, monthControl }: { month: string; monthControl?: React.ReactNode }) {
-  const [figures, setFigures] = useState<CommissionFigures | null>(null);
-  const [entries, setEntries] = useState<CommissionEntryItem[]>([]);
-  const [adjustments, setAdjustments] = useState<CommissionAdjustmentItem[]>([]);
-  const [trend, setTrend] = useState<TrendPoint[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(null);
-    (async () => {
-      const [summary, breakdown, tr] = await Promise.all([
-        getMyCommissionSummary(month),
-        getMyCommissionBreakdown(month),
-        getSalesTrend("me", month, 8),
-      ]);
-      if (!active) return;
-      if (!summary.ok) setError(summary.error ?? "Kunde inte hämta dina siffror");
-      else setFigures(summary.figures ?? null);
-      if (breakdown.ok) {
-        setEntries(breakdown.entries ?? []);
-        setAdjustments(breakdown.adjustments ?? []);
-      }
-      if (tr.ok) setTrend(tr.points ?? []);
-      setLoading(false);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [month]);
-
-  const revSeries = trend.map((p) => p.revenue);
-  const commSeries = trend.map((p) => p.commission);
-  const bars = trend.map((p) => ({ label: monthShort(p.month), value: p.commission }));
-
-  const nextTierPct = (() => {
-    if (!figures || figures.kvarTillNastaNiva == null) return 100;
-    const rev = figures.revenueExVat ?? 0;
-    const target = rev + figures.kvarTillNastaNiva;
-    return target > 0 ? (rev / target) * 100 : 0;
-  })();
-
-  return (
-    <section className="mb-12">
-      <SectionHeader
-        title="Mina siffror"
-        right={
-          <div className="flex items-center gap-3">
-            {figures && figures.periodExists && <StatusBadge status={figures.status} />}
-            {figures && figures.periodExists && figures.dynamic && (
-              <span className="hidden text-xs text-slate-400 sm:inline">Preliminärt</span>
-            )}
-            {monthControl}
-          </div>
-        }
-      />
-
-      {error && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{error}</div>
-      )}
-
-      {loading ? (
-        <div className="rounded-2xl bg-white p-10 text-center text-slate-400 ring-1 ring-slate-100">Laddar…</div>
-      ) : !figures || !figures.periodExists ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-400">
-          Ingen period ännu för {monthLabel(month)}.
-        </div>
-      ) : (
-        <>
-          <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <StatCard
-              label="Betald omsättning ex moms"
-              value={formatCurrency(figures.revenueExVat)}
-              iconPath={ICONS.revenue}
-              tone="indigo"
-              right={<TrendBadge series={revSeries} />}
-            >
-              <Sparkline data={revSeries} tone="indigo" />
-            </StatCard>
-            <StatCard
-              label="Intjänad provision"
-              value={formatCurrency(figures.earnedCommission)}
-              iconPath={ICONS.earned}
-              tone="violet"
-              right={<TrendBadge series={commSeries} />}
-            >
-              <Sparkline data={commSeries} tone="violet" />
-            </StatCard>
-            <StatCard
-              label="Aktuell provisionsnivå"
-              value={formatPercent(figures.tierRatePercent)}
-              iconPath={ICONS.tier}
-              tone="sky"
-            >
-              <p className="mt-3 text-xs text-slate-400">
-                {figures.kvarTillNastaNiva == null
-                  ? "Högsta nivån uppnådd"
-                  : `${formatCurrency(figures.kvarTillNastaNiva)} till nästa nivå`}
-              </p>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-violet-500" style={{ width: `${nextTierPct}%` }} />
-              </div>
-            </StatCard>
-          </div>
-
-          <div className="mb-6 grid gap-4 sm:grid-cols-3">
-            <StatCard label="Utbetald provision" value={formatCurrency(figures.paidCommission)} iconPath={ICONS.paid} tone="emerald" />
-            <StatCard label="Ej utbetald provision" value={formatCurrency(figures.unpaidCommission)} iconPath={ICONS.unpaid} tone="amber" />
-            <StatCard
-              label="Kvar till nästa nivå"
-              value={figures.kvarTillNastaNiva == null ? "Högsta nivån" : formatCurrency(figures.kvarTillNastaNiva)}
-              iconPath={ICONS.target}
-              tone="indigo"
-            />
-          </div>
-
-          {trend.some((p) => p.commission > 0) && (
-            <div className="mb-6">
-              <ChartCard title="Provision per månad" subtitle="Senaste 8 månaderna">
-                <BarChart points={bars} />
-              </ChartCard>
-            </div>
-          )}
-
-          <IncludedInvoicesTable entries={entries} />
-          <AdjustmentsTable adjustments={adjustments} />
-        </>
-      )}
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Tables
 // ---------------------------------------------------------------------------
 
@@ -588,39 +453,6 @@ function IncludedInvoicesTable({ entries }: { entries: CommissionEntryItem[] }) 
           </table>
         </div>
       )}
-    </CardTable>
-  );
-}
-
-function AdjustmentsTable({ adjustments }: { adjustments: CommissionAdjustmentItem[] }) {
-  if (adjustments.length === 0) return null;
-  const typeLabel = (t: string | null) => ADJUSTMENT_TYPE_OPTIONS.find((o) => o.value === t)?.label ?? t ?? "–";
-  return (
-    <CardTable title="Justeringar">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-slate-100 bg-slate-50/60 text-xs font-medium uppercase tracking-wide text-slate-400">
-              <th className="px-5 py-2.5 text-left">Typ</th>
-              <th className="px-5 py-2.5 text-left">Anledning</th>
-              <th className="px-5 py-2.5 text-left">Datum</th>
-              <th className="px-5 py-2.5 text-right">Belopp</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {adjustments.map((a, i) => (
-              <tr key={i} className="transition-colors hover:bg-slate-50/60">
-                <td className="px-5 py-3 text-sm text-slate-700">{typeLabel(a.adjustmentType)}</td>
-                <td className="px-5 py-3 text-sm text-slate-500">{a.reason ?? "–"}</td>
-                <td className="px-5 py-3 text-sm text-slate-400">{formatDate(a.createdAt)}</td>
-                <td className={`px-5 py-3 text-right text-sm font-medium tabular-nums ${a.amount < 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                  {formatCurrency(a.amount)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </CardTable>
   );
 }
@@ -1000,18 +832,8 @@ function Toast({ toast, onClose }: { toast: { type: "success" | "error"; msg: st
 // ---------------------------------------------------------------------------
 
 /**
- * "Mina siffror" — the logged-in user's OWN commission panel. Exported so it can
- * be embedded on the /admin Dashboard for any commission-eligible user (staff or
- * admin). Self-contained: manages its own month + fetches its own (self-scoped) data.
- */
-export function MyCommission({ initialMonth }: { initialMonth: string }) {
-  const [month, setMonth] = useState(initialMonth);
-  return <MyNumbersSection month={month} monthControl={<MonthSelector month={month} onChange={setMonth} />} />;
-}
-
-/**
- * Sales page root — ADMIN company overview only. Individual figures live on the
- * Dashboard via <MyCommission />.
+ * Sales page root — ADMIN company overview only. Individual figures ("Mina
+ * siffror") live on the Dashboard via <MyCommission /> (see ./MinaSiffror).
  */
 export default function SalesClient({ isAdmin, initialMonth }: { isAdmin: boolean; initialMonth: string }) {
   const [month, setMonth] = useState(initialMonth);

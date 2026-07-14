@@ -319,6 +319,10 @@ export interface CommissionEntryItem {
   vatAmount: number;
   total: number;
   customerId: string | null;
+  /** Enriched via RLS-scoped joins; null when the row is not readable. */
+  customerName: string | null;
+  companyName: string | null;
+  packageName: string | null;
 }
 
 export interface CommissionAdjustmentItem {
@@ -367,7 +371,7 @@ async function fetchEntries(
     .eq("period_start", periodStart)
     .order("paid_at_snapshot", { ascending: true });
 
-  return (data ?? []).map((e) => {
+  const base = (data ?? []).map((e) => {
     const row = e as {
       invoice_id: string;
       invoice_number_snapshot: number | null;
@@ -385,6 +389,87 @@ async function fetchEntries(
       vatAmount: num(row.vat_amount_snapshot),
       total: num(row.total_snapshot),
       customerId: row.customer_id ?? null,
+      customerName: null as string | null,
+      companyName: null as string | null,
+      packageName: null as string | null,
+    };
+  });
+
+  return enrichEntries(supabase, base);
+}
+
+/**
+ * Attach customer name / company / package to entries. Reads customers +
+ * invoices through the SAME session client, so RLS decides what's visible; any
+ * row the caller can't read simply stays null (the UI falls back gracefully).
+ * Never throws — enrichment is best-effort presentation, not a security gate.
+ */
+async function enrichEntries(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  entries: CommissionEntryItem[]
+): Promise<CommissionEntryItem[]> {
+  if (entries.length === 0) return entries;
+
+  const customerIds = Array.from(
+    new Set(entries.map((e) => e.customerId).filter((v): v is string => !!v))
+  );
+  const invoiceIds = Array.from(
+    new Set(entries.map((e) => e.invoiceId).filter((v): v is string => !!v))
+  );
+
+  const customerById = new Map<string, { name: string | null; company: string | null }>();
+  if (customerIds.length > 0) {
+    const { data: custs } = await supabase
+      .from("customers")
+      .select("id, first_name, last_name, company_name")
+      .in("id", customerIds);
+    for (const c of custs ?? []) {
+      const row = c as {
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        company_name: string | null;
+      };
+      const name =
+        `${(row.first_name ?? "").trim()} ${(row.last_name ?? "").trim()}`.trim() || null;
+      customerById.set(row.id, { name, company: row.company_name?.trim() || null });
+    }
+  }
+
+  // Package/plan lives on the invoice (service_type); fall back to the
+  // customer's service_type when the invoice doesn't carry one.
+  const invoiceById = new Map<string, { serviceType: string | null }>();
+  const custServiceById = new Map<string, string | null>();
+  if (invoiceIds.length > 0) {
+    const { data: invs } = await supabase
+      .from("invoices")
+      .select("id, service_type")
+      .in("id", invoiceIds);
+    for (const i of invs ?? []) {
+      const row = i as { id: string; service_type: string | null };
+      invoiceById.set(row.id, { serviceType: row.service_type?.trim() || null });
+    }
+  }
+  if (customerIds.length > 0) {
+    const { data: custSvc } = await supabase
+      .from("customers")
+      .select("id, service_type")
+      .in("id", customerIds);
+    for (const c of custSvc ?? []) {
+      const row = c as { id: string; service_type: string | null };
+      custServiceById.set(row.id, row.service_type?.trim() || null);
+    }
+  }
+
+  return entries.map((e) => {
+    const cust = e.customerId ? customerById.get(e.customerId) : undefined;
+    const invoicePkg = invoiceById.get(e.invoiceId)?.serviceType ?? null;
+    const custPkg = e.customerId ? custServiceById.get(e.customerId) ?? null : null;
+    return {
+      ...e,
+      customerName: cust?.name ?? null,
+      companyName: cust?.company ?? null,
+      packageName: invoicePkg ?? custPkg ?? null,
     };
   });
 }

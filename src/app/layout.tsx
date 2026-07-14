@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
@@ -18,6 +18,19 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Display font for big numbers/prices (dashboard stat values).
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-numbers",
+  subsets: ["latin"],
+});
+
+// Body/label font for the "Mina siffror" sales dashboard. Scoped via CSS var —
+// applied only where the redesign opts in, not globally.
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
 });
 
@@ -71,7 +84,7 @@ export default async function RootLayout({
   return (
     <html lang={lang}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-950`}
+        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${plusJakarta.variable} antialiased min-h-screen bg-slate-950`}
       >
         <LanguageProvider>
           <ConditionalLayout

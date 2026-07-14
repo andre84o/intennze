@@ -38,16 +38,23 @@ function AdminContent({
 export default function AdminLayoutClient({
   children,
   userEmail,
+  userName,
   role,
   commissionEligible,
 }: {
   children: ReactNode;
   userEmail?: string;
+  userName?: string;
   role: "admin" | "staff";
   commissionEligible: boolean;
 }) {
   return (
-    <AdminProvider role={role} commissionEligible={commissionEligible}>
+    <AdminProvider
+      role={role}
+      commissionEligible={commissionEligible}
+      userEmail={userEmail ?? ""}
+      userName={userName ?? ""}
+    >
       <AdminContent userEmail={userEmail}>{children}</AdminContent>
     </AdminProvider>
   );
