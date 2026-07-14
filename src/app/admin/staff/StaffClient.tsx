@@ -552,6 +552,9 @@ function StaffDetailModal({
   const [jobTitle, setJobTitle] = useState(row.job_title ?? "");
   const [employmentStart, setEmploymentStart] = useState(row.employment_start ?? "");
   const [employmentEnd, setEmploymentEnd] = useState(row.employment_end ?? "");
+  // "Currently employed" = no end date. Uncheck it when the person leaves to
+  // reveal and set the employment end date.
+  const [currentlyEmployed, setCurrentlyEmployed] = useState(!row.employment_end);
   const [commissionEligible, setCommissionEligible] = useState(row.commission_eligible === true);
   const [role, setRole] = useState<"admin" | "staff">(row.role === "admin" ? "admin" : "staff");
 
@@ -602,7 +605,7 @@ function StaffDetailModal({
           country,
           jobTitle,
           employmentStart,
-          employmentEnd,
+          employmentEnd: currentlyEmployed ? "" : employmentEnd,
           commissionEligible,
           role: nextRole,
         }),
@@ -674,12 +677,32 @@ function StaffDetailModal({
           value={employmentStart}
           onChange={setEmploymentStart}
         />
-        <TextField
-          label="Employment end"
-          type="date"
-          value={employmentEnd}
-          onChange={setEmploymentEnd}
-        />
+        <div className="text-sm">
+          <label className="flex items-center gap-2 mb-1 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={currentlyEmployed}
+              onChange={(e) => {
+                setCurrentlyEmployed(e.target.checked);
+                if (e.target.checked) setEmploymentEnd("");
+              }}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-xs text-gray-700">Currently employed</span>
+          </label>
+          {currentlyEmployed ? (
+            <p className="text-xs text-gray-400">
+              Uncheck when the person leaves to set an end date.
+            </p>
+          ) : (
+            <TextField
+              label="Employment end"
+              type="date"
+              value={employmentEnd}
+              onChange={setEmploymentEnd}
+            />
+          )}
+        </div>
         <label className="text-sm block">
           <span className="block text-xs text-gray-500 mb-1">Role</span>
           <Select value={role} onValueChange={(v) => setRole(v as "admin" | "staff")}>
