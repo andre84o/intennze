@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import DashboardClient from "./DashboardClient";
+import { MyCommission } from "./sales/SalesClient";
 
 export const metadata = {
   title: "Admin | intenzze",
@@ -32,11 +33,6 @@ export default async function AdminPage() {
   const { count: customersCount } = await supabase
     .from("customers")
     .select("*", { count: "exact", head: true });
-
-  const { count: remindersCount } = await supabase
-    .from("reminders")
-    .select("*", { count: "exact", head: true })
-    .eq("is_completed", false);
 
   const { count: quotesCount } = await supabase
     .from("quotes")
@@ -114,12 +110,38 @@ export default async function AdminPage() {
     },
   };
 
+  // Personal commission ("Mina siffror") — shown on the dashboard for any
+  // commission-eligible user (staff or admin). Self-scoped + RLS in the actions.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let commissionEligible = false;
+  if (user) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("commission_eligible")
+      .eq("user_id", user.id)
+      .maybeSingle<{ commission_eligible: boolean }>();
+    commissionEligible = prof?.commission_eligible === true;
+  }
+  const commissionMonth = new Date()
+    .toLocaleDateString("en-CA", { timeZone: "Europe/Stockholm" })
+    .slice(0, 7);
+
   return (
-    <DashboardClient
-      analytics={analytics}
-      customersCount={customersCount || 0}
-      remindersCount={remindersCount || 0}
-      quotesCount={quotesCount || 0}
-    />
+    <>
+      {commissionEligible && (
+        <div className="bg-[#f6f5fb] px-4 pt-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <MyCommission initialMonth={commissionMonth} />
+          </div>
+        </div>
+      )}
+      <DashboardClient
+        analytics={analytics}
+        customersCount={customersCount || 0}
+        quotesCount={quotesCount || 0}
+      />
+    </>
   );
 }

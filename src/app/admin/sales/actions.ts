@@ -730,3 +730,76 @@ export async function getInvoiceBacking(periodId: string): Promise<InvoiceBackin
   const entries = await fetchEntries(guard.supabase, period.user_id, period.period_start);
   return { ok: true, entries };
 }
+
+// ---------------------------------------------------------------------------
+// Trend series (last N months) for the dashboard charts. Real, RLS-scoped:
+//   scope "me"      -> the logged-in user's own entries (requireUser + RLS)
+//   scope "company" -> all entries (requireAdmin). Commission is derived by
+//   applying the active tier ladder to each month's revenue (same formula the
+//   RPC uses), so the charts never trust client math on raw money.
+// ---------------------------------------------------------------------------
+
+export interface TrendPoint {
+  month: string; // YYYY-MM
+  revenue: number;
+  commission: number;
+}
+export interface SalesTrendResult {
+  ok: boolean;
+  points?: TrendPoint[];
+  error?: string;
+}
+
+export async function getSalesTrend(
+  scope: "me" | "company",
+  endMonth: string,
+  months = 8
+): Promise<SalesTrendResult> {
+  const guard = scope === "company" ? await requireAdmin() : await requireUser();
+  if ("error" in guard) return { ok: false, error: guard.error };
+
+  const endStart = monthToPeriodStart(endMonth);
+  if (!endStart) return { ok: false, error: "Ogiltig månad" };
+  const span = Math.max(1, Math.min(24, Math.floor(months)));
+
+  const [ey, em] = endMonth.split("-").map((v) => parseInt(v, 10));
+  const buckets: string[] = [];
+  for (let i = span - 1; i >= 0; i--) {
+    const d = new Date(ey, em - 1 - i, 1);
+    buckets.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  const startPeriod = `${buckets[0]}-01`;
+
+  // Read the official per-month figures from commission_periods snapshots
+  // (RLS: "me" -> own; "company" -> all for admin). Sum across sellers per month.
+  let q = guard.supabase
+    .from("commission_periods")
+    .select("period_start, revenue_ex_vat_snapshot, final_commission_snapshot, user_id")
+    .gte("period_start", startPeriod)
+    .lte("period_start", endStart);
+  if (scope === "me") q = q.eq("user_id", guard.userId);
+  const { data: periods, error } = await q;
+  if (error) return { ok: false, error: "Kunde inte hämta trend" };
+
+  const revByMonth = new Map<string, number>();
+  const commByMonth = new Map<string, number>();
+  for (const p of periods ?? []) {
+    const m = String((p as { period_start: string }).period_start).slice(0, 7);
+    revByMonth.set(
+      m,
+      (revByMonth.get(m) ?? 0) + num((p as { revenue_ex_vat_snapshot: unknown }).revenue_ex_vat_snapshot)
+    );
+    commByMonth.set(
+      m,
+      (commByMonth.get(m) ?? 0) + num((p as { final_commission_snapshot: unknown }).final_commission_snapshot)
+    );
+  }
+
+  const points: TrendPoint[] = buckets.map((m) => ({
+    month: m,
+    revenue: revByMonth.get(m) ?? 0,
+    commission: commByMonth.get(m) ?? 0,
+  }));
+
+  return { ok: true, points };
+}
