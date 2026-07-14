@@ -2,33 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
-import { lookupEmailByUsername } from "./actions";
-
-function getErrorMessage(error: { message: string; status?: number }): string {
-  const msg = error.message.toLowerCase();
-
-  if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
-    return "Fel uppgifter. Kontrollera användarnamn/e-post och lösenord.";
-  }
-  if (msg.includes("email not confirmed")) {
-    return "E-postadressen är inte bekräftad. Kontrollera din inkorg eller be admin att bekräfta kontot.";
-  }
-  if (msg.includes("user not found")) {
-    return "Ingen användare hittades.";
-  }
-  if (msg.includes("too many requests") || msg.includes("rate limit")) {
-    return "För många inloggningsförsök. Vänta en stund och försök igen.";
-  }
-  if (msg.includes("network") || msg.includes("fetch")) {
-    return "Nätverksfel. Kontrollera din internetanslutning.";
-  }
-  if (msg.includes("password")) {
-    return "Lösenordet måste vara minst 6 tecken.";
-  }
-
-  return `Inloggningen misslyckades: ${error.message}`;
-}
+import { signIn } from "./actions";
 
 export default function LoginForm() {
   const [identifier, setIdentifier] = useState("");
@@ -51,24 +25,16 @@ export default function LoginForm() {
     setError(null);
     setLoading(true);
 
-    let email = identifier.trim();
+    const result = await signIn(identifier, password);
 
-    // If not an email address, look up by username
-    if (!email.includes("@")) {
-      const resolved = await lookupEmailByUsername(email);
-      if (!resolved) {
-        setError("Inget konto hittades med detta användarnamn.");
-        setLoading(false);
-        return;
-      }
-      email = resolved;
-    }
-
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      setError(getErrorMessage(error));
+    if (!result.ok) {
+      // Single generic message for unknown account, wrong password, AND
+      // inactive/suspended/ended accounts — no account-enumeration oracle.
+      setError(
+        result.rateLimited
+          ? "För många inloggningsförsök. Vänta en stund och försök igen."
+          : "Fel uppgifter. Kontrollera användarnamn/e-post och lösenord."
+      );
       setLoading(false);
       return;
     }
