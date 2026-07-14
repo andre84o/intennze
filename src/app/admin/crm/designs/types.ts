@@ -41,6 +41,8 @@ export interface DesignProps {
   onUpdateCustomerBoolean: (id: string, field: string, value: boolean) => void;
   onAddInteraction: (customerId: string, type: InteractionType, description: string) => void;
   onDeleteInteraction: (id: string) => void;
+  /** Only admins may delete interactions; when false the delete controls are hidden. */
+  canDeleteInteraction: boolean;
   onAddReminder: (customerId: string, form: ReminderFormData) => void;
   onCompleteReminder: (id: string) => void;
   onSendQuestionnaire: (id: string) => void;

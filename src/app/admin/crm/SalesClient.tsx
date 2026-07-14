@@ -24,6 +24,8 @@ interface Props {
   interactions: CustomerInteraction[];
   questionnaires: Questionnaire[];
   quotes: Quote[];
+  /** Only admins may delete interactions (notes/activity log). RLS enforces this too. */
+  isAdmin: boolean;
   error?: string;
 }
 
@@ -35,7 +37,7 @@ const isServiceExpired = (c: Customer) => {
   return d < today;
 };
 
-export default function SalesClient({ customers: init, reminders: initR, interactions: initI, questionnaires: initQ, quotes: initQuotes, error }: Props) {
+export default function SalesClient({ customers: init, reminders: initR, interactions: initI, questionnaires: initQ, quotes: initQuotes, isAdmin, error }: Props) {
   const [customers, setCustomers] = useState(init);
   const [reminders, setReminders] = useState(initR);
   const [interactions, setInteractions] = useState(initI);
@@ -135,6 +137,9 @@ export default function SalesClient({ customers: init, reminders: initR, interac
   };
 
   const onDeleteInteraction = async (id: string) => {
+    // Staff may not delete interactions. This is a client-side guard only; the
+    // real enforcement is the RLS policy (DELETE requires public.is_admin()).
+    if (!isAdmin) return;
     const sb = createClient();
     const { error } = await sb.from("customer_interactions").delete().eq("id", id);
     if (!error) setInteractions(p => p.filter(i => i.id !== id));
@@ -210,7 +215,7 @@ export default function SalesClient({ customers: init, reminders: initR, interac
 
   const designProps: DesignProps = {
     customers, reminders, interactions, questionnaires, quotes, today,
-    savingCustomer, sendingQuestionnaire,
+    savingCustomer, sendingQuestionnaire, canDeleteInteraction: isAdmin,
     getCustomerReminders, getCustomerInteractions, getNextReminder,
     hasOverdueReminder, hasTodayReminder, hasQuestionnaire, getCallQueue, getCustomerQuotes, isServiceExpired,
     formatDate, formatDateTime,

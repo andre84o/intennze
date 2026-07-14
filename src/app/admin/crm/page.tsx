@@ -8,6 +8,11 @@ export const metadata = {
 export default async function SalesPage() {
   const supabase = await createClient();
 
+  // Whether the caller is an admin — used to gate the delete-note control in
+  // the UI. This is defense-in-depth only; the authoritative gate is the RLS
+  // policy on customer_interactions (DELETE requires public.is_admin()).
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+
   // Hämta alla kunder med alla fält
   const { data: customers, error } = await supabase
     .from("customers")
@@ -45,6 +50,7 @@ export default async function SalesPage() {
       interactions={interactions || []}
       questionnaires={questionnaires || []}
       quotes={quotes || []}
+      isAdmin={isAdmin === true}
       error={error?.message}
     />
   );
