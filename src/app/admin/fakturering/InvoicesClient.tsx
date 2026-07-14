@@ -10,11 +10,13 @@ import {
 } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { confirmInvoicePaid, type EligibleSalesperson } from "./actions";
 
 interface Props {
   initialInvoices: (Invoice & { customer: Customer })[];
   customersWithService: Customer[];
   allCustomers: Customer[];
+  salespeople: EligibleSalesperson[];
   error?: string;
 }
 
@@ -38,9 +40,14 @@ export default function InvoicesClient({
   initialInvoices,
   customersWithService,
   allCustomers,
+  salespeople,
   error,
 }: Props) {
   const [invoices, setInvoices] = useState(initialInvoices);
+  // "Confirm paid" dialog state (commission-aware paid transition).
+  const [payInvoice, setPayInvoice] = useState<(Invoice & { customer: Customer }) | null>(null);
+  const [paySalesperson, setPaySalesperson] = useState<string>("");
+  const [confirmingPaid, setConfirmingPaid] = useState(false);
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showOneTimeModal, setShowOneTimeModal] = useState(false);
@@ -201,15 +208,17 @@ export default function InvoicesClient({
     setShowGenerateModal(false);
   };
 
-  // Update invoice status
-  const handleUpdateStatus = async (invoiceId: string, newStatus: InvoiceStatus) => {
+  // Update invoice status.
+  // NOTE: the 'paid' transition is deliberately NOT handled here — marking an
+  // invoice paid must go through confirmInvoicePaid (server action → RPC) so
+  // commission is created server-side. This client path only handles 'sent'
+  // (and other non-money transitions if ever added).
+  const handleUpdateStatus = async (invoiceId: string, newStatus: Exclude<InvoiceStatus, "paid">) => {
     const supabase = createClient();
 
     const updates: Partial<Invoice> = { status: newStatus };
     if (newStatus === "sent") {
       updates.sent_at = new Date().toISOString();
-    } else if (newStatus === "paid") {
-      updates.paid_at = new Date().toISOString();
     }
 
     const { error } = await supabase
@@ -223,6 +232,64 @@ export default function InvoicesClient({
           inv.id === invoiceId ? { ...inv, ...updates } : inv
         )
       );
+    }
+  };
+
+  // Open the commission-aware "confirm paid" dialog. Default the credited
+  // salesperson to the invoice customer's owner_user_id (admin can override).
+  const openPayDialog = (invoice: Invoice & { customer: Customer }) => {
+    const ownerId =
+      (invoice.customer as (Customer & { owner_user_id?: string | null }) | undefined)
+        ?.owner_user_id ?? "";
+    // Only pre-select the owner if they are a currently eligible seller.
+    const preselect = salespeople.some((s) => s.userId === ownerId) ? ownerId : "";
+    setPaySalesperson(preselect);
+    setPayInvoice(invoice);
+  };
+
+  // Confirm the paid transition via the server action (creates commission).
+  const handleConfirmPaid = async () => {
+    if (!payInvoice) return;
+    setConfirmingPaid(true);
+    try {
+      const res = await confirmInvoicePaid({
+        invoiceId: payInvoice.id,
+        salespersonUserId: paySalesperson || null,
+      });
+
+      if (!res.ok) {
+        throw new Error(res.error || "Kunde inte markera fakturan som betald");
+      }
+
+      // Reflect the paid transition locally.
+      const now = new Date().toISOString();
+      setInvoices((prev) =>
+        prev.map((inv) =>
+          inv.id === payInvoice.id
+            ? { ...inv, status: "paid" as InvoiceStatus, paid_at: now }
+            : inv
+        )
+      );
+      if (selectedInvoice?.id === payInvoice.id) {
+        setSelectedInvoice({ ...selectedInvoice, status: "paid", paid_at: now });
+      }
+
+      const commissionMsg = res.commissionCreated
+        ? "Provision skapades."
+        : res.eligible === false
+        ? `Ingen provision${res.reason ? ` (${res.reason})` : ""}.`
+        : "Ingen provision skapades.";
+      showNotification(
+        "success",
+        "Markerad som betald",
+        `Faktura #${res.invoiceNumber ?? payInvoice.invoice_number} är betald. ${commissionMsg}`
+      );
+      setPayInvoice(null);
+    } catch (err) {
+      console.error("Confirm paid error:", err);
+      showNotification("error", "Fel", err instanceof Error ? err.message : "Kunde inte markera fakturan som betald");
+    } finally {
+      setConfirmingPaid(false);
     }
   };
 
@@ -669,7 +736,7 @@ export default function InvoicesClient({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUpdateStatus(invoice.id, "paid");
+                              openPayDialog(invoice);
                             }}
                             className="px-3 py-1 text-xs font-medium bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
                           >
@@ -1324,10 +1391,7 @@ export default function InvoicesClient({
                 )}
                 {selectedInvoice.status === "sent" && (
                   <button
-                    onClick={() => {
-                      handleUpdateStatus(selectedInvoice.id, "paid");
-                      setSelectedInvoice({ ...selectedInvoice, status: "paid", paid_at: new Date().toISOString() });
-                    }}
+                    onClick={() => openPayDialog(selectedInvoice)}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                   >
                     Markera betald
@@ -1406,6 +1470,102 @@ export default function InvoicesClient({
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Paid Modal (commission-aware) */}
+      {payInvoice && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            onClick={() => (confirmingPaid ? null : setPayInvoice(null))}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">
+                Markera faktura #{payInvoice.invoice_number} som betald
+              </h2>
+              <button
+                onClick={() => setPayInvoice(null)}
+                disabled={confirmingPaid}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Säljare (provision)
+                </label>
+                <Select
+                  value={paySalesperson || "__none__"}
+                  onValueChange={(v) => setPaySalesperson(v === "__none__" ? "" : v)}
+                >
+                  <SelectTrigger className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:bg-white focus:border-blue-500">
+                    <SelectValue placeholder="Ingen säljare" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="__none__" className="rounded-lg">
+                      Ingen säljare
+                    </SelectItem>
+                    {salespeople.map((s) => (
+                      <SelectItem key={s.userId} value={s.userId} className="rounded-lg">
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1.5">
+                  Standard är kundens ägare. Ändra vid behov innan bekräftelse.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Provisionsberättigad</span>
+                <span className={`font-medium ${paySalesperson ? "text-green-600" : "text-gray-400"}`}>
+                  {paySalesperson ? "Ja" : "Nej"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Belopp exkl. moms</span>
+                <span className="font-semibold text-gray-900">
+                  {formatCurrency(payInvoice.amount)}
+                </span>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 px-6 py-4 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => setPayInvoice(null)}
+                disabled={confirmingPaid}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-medium disabled:opacity-50"
+              >
+                Avbryt
+              </button>
+              <button
+                onClick={handleConfirmPaid}
+                disabled={confirmingPaid}
+                className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {confirmingPaid ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Bekräftar…
+                  </>
+                ) : (
+                  "Bekräfta"
+                )}
+              </button>
             </div>
           </div>
         </div>
