@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import type { EmailOtpType } from "@supabase/supabase-js";
 
 type Phase = "checking" | "ready" | "no-session" | "saving" | "done";
 
@@ -16,9 +17,11 @@ export default function AcceptInviteClient() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // On mount: establish a session from the invite link.
-  // The link can arrive as a PKCE ?code= (exchange it) or the session may
-  // already be present (implicit flow / already exchanged).
+  // On mount: establish a session from the invite/magic link. Supabase can
+  // deliver it in different shapes depending on the flow, so handle all three:
+  //   1. PKCE     ?code=              -> exchangeCodeForSession
+  //   2. OTP      ?token_hash=&type=  -> verifyOtp
+  //   3. Implicit #access_token=...   -> setSession (admin-generated links use this)
   useEffect(() => {
     let cancelled = false;
 
@@ -26,14 +29,29 @@ export default function AcceptInviteClient() {
       try {
         const url = new URL(window.location.href);
         const code = url.searchParams.get("code");
+        const tokenHash = url.searchParams.get("token_hash");
+        const otpType = url.searchParams.get("type");
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
 
         if (code) {
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) {
-            // Fall through to the session check below; if that also fails we
-            // show the expired-link message.
-            console.error("[accept-invite] exchangeCodeForSession failed:", exchangeError);
-          }
+          const { error: e } = await supabase.auth.exchangeCodeForSession(code);
+          if (e) console.error("[accept-invite] exchangeCodeForSession:", e.message);
+        } else if (tokenHash && otpType) {
+          const { error: e } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: otpType as EmailOtpType,
+          });
+          if (e) console.error("[accept-invite] verifyOtp:", e.message);
+        } else if (accessToken && refreshToken) {
+          const { error: e } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (e) console.error("[accept-invite] setSession:", e.message);
+          // strip the tokens out of the URL so a refresh doesn't re-process them
+          window.history.replaceState(null, "", url.pathname + url.search);
         }
 
         const {
