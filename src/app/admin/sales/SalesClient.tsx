@@ -770,7 +770,7 @@ function Toast({
 // Root
 // ---------------------------------------------------------------------------
 
-export default function ProvisionClient({
+export default function SalesClient({
   isAdmin,
   showMyNumbers,
   initialMonth,

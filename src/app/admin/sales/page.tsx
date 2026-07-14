@@ -1,6 +1,6 @@
 import { requireCommissionAccessPage } from "@/lib/auth/adminGuard";
 import { todayStockholm } from "@/lib/auth/activeProfile";
-import ProvisionClient from "./ProvisionClient";
+import SalesClient from "./SalesClient";
 
 /**
  * /admin/sales — Commission ("Provision") area.
@@ -21,7 +21,7 @@ export default async function ProvisionPage() {
   const showMyNumbers = commissionEligible;
 
   return (
-    <ProvisionClient
+    <SalesClient
       isAdmin={isAdmin}
       showMyNumbers={showMyNumbers}
       initialMonth={initialMonth}
