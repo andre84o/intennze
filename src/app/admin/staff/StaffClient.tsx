@@ -16,6 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 // Canonical permission values — MUST match the server allowlist exactly.
 const PERMISSIONS: { value: string; label: string }[] = [
@@ -96,7 +102,7 @@ export default function StaffClient({
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto">
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Staff Management</h1>
           <p className="text-sm text-gray-500">
@@ -105,7 +111,7 @@ export default function StaffClient({
         </div>
         <button
           onClick={() => setInviteOpen(true)}
-          className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
+          className="w-full shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 whitespace-nowrap sm:w-auto"
         >
           Invite staff
         </button>
@@ -118,12 +124,12 @@ export default function StaffClient({
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 border-b border-gray-200">
+      <div className="mb-4 flex gap-1 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {(["active", "invited", "suspended", "ended"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors capitalize ${
+            className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium capitalize transition-colors ${
               tab === t
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-800"
@@ -159,20 +165,20 @@ export default function StaffClient({
               className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 bg-white"
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-900 truncate">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="min-w-0 max-w-full truncate font-medium text-gray-900">
                     {fullName(row) || row.email || row.auth_email || "Unnamed"}
                   </span>
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[status]}`}
+                    className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[status]}`}
                   >
                     {status}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 capitalize">
+                  <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 capitalize">
                     {row.role ?? "—"}
                   </span>
                   {isSelf && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                    <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                       You
                     </span>
                   )}
@@ -239,7 +245,7 @@ function TextField({
   placeholder?: string;
 }) {
   return (
-    <label className="text-sm block">
+    <label className="text-sm block min-w-0">
       <span className="block text-xs text-gray-500 mb-1">
         {label}
         {required ? " *" : ""}
@@ -255,6 +261,89 @@ function TextField({
           disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white"
         }`}
       />
+    </label>
+  );
+}
+
+function toISODate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseISODate(s: string): Date | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (!m) return undefined;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+function DateField({
+  label,
+  value,
+  onChange,
+  required = false,
+  disabled = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const date = parseISODate(value);
+
+  return (
+    <label className="text-sm block min-w-0">
+      <span className="block text-xs text-gray-500 mb-1">
+        {label}
+        {required ? " *" : ""}
+      </span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            className={`flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 px-3 py-2 text-left transition-all focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 ${
+              disabled
+                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                : "bg-white"
+            } ${date ? "text-gray-900" : "text-gray-400"}`}
+          >
+            <span className="truncate">
+              {date ? date.toLocaleDateString("sv-SE") : "Välj datum"}
+            </span>
+            <svg
+              className="size-4 flex-shrink-0 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+              />
+            </svg>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="z-[60] w-auto rounded-2xl border border-slate-200 p-0 shadow-xl"
+          align="start"
+        >
+          <Calendar
+            mode="single"
+            selected={date}
+            defaultMonth={date}
+            onSelect={(d) => {
+              onChange(d ? toISODate(d) : "");
+              setOpen(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
     </label>
   );
 }
@@ -292,26 +381,44 @@ function RoleSelect({
 function PermissionCheckboxes({
   selected,
   onToggle,
+  onSelectAll,
 }: {
   selected: Set<string>;
   onToggle: (value: string, checked: boolean) => void;
+  onSelectAll?: (checked: boolean) => void;
 }) {
+  const allSelected =
+    selected.size >= PERMISSIONS.length &&
+    PERMISSIONS.every((p) => selected.has(p.value));
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      {PERMISSIONS.map((p) => (
-        <label
-          key={p.value}
-          className="flex items-center gap-2 text-sm rounded-lg border border-gray-200 px-3 py-2 cursor-pointer hover:bg-gray-50"
-        >
+    <div className="space-y-2">
+      {onSelectAll && (
+        <label className="flex w-fit items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
           <input
             type="checkbox"
-            checked={selected.has(p.value)}
-            onChange={(e) => onToggle(p.value, e.target.checked)}
+            checked={allSelected}
+            onChange={(e) => onSelectAll(e.target.checked)}
             className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-gray-700">{p.label}</span>
+          Select all
         </label>
-      ))}
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {PERMISSIONS.map((p) => (
+          <label
+            key={p.value}
+            className="flex items-center gap-2 text-sm rounded-lg border border-gray-200 px-3 py-2 cursor-pointer hover:bg-gray-50"
+          >
+            <input
+              type="checkbox"
+              checked={selected.has(p.value)}
+              onChange={(e) => onToggle(p.value, e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-gray-700">{p.label}</span>
+          </label>
+        ))}
+      </div>
     </div>
   );
 }
@@ -348,15 +455,27 @@ function ModalShell({
   onClose,
   children,
   footer,
+  mobileFullScreen = false,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   footer: React.ReactNode;
+  mobileFullScreen?: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div
+      className={`fixed inset-0 z-50 flex bg-black/40 sm:items-center sm:justify-center sm:p-4 ${
+        mobileFullScreen ? "p-0" : "items-center justify-center p-4"
+      }`}
+    >
+      <div
+        className={`bg-white shadow-xl flex flex-col sm:w-full sm:max-w-2xl sm:max-h-[90vh] sm:rounded-2xl ${
+          mobileFullScreen
+            ? "w-full h-full rounded-none"
+            : "w-full max-h-[90vh] rounded-2xl"
+        }`}
+      >
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-none">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700">
@@ -409,6 +528,9 @@ function InviteModal({
       return next;
     });
 
+  const setAllPerms = (checked: boolean) =>
+    setPerms(checked ? new Set(PERMISSIONS.map((p) => p.value)) : new Set());
+
   const submit = () =>
     startTransition(async () => {
       setErr(null);
@@ -439,6 +561,7 @@ function InviteModal({
     <ModalShell
       title="Invite staff"
       onClose={onClose}
+      mobileFullScreen
       footer={
         success ? (
           <button
@@ -482,7 +605,7 @@ function InviteModal({
               onChange={setEmail}
               placeholder="name@company.com"
             />
-            <label className="text-sm block">
+            <label className="text-sm block min-w-0">
               <span className="block text-xs text-gray-500 mb-1">Role</span>
               <RoleSelect value={role} onValueChange={setRole} />
             </label>
@@ -513,7 +636,11 @@ function InviteModal({
 
           <div>
             <p className="text-xs text-gray-500 mb-2">Permissions</p>
-            <PermissionCheckboxes selected={perms} onToggle={togglePerm} />
+            <PermissionCheckboxes
+              selected={perms}
+              onToggle={togglePerm}
+              onSelectAll={setAllPerms}
+            />
           </div>
 
           {err && (
@@ -580,6 +707,9 @@ function StaffDetailModal({
       return next;
     });
 
+  const setAllPerms = (checked: boolean) =>
+    setPerms(checked ? new Set(PERMISSIONS.map((p) => p.value)) : new Set());
+
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) =>
     startTransition(async () => {
       setErr(null);
@@ -623,6 +753,7 @@ function StaffDetailModal({
     <ModalShell
       title="Staff member"
       onClose={onClose}
+      mobileFullScreen
       footer={
         <>
           <button
@@ -671,15 +802,13 @@ function StaffDetailModal({
         <TextField label="Postal code" value={postalCode} onChange={setPostalCode} />
         <TextField label="City" value={city} onChange={setCity} />
         <TextField label="Country" value={country} onChange={setCountry} />
-        <TextField
+        <DateField
           label="Employment start"
-          type="date"
           value={employmentStart}
           onChange={setEmploymentStart}
         />
-        <TextField
+        <DateField
           label="Employment end"
-          type="date"
           value={employmentEnd}
           onChange={setEmploymentEnd}
           disabled={currentlyEmployed}
@@ -748,7 +877,11 @@ function StaffDetailModal({
             Save permissions
           </button>
         </div>
-        <PermissionCheckboxes selected={perms} onToggle={togglePerm} />
+        <PermissionCheckboxes
+          selected={perms}
+          onToggle={togglePerm}
+          onSelectAll={setAllPerms}
+        />
       </div>
 
       {/* Status actions */}
