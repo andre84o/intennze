@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { buildCallQueue, stockholmToday, type QueueReminder } from "@/lib/nextLead";
 import { DesignProps, Questionnaire, ReminderFormData } from "./designs/types";
 import Design1Pipeline from "./designs/Design1Pipeline";
+import MyReminders, { type MyReminderRow } from "./MyReminders";
 
 function upsertById<T extends { id: string }>(list: T[], row: T): T[] {
   const i = list.findIndex((x) => x.id === row.id);
@@ -24,6 +25,8 @@ interface Props {
   interactions: CustomerInteraction[];
   questionnaires: Questionnaire[];
   quotes: Quote[];
+  /** The logged-in user's own active reminders (per individual). */
+  myReminders: MyReminderRow[];
   /** Only admins may delete interactions (notes/activity log). RLS enforces this too. */
   isAdmin: boolean;
   error?: string;
@@ -37,7 +40,7 @@ const isServiceExpired = (c: Customer) => {
   return d < today;
 };
 
-export default function SalesClient({ customers: init, reminders: initR, interactions: initI, questionnaires: initQ, quotes: initQuotes, isAdmin, error }: Props) {
+export default function SalesClient({ customers: init, reminders: initR, interactions: initI, questionnaires: initQ, quotes: initQuotes, myReminders, isAdmin, error }: Props) {
   const [customers, setCustomers] = useState(init);
   const [reminders, setReminders] = useState(initR);
   const [interactions, setInteractions] = useState(initI);
@@ -148,7 +151,9 @@ export default function SalesClient({ customers: init, reminders: initR, interac
   const onAddReminder = async (customerId: string, form: ReminderFormData) => {
     if (!form.title || !form.date) return;
     const sb = createClient();
-    const { data, error } = await sb.from("reminders").insert({ customer_id: customerId, title: form.title, reminder_date: form.date, reminder_time: form.time || null, type: form.type }).select().single();
+    // Stamp the owner so reminders can be shown per individual user.
+    const { data: { user } } = await sb.auth.getUser();
+    const { data, error } = await sb.from("reminders").insert({ customer_id: customerId, title: form.title, reminder_date: form.date, reminder_time: form.time || null, type: form.type, created_by: user?.id ?? null }).select().single();
     if (!error && data) { setReminders(p => [...p, data]); }
   };
 
@@ -241,6 +246,8 @@ export default function SalesClient({ customers: init, reminders: initR, interac
       </div>
 
       {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>}
+
+      <MyReminders reminders={myReminders} />
 
       <Design1Pipeline {...designProps} />
 

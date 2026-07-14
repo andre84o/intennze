@@ -75,15 +75,12 @@ const STAFF_VISIBLE_HREFS = new Set(["/admin", "/admin/kunder", "/admin/crm"]);
 function filterMenuByRole(
   items: MenuItem[],
   role: "admin" | "staff",
-  commissionEligible: boolean
+  _commissionEligible: boolean
 ): MenuItem[] {
+  // Sales is admin-only (company overview). Staff see their own commission on the
+  // Dashboard instead, so no /admin/sales entry for staff.
   if (role === "admin") return items;
-  return items.filter(
-    (item) =>
-      STAFF_VISIBLE_HREFS.has(item.href) ||
-      // Commission-eligible staff also see the Provision entry.
-      (item.href === "/admin/sales" && commissionEligible)
-  );
+  return items.filter((item) => STAFF_VISIBLE_HREFS.has(item.href));
 }
 
 export default function AdminSidebar() {
