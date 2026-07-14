@@ -610,7 +610,7 @@ export async function approvePeriod(periodId: string): Promise<PeriodActionResul
   });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin/provision");
+  revalidatePath("/admin/sales");
   return { ok: true };
 }
 
@@ -628,7 +628,7 @@ export async function markPeriodPaid(periodId: string): Promise<PeriodActionResu
   });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin/provision");
+  revalidatePath("/admin/sales");
   return { ok: true };
 }
 
@@ -694,7 +694,7 @@ export async function createAdjustment(
   });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin/provision");
+  revalidatePath("/admin/sales");
   return { ok: true };
 }
 

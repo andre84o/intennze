@@ -3,7 +3,7 @@ import { todayStockholm } from "@/lib/auth/activeProfile";
 import ProvisionClient from "./ProvisionClient";
 
 /**
- * /admin/provision — Commission ("Provision") area.
+ * /admin/sales — Commission ("Provision") area.
  *
  * Access (RESOLVED): active Admin always, OR active Staff with
  * commission_eligible=true. Ineligible active staff → /admin; unauth/inactive →
