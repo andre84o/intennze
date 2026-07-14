@@ -677,32 +677,31 @@ function StaffDetailModal({
           value={employmentStart}
           onChange={setEmploymentStart}
         />
-        <div className="text-sm">
-          <label className="flex items-center gap-2 mb-1 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={currentlyEmployed}
-              onChange={(e) => {
-                setCurrentlyEmployed(e.target.checked);
-                if (e.target.checked) setEmploymentEnd("");
-              }}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-xs text-gray-700">Currently employed</span>
-          </label>
-          {currentlyEmployed ? (
-            <p className="text-xs text-gray-400">
-              Uncheck when the person leaves to set an end date.
-            </p>
-          ) : (
-            <TextField
-              label="Employment end"
-              type="date"
-              value={employmentEnd}
-              onChange={setEmploymentEnd}
-            />
-          )}
-        </div>
+        <TextField
+          label="Employment end"
+          type="date"
+          value={employmentEnd}
+          onChange={setEmploymentEnd}
+          disabled={currentlyEmployed}
+        />
+        <label className="sm:col-span-2 flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={currentlyEmployed}
+            onChange={(e) => {
+              setCurrentlyEmployed(e.target.checked);
+              if (e.target.checked) setEmploymentEnd("");
+            }}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-xs text-gray-700">
+            Currently employed
+            <span className="text-gray-400">
+              {" "}
+              — uncheck to set an end date when the person leaves
+            </span>
+          </span>
+        </label>
         <label className="text-sm block">
           <span className="block text-xs text-gray-500 mb-1">Role</span>
           <Select value={role} onValueChange={(v) => setRole(v as "admin" | "staff")}>
