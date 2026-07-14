@@ -77,8 +77,15 @@ export default function AcceptInviteClient() {
     e.preventDefault();
     setError(null);
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    // At least 8 characters, at least one uppercase letter and one digit.
+    if (
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/[0-9]/.test(password)
+    ) {
+      setError(
+        "Password must be at least 8 characters and include at least one uppercase letter and one number."
+      );
       return;
     }
     if (password !== confirm) {
@@ -143,6 +150,9 @@ export default function AcceptInviteClient() {
               className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
               placeholder="••••••••"
             />
+            <p className="mt-2 text-xs text-slate-500">
+              At least 8 characters, with one uppercase letter and one number.
+            </p>
           </div>
 
           <div>
