@@ -438,6 +438,8 @@ function DateField({
         <PopoverContent
           className="date-popover-content z-[60] w-auto rounded-2xl border border-slate-200 p-0 shadow-xl"
           align="start"
+          side="top"
+          sideOffset={8}
         >
           <Calendar
             mode="single"
