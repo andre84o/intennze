@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { useAdmin } from "./AdminContext";
+import CrmIcon from "./CrmIcon";
 
 interface MenuItem {
   label: string;
   href: string;
   iconPath: string;
   iconPath2?: string;
+  // Optional custom icon renderer. When set, it replaces the default
+  // stroke-based <svg> for this item (e.g. the filled CRM icon).
+  renderIcon?: (className: string) => ReactNode;
 }
 
 const defaultMenuItems: MenuItem[] = [
@@ -32,7 +36,8 @@ const defaultMenuItems: MenuItem[] = [
   {
     label: "CRM",
     href: "/admin/crm",
-    iconPath: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z",
+    iconPath: "",
+    renderIcon: (className: string) => <CrmIcon className={className} />,
   },
   {
     label: "Fakturering",
@@ -317,11 +322,24 @@ export default function AdminSidebar() {
                       </svg>
                     </span>
                   )}
-                  <span className={`flex-shrink-0 ${isActive ? "text-white" : "text-[#8A87A0] group-hover:text-[#6E5CF3]"} transition-colors`}>
-                    <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.7">
-                      <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath} />
-                      {item.iconPath2 && <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath2} />}
-                    </svg>
+                  <span
+                    className={`flex-shrink-0 ${
+                      isActive
+                        ? "text-white"
+                        : // Filled custom icons (e.g. CRM) antialias lighter than the
+                          // stroke icons at 18px, so give them a darker resting grey
+                          // that reads at the same weight. Hover/active stay identical.
+                          `${item.renderIcon ? "text-[#6A6680]" : "text-[#8A87A0]"} group-hover:text-[#6E5CF3]`
+                    } transition-colors`}
+                  >
+                    {item.renderIcon ? (
+                      item.renderIcon("h-[18px] w-[18px]")
+                    ) : (
+                      <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.7">
+                        <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath} />
+                        {item.iconPath2 && <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath2} />}
+                      </svg>
+                    )}
                   </span>
                   <span className={labelHidden}>{item.label}</span>
                 </Link>
