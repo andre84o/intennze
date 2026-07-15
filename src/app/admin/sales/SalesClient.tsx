@@ -610,7 +610,6 @@ function CompanySection({
     <section className="mb-12">
       <SectionHeader
         title="Företagsöversikt"
-        subtitle="Alla säljare denna period"
         right={
           <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             {monthControl}
