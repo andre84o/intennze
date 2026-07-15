@@ -11,8 +11,8 @@ import AdminHeader from "./AdminHeader";
  * header reveals it all the way to the top instead of the default gray. Keep in
  * sync with each page root's background: /admin dashboard → soft lavender mesh
  * gradient (the dashboard div itself is transparent so this single layer shows
- * through, seamless behind the header), /admin/sales → #f6f5fb, /admin/crm →
- * slate-50, else gray-50.
+ * through, seamless behind the header — the embedded Sales section rides on this
+ * same mesh), /admin/crm → slate-50, else gray-50.
  */
 const DASHBOARD_MESH =
   "radial-gradient(at 82% -8%, #F1E8FF 0px, transparent 55%)," +
@@ -23,7 +23,6 @@ const DASHBOARD_MESH =
 
 function pageBackground(pathname: string): string {
   if (pathname === "/admin") return DASHBOARD_MESH;
-  if (pathname.startsWith("/admin/sales")) return "#f6f5fb";
   if (pathname.startsWith("/admin/crm")) return "#f8fafc"; // slate-50
   return "#f9fafb"; // gray-50
 }

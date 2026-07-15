@@ -15,7 +15,7 @@ function todayStockholm(): string {
  * "Mina påminnelser" — a compact stat card (like the CRM overview cards) showing
  * how many of the logged-in user's OWN reminders are overdue (missed). Scoped to
  * created_by on the server (see crm/page.tsx). The company-wide "Försenade"
- * total lives on /admin/sales for admins.
+ * total lives in the Dashboard's admin-only Sales section.
  */
 export default function MyReminders({ reminders }: { reminders: MyReminderRow[] }) {
   const today = todayStockholm();

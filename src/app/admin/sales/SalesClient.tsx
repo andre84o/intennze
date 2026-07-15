@@ -1103,7 +1103,17 @@ function Toast({ toast, onClose }: { toast: { type: "success" | "error"; msg: st
  * Sales page root — ADMIN company overview only. Individual figures ("Mina
  * siffror") live on the Dashboard via <MyCommission /> (see ./MinaSiffror).
  */
-export default function SalesClient({ isAdmin, initialMonth }: { isAdmin: boolean; initialMonth: string }) {
+export default function SalesClient({
+  isAdmin,
+  initialMonth,
+  embedded = false,
+}: {
+  isAdmin: boolean;
+  initialMonth: string;
+  // When true, render just the inner content (no full-bleed wrapper/background)
+  // so the sales overview can be embedded inside the Dashboard's own container.
+  embedded?: boolean;
+}) {
   const [month, setMonth] = useState(initialMonth);
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
@@ -1112,19 +1122,25 @@ export default function SalesClient({ isAdmin, initialMonth }: { isAdmin: boolea
     window.setTimeout(() => setToast(null), 4000);
   }, []);
 
+  const inner = (
+    <div className="mx-auto max-w-7xl">
+      {isAdmin && (
+        <CompanySection
+          month={month}
+          onToast={showToast}
+          monthControl={<MonthSelector month={month} onChange={setMonth} />}
+        />
+      )}
+
+      {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+    </div>
+  );
+
+  if (embedded) return <div className="text-slate-900">{inner}</div>;
+
   return (
     <div className="-m-4 min-h-full bg-[#f6f5fb] p-4 pt-6 text-slate-900 sm:-m-6 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl">
-        {isAdmin && (
-          <CompanySection
-            month={month}
-            onToast={showToast}
-            monthControl={<MonthSelector month={month} onChange={setMonth} />}
-          />
-        )}
-
-        {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
-      </div>
+      {inner}
     </div>
   );
 }

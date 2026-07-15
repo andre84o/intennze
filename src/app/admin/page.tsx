@@ -1,6 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import DashboardClient from "./DashboardClient";
-import { MyCommission } from "./sales/SalesClient";
+import DashboardTabs from "./DashboardTabs";
 
 export const metadata = {
   title: "Admin | intenzze",
@@ -116,36 +115,34 @@ export default async function AdminPage() {
     data: { user },
   } = await supabase.auth.getUser();
   let commissionEligible = false;
+  let isAdmin = false;
   if (user) {
     const { data: prof } = await supabase
       .from("profiles")
-      .select("commission_eligible")
+      .select("commission_eligible, role")
       .eq("user_id", user.id)
-      .maybeSingle<{ commission_eligible: boolean }>();
+      .maybeSingle<{ commission_eligible: boolean; role: string }>();
     commissionEligible = prof?.commission_eligible === true;
+    // Presentation gate only — the sales section's server actions each re-verify
+    // admin server-side, and RLS remains the real guard.
+    isAdmin = prof?.role === "admin";
   }
   const commissionMonth = new Date()
     .toLocaleDateString("en-CA", { timeZone: "Europe/Stockholm" })
     .slice(0, 7);
 
+  // DashboardTabs owns the full-bleed container (it cancels the admin <main>
+  // padding with -m-3 sm:-m-6 so content reaches every edge). The mesh-gradient
+  // background is painted by the admin layout on the outer container and shows
+  // through seamlessly behind the transparent header.
   return (
-    <div
-      // Full-bleed: cancel the admin <main> padding (p-3 sm:p-6) so the dashboard
-      // content reaches every edge. The mesh-gradient background is painted by the
-      // admin layout (AdminLayoutClient) on the outer container, so it extends up
-      // behind the transparent header seamlessly — this div stays transparent.
-      className="-m-3 min-h-[calc(100vh-3.5rem)] px-4 pb-10 pt-6 sm:-m-6 sm:min-h-[calc(100vh-4rem)] sm:px-6 lg:px-8"
-    >
-      {commissionEligible && (
-        <div className="mx-auto max-w-[1180px]">
-          <MyCommission initialMonth={commissionMonth} />
-        </div>
-      )}
-      <DashboardClient
-        analytics={analytics}
-        customersCount={customersCount || 0}
-        quotesCount={quotesCount || 0}
-      />
-    </div>
+    <DashboardTabs
+      isAdmin={isAdmin}
+      commissionEligible={commissionEligible}
+      commissionMonth={commissionMonth}
+      analytics={analytics}
+      customersCount={customersCount || 0}
+      quotesCount={quotesCount || 0}
+    />
   );
 }

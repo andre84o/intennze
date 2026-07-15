@@ -2,6 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
+import {
+  PROFILE_COLUMNS,
+  isActiveProfile,
+  normalizeRole,
+  todayStockholm,
+  type GuardProfile,
+} from "@/lib/auth/activeProfile";
 
 /**
  * Provision (Commission) — server actions.
@@ -42,7 +49,15 @@ async function requireUser(): Promise<SessionOk | SessionFail> {
   return { supabase, userId: user.id };
 }
 
-/** Ensure an ACTIVE ADMIN; return the SESSION client + uid. */
+/**
+ * Ensure an ACTIVE ADMIN; return the SESSION client + uid.
+ *
+ * Uses the app's SHARED active-profile rule (@/lib/auth/activeProfile) — the
+ * exact same definition the page/API guards use — so a suspended, deactivated,
+ * or out-of-employment-window admin is rejected here too, not just via
+ * is_active. `profiles` is the sole role source; no service-role, no hardcoded
+ * ids. RLS remains the real backstop.
+ */
 async function requireAdmin(): Promise<SessionOk | SessionFail> {
   const supabase = await createClient();
   const {
@@ -50,13 +65,13 @@ async function requireAdmin(): Promise<SessionOk | SessionFail> {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Inte inloggad" };
 
-  const { data: profile, error } = await supabase
+  const { data: profile } = await supabase
     .from("profiles")
-    .select("role, is_active")
+    .select(PROFILE_COLUMNS)
     .eq("user_id", user.id)
-    .maybeSingle();
+    .maybeSingle<GuardProfile>();
 
-  if (error || !profile || profile.role !== "admin" || profile.is_active !== true) {
+  if (!isActiveProfile(profile, todayStockholm()) || normalizeRole(profile) !== "admin") {
     return { error: "Åtkomst nekad" };
   }
   return { supabase, userId: user.id };
@@ -686,7 +701,7 @@ export async function approvePeriod(periodId: string): Promise<PeriodActionResul
   });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin/sales");
+  revalidatePath("/admin");
   return { ok: true };
 }
 
@@ -704,7 +719,7 @@ export async function markPeriodPaid(periodId: string): Promise<PeriodActionResu
   });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin/sales");
+  revalidatePath("/admin");
   return { ok: true };
 }
 
@@ -770,7 +785,7 @@ export async function createAdjustment(
   });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin/sales");
+  revalidatePath("/admin");
   return { ok: true };
 }
 
@@ -1054,6 +1069,6 @@ export async function recordCommissionPayment(
   });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin/sales");
+  revalidatePath("/admin");
   return { ok: true };
 }
