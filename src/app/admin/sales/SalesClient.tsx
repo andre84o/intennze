@@ -12,6 +12,7 @@ import {
   listEligibleSalespeople,
   listPaymentCustomers,
   recordCommissionPayment,
+  getOverdueReminderCount,
   type CommissionEntryItem,
   type CompanyCommissionOverviewResult,
   type EligibleSalesperson,
@@ -555,6 +556,7 @@ function CompanySection({
   const [overview, setOverview] = useState<CompanyCommissionOverviewResult | null>(null);
   const [rows, setRows] = useState<SalespersonCommissionRow[]>([]);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
+  const [overdue, setOverdue] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, startTransition] = useTransition();
@@ -566,15 +568,17 @@ function CompanySection({
   const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [ov, list, tr] = await Promise.all([
+    const [ov, list, tr, od] = await Promise.all([
       getCompanyCommissionOverview(month),
       getSalespeopleCommission(month),
       getSalesTrend("company", month, 8),
+      getOverdueReminderCount(),
     ]);
     if (!ov.ok) setError(ov.error ?? "Kunde inte hämta företagsöversikt");
     else setOverview(ov);
     if (list.ok) setRows(list.rows ?? []);
     if (tr.ok) setTrend(tr.points ?? []);
+    if (od.ok) setOverdue(od.count ?? 0);
     setLoading(false);
   }, [month]);
 
@@ -623,6 +627,21 @@ function CompanySection({
 
       {error && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{error}</div>
+      )}
+
+      {overdue != null && (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 sm:max-w-sm">
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-orange-400 text-white shadow-sm shadow-rose-500/30">
+            <Icon path={ICONS.unpaid} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm text-slate-400">Försenade påminnelser</p>
+            <p className="text-2xl font-bold tabular-nums text-slate-900 [font-family:var(--font-numbers)]">
+              {overdue}
+            </p>
+          </div>
+          <span className="ml-auto text-xs text-slate-400">kunder att följa upp</span>
+        </div>
       )}
 
       {loading ? (

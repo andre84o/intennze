@@ -808,6 +808,46 @@ export async function getInvoiceBacking(periodId: string): Promise<InvoiceBackin
 }
 
 // ---------------------------------------------------------------------------
+// getOverdueReminderCount() — ADMIN ONLY. Company-wide total of customers with
+// at least one overdue (past-due, not completed) reminder — the "Försenade"
+// figure relocated here from the CRM page so admins keep the company total.
+// ---------------------------------------------------------------------------
+
+export interface OverdueReminderCountResult {
+  ok: boolean;
+  error?: string;
+  count?: number;
+}
+
+/** "YYYY-MM-DD" for today in Europe/Stockholm (matches the CRM predicate). */
+function stockholmTodayISO(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Stockholm" });
+}
+
+export async function getOverdueReminderCount(): Promise<OverdueReminderCountResult> {
+  const guard = await requireAdmin();
+  if ("error" in guard) return { ok: false, error: guard.error };
+
+  const today = stockholmTodayISO();
+  const { data, error } = await guard.supabase
+    .from("reminders")
+    .select("customer_id")
+    .eq("is_completed", false)
+    .lt("reminder_date", today);
+
+  if (error) return { ok: false, error: error.message };
+
+  // Count DISTINCT customers with an overdue reminder — same definition the CRM
+  // "Försenade" card used (customers, not raw reminder rows).
+  const distinct = new Set(
+    (data ?? [])
+      .map((r) => (r as { customer_id: string | null }).customer_id)
+      .filter((v): v is string => !!v)
+  );
+  return { ok: true, count: distinct.size };
+}
+
+// ---------------------------------------------------------------------------
 // Trend series (last N months) for the dashboard charts. Real, RLS-scoped:
 //   scope "me"      -> the logged-in user's own entries (requireUser + RLS)
 //   scope "company" -> all entries (requireAdmin). Commission is derived by

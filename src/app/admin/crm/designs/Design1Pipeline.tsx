@@ -264,12 +264,11 @@ export default function Design1Pipeline(p: DesignProps) {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {[
           { label: "Totalt", count: p.customers.length, color: "text-slate-800" },
           { label: "Leads", count: p.customers.filter(c => c.status === "lead").length, color: "text-blue-600" },
           { label: "Kunder", count: p.customers.filter(c => c.status === "customer").length, color: "text-green-600" },
-          { label: "Försenade", count: p.customers.filter(c => p.hasOverdueReminder(c.id)).length, color: "text-rose-600" },
         ].map((s) => (
           <div key={s.label} className="border border-slate-200 rounded-xl bg-white py-3 px-4">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-0.5">{s.label}</p>

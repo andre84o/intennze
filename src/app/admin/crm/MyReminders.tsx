@@ -1,8 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-
 export interface MyReminderRow {
   id: string;
   title: string;
@@ -17,80 +12,36 @@ function todayStockholm(): string {
 }
 
 /**
- * "Mina påminnelser" — the logged-in user's OWN active reminders (scoped by
- * created_by on the server). Shown on the CRM page.
+ * "Mina påminnelser" — a compact stat card (like the CRM overview cards) showing
+ * how many of the logged-in user's OWN reminders are overdue (missed). Scoped to
+ * created_by on the server (see crm/page.tsx). The company-wide "Försenade"
+ * total lives on /admin/sales for admins.
  */
-export default function MyReminders({ reminders: initial }: { reminders: MyReminderRow[] }) {
-  const [reminders, setReminders] = useState(initial);
-  const [busy, setBusy] = useState<string | null>(null);
+export default function MyReminders({ reminders }: { reminders: MyReminderRow[] }) {
   const today = todayStockholm();
-
-  const complete = async (id: string) => {
-    setBusy(id);
-    const sb = createClient();
-    const { error } = await sb
-      .from("reminders")
-      .update({ is_completed: true, completed_at: new Date().toISOString() })
-      .eq("id", id);
-    if (!error) setReminders((p) => p.filter((r) => r.id !== id));
-    setBusy(null);
-  };
+  const missed = reminders.filter((r) => r.reminder_date < today).length;
+  const total = reminders.length;
 
   return (
-    <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
-        <h2 className="text-sm font-semibold text-slate-900">Mina påminnelser</h2>
-        {reminders.length > 0 && (
-          <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600">
-            {reminders.length}
-          </span>
-        )}
+    <div className="mb-6 sm:max-w-xs">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div className="mb-0.5 flex items-center justify-between gap-2">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Mina påminnelser</p>
+          {missed > 0 && (
+            <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-600">
+              Försenade
+            </span>
+          )}
+        </div>
+        <p className={`text-2xl font-bold ${missed > 0 ? "text-rose-600" : "text-slate-800"}`}>{missed}</p>
+        <p className="mt-0.5 text-xs text-slate-400">
+          {missed > 0
+            ? `${missed} missad${missed === 1 ? "" : "e"} av ${total} aktiva`
+            : total > 0
+            ? `${total} aktiva · inga missade`
+            : "Inga aktiva påminnelser"}
+        </p>
       </div>
-
-      {reminders.length === 0 ? (
-        <p className="px-5 py-8 text-center text-sm text-slate-400">Du har inga aktiva påminnelser.</p>
-      ) : (
-        <ul className="divide-y divide-slate-50">
-          {reminders.map((r) => {
-            const overdue = r.reminder_date < today;
-            const isToday = r.reminder_date === today;
-            const d = new Date(r.reminder_date);
-            return (
-              <li key={r.id} className="flex items-center gap-3 px-5 py-3">
-                <div
-                  className={`flex h-11 w-11 flex-none flex-col items-center justify-center rounded-xl text-center ${
-                    overdue
-                      ? "bg-rose-50 text-rose-600"
-                      : isToday
-                      ? "bg-amber-50 text-amber-600"
-                      : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  <span className="text-sm font-bold leading-none">{d.getDate()}</span>
-                  <span className="text-[10px] uppercase">
-                    {d.toLocaleDateString("sv-SE", { month: "short" }).replace(".", "")}
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-900">{r.title}</p>
-                  <p className="truncate text-xs text-slate-400">
-                    {r.customerName ?? "—"}
-                    {r.reminder_time ? ` · ${r.reminder_time.slice(0, 5)}` : ""}
-                    {overdue ? " · Försenad" : isToday ? " · Idag" : ""}
-                  </p>
-                </div>
-                <button
-                  onClick={() => complete(r.id)}
-                  disabled={busy === r.id}
-                  className="flex-none rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-100 disabled:opacity-50"
-                >
-                  {busy === r.id ? "…" : "Klar"}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
     </div>
   );
 }
