@@ -46,7 +46,7 @@ function SectionToggle({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void
                   }
                 : undefined
             }
-            className={`rounded-full px-6 py-2 text-[13.5px] font-semibold transition-colors ${
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors sm:px-6 sm:py-2 sm:text-[13.5px] ${
               active ? "" : "text-[#67637E] hover:text-[#211D33]"
             }`}
           >
@@ -88,7 +88,7 @@ export default function DashboardTabs({
   return (
     <div className="-m-3 min-h-[calc(100vh-3.5rem)] px-4 pb-10 pt-6 sm:-m-6 sm:min-h-[calc(100vh-4rem)] sm:px-6 lg:px-8">
       {isAdmin && (
-        <div className="mb-6 flex justify-center">
+        <div className="mb-4 flex justify-center sm:mb-6">
           <SectionToggle tab={activeTab} onChange={setTab} />
         </div>
       )}
