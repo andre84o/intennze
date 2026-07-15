@@ -138,31 +138,22 @@ type PeriodFiguresRpc = {
 };
 
 /**
- * "Kvar till nästa nivå" = next active tier's min_revenue_ex_vat − revenue.
- * Computed SERVER-SIDE from commission_tiers. Returns null at the top tier
- * (no higher tier) or when tiers can't be read.
+ * "Kvar till nästa nivå" = kronor to the salesperson's NEXT ladder threshold.
+ * Computed SERVER-SIDE via the commission_next_tier_gap RPC, which reads the
+ * salesperson's OWN ladder (falling back to the global one) and is self-or-admin
+ * guarded. Returns null at the top tier or when it can't be read.
  */
 async function computeKvarTillNastaNiva(
   supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
   revenue: number
 ): Promise<number | null> {
-  const { data, error } = await supabase
-    .from("commission_tiers")
-    .select("min_revenue_ex_vat, effective_to")
-    .is("effective_to", null)
-    .order("min_revenue_ex_vat", { ascending: true });
-
-  if (error || !data) return null;
-
-  const mins = data
-    .map((t) => num((t as { min_revenue_ex_vat: number | string | null }).min_revenue_ex_vat))
-    .filter((m) => Number.isFinite(m))
-    .sort((a, b) => a - b);
-
-  // First tier boundary strictly greater than current revenue is the next level.
-  const next = mins.find((m) => m > revenue);
-  if (next === undefined) return null; // already at (or above) the top tier
-  return next - revenue;
+  const { data, error } = await supabase.rpc("commission_next_tier_gap", {
+    p_user_id: userId,
+    p_revenue: revenue,
+  });
+  if (error || data == null) return null;
+  return num(data);
 }
 
 /** Normalise a period status string to the allowlist. */
@@ -207,7 +198,7 @@ async function resolveFigures(
     const live = await tryLiveFigures(supabase, userId, periodStart);
     if (live) return live;
     // No period + no live figures → show zeros, never error.
-    empty.kvarTillNastaNiva = await computeKvarTillNastaNiva(supabase, 0);
+    empty.kvarTillNastaNiva = await computeKvarTillNastaNiva(supabase, userId, 0);
     return empty;
   }
 
@@ -241,7 +232,7 @@ async function resolveFigures(
     finalCommission: final,
     paidCommission,
     unpaidCommission: final - paidCommission,
-    kvarTillNastaNiva: await computeKvarTillNastaNiva(supabase, revenue),
+    kvarTillNastaNiva: await computeKvarTillNastaNiva(supabase, userId, revenue),
   };
 }
 
@@ -278,7 +269,7 @@ async function tryLiveFigures(
     finalCommission: final,
     paidCommission: status === "paid" ? final : 0,
     unpaidCommission: final - (status === "paid" ? final : 0),
-    kvarTillNastaNiva: await computeKvarTillNastaNiva(supabase, revenue),
+    kvarTillNastaNiva: await computeKvarTillNastaNiva(supabase, userId, revenue),
   };
 }
 

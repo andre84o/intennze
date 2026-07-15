@@ -58,6 +58,15 @@ const VALID_STATUSES = new Set(["active", "suspended", "ended"]);
 
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
+const isUuid = (v: unknown): v is string =>
+  typeof v === "string" &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
+const num = (v: unknown): number => {
+  const n = typeof v === "number" ? v : parseFloat(String(v ?? ""));
+  return Number.isFinite(n) ? n : 0;
+};
+
 type AdminOk = { supabase: Awaited<ReturnType<typeof createClient>>; userId: string };
 type AdminFail = { error: string };
 
@@ -609,4 +618,137 @@ export async function listStaff(): Promise<ListStaffResult> {
   });
 
   return { ok: true, staff };
+}
+
+// ---------------------------------------------------------------------------
+// Per-salesperson commission ladder + base salary (ADMIN ONLY)
+//   Reads/writes the admin-only tables (salesperson_commission_tiers +
+//   salesperson_commission_settings) via the SESSION client, so the admin-only
+//   RLS is the real guard; requireAdmin() is defense-in-depth. Base salary is
+//   stored here for admin reference only and is never returned to salespeople.
+// ---------------------------------------------------------------------------
+
+export interface CommissionTierInput {
+  minRevenueExVat: number;
+  maxRevenueExVat: number | null;
+  ratePercent: number;
+}
+
+export interface SalespersonCommissionConfig {
+  tiers: CommissionTierInput[];
+  baseSalary: number | null;
+}
+
+export interface GetCommissionConfigResult {
+  ok: boolean;
+  error?: string;
+  config?: SalespersonCommissionConfig;
+}
+
+/** Default ladder pre-filled for a salesperson who has none yet. Mirrors the
+ * business's starting ladder (editable per person in the Staff modal). */
+const DEFAULT_COMMISSION_TIERS: CommissionTierInput[] = [
+  { minRevenueExVat: 0, maxRevenueExVat: 50000, ratePercent: 15 },
+  { minRevenueExVat: 50001, maxRevenueExVat: 100000, ratePercent: 20 },
+  { minRevenueExVat: 100001, maxRevenueExVat: 150000, ratePercent: 25 },
+  { minRevenueExVat: 150001, maxRevenueExVat: null, ratePercent: 30 },
+];
+
+export async function getSalespersonCommissionConfig(
+  userId: string
+): Promise<GetCommissionConfigResult> {
+  const guard = await requireAdmin();
+  if ("error" in guard) return { ok: false, error: guard.error };
+  if (!isUuid(userId)) return { ok: false, error: "Ogiltig användare" };
+
+  const { data: tierRows, error: tErr } = await guard.supabase
+    .from("salesperson_commission_tiers")
+    .select("min_revenue_ex_vat, max_revenue_ex_vat, rate_percent, sort_order")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true });
+  if (tErr) return { ok: false, error: tErr.message };
+
+  const { data: settingsRow } = await guard.supabase
+    .from("salesperson_commission_settings")
+    .select("base_salary")
+    .eq("user_id", userId)
+    .maybeSingle<{ base_salary: number | string | null }>();
+
+  const tiers: CommissionTierInput[] =
+    (tierRows ?? []).length > 0
+      ? (tierRows ?? []).map((t) => {
+          const row = t as {
+            min_revenue_ex_vat: number | string | null;
+            max_revenue_ex_vat: number | string | null;
+            rate_percent: number | string | null;
+          };
+          return {
+            minRevenueExVat: num(row.min_revenue_ex_vat),
+            maxRevenueExVat: row.max_revenue_ex_vat == null ? null : num(row.max_revenue_ex_vat),
+            ratePercent: num(row.rate_percent),
+          };
+        })
+      : // No personal ladder yet → offer the default as an editable starting point.
+        DEFAULT_COMMISSION_TIERS.map((t) => ({ ...t }));
+
+  return {
+    ok: true,
+    config: {
+      tiers,
+      baseSalary: settingsRow?.base_salary == null ? null : num(settingsRow.base_salary),
+    },
+  };
+}
+
+export async function saveSalespersonCommissionConfig(
+  userId: string,
+  input: { tiers: CommissionTierInput[]; baseSalary: number | null }
+): Promise<{ ok: boolean; error?: string }> {
+  const guard = await requireAdmin();
+  if ("error" in guard) return { ok: false, error: guard.error };
+  if (!isUuid(userId)) return { ok: false, error: "Ogiltig användare" };
+
+  const raw = Array.isArray(input?.tiers) ? input.tiers : [];
+  const clean: { min: number; max: number | null; rate: number }[] = [];
+  let prevMin = -1;
+  for (const t of raw) {
+    const min = num(t?.minRevenueExVat);
+    const max =
+      t?.maxRevenueExVat == null || (t.maxRevenueExVat as unknown) === "" ? null : num(t.maxRevenueExVat);
+    const rate = num(t?.ratePercent);
+    if (!(min >= 0)) return { ok: false, error: "Omsättningsgräns måste vara ≥ 0" };
+    if (max != null && max < min) return { ok: false, error: "Max får inte vara mindre än min" };
+    if (!(rate >= 0 && rate <= 100)) return { ok: false, error: "Provisionssats måste vara 0–100 %" };
+    if (min <= prevMin) return { ok: false, error: "Omsättningsgränserna måste vara stigande" };
+    prevMin = min;
+    clean.push({ min, max, rate });
+  }
+
+  const base =
+    input?.baseSalary == null || (input.baseSalary as unknown) === "" ? null : num(input.baseSalary);
+  if (base != null && base < 0) return { ok: false, error: "Grundlön kan inte vara negativ" };
+
+  // Replace the ladder atomically-ish: delete existing rows, then insert new.
+  const del = await guard.supabase.from("salesperson_commission_tiers").delete().eq("user_id", userId);
+  if (del.error) return { ok: false, error: del.error.message };
+  if (clean.length > 0) {
+    const rows = clean.map((t, i) => ({
+      user_id: userId,
+      sort_order: i + 1,
+      min_revenue_ex_vat: t.min,
+      max_revenue_ex_vat: t.max,
+      rate_percent: t.rate,
+    }));
+    const ins = await guard.supabase.from("salesperson_commission_tiers").insert(rows);
+    if (ins.error) return { ok: false, error: ins.error.message };
+  }
+
+  const up = await guard.supabase.from("salesperson_commission_settings").upsert(
+    { user_id: userId, base_salary: base, updated_by: guard.userId },
+    { onConflict: "user_id" }
+  );
+  if (up.error) return { ok: false, error: up.error.message };
+
+  revalidatePath("/admin/staff");
+  return { ok: true };
 }

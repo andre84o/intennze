@@ -195,3 +195,25 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+/*
+ * Mobile date picker (Staff member modal): pin the calendar as a fixed, centered
+ * card so it never drifts or spills off-screen. Overrides Radix's inline
+ * anchored positioning on the popper wrapper — scoped to .date-popover-content
+ * only, so no other popover is affected. Desktop keeps the anchored popover.
+ */
+@media (max-width: 639px) {
+  [data-radix-popper-content-wrapper]:has(> .date-popover-content) {
+    position: fixed !important;
+    inset: auto !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-width: calc(100vw - 24px);
+    z-index: 70;
+  }
+  .date-popover-content {
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+  }
+}
