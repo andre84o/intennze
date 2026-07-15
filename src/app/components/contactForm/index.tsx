@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLanguage } from "@/app/i18n/LanguageProvider";
 import { dict } from "@/app/i18n/dict";
 import { trackLead, genEventId, getFbp, getFbc } from "@/utils/metaPixel";
@@ -34,29 +34,6 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
   // Card surface. Dropped when embedded so a parent (e.g. the scrollable modal
   // wrapper) owns the bg/border/rounding and the scrollbar stays inside it.
   const chrome = embedded ? "" : "bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl";
-
-  // Fire Google tracking when the form is successfully sent. The Meta `Lead`
-  // is fired inside onSubmit instead, where we still have the form values for
-  // advanced matching and a shared dedup id (see below).
-  useEffect(() => {
-    if (status === "sent" && typeof window !== "undefined") {
-      // Google Ads Conversion
-      if ((window as { gtag?: (...args: unknown[]) => void }).gtag) {
-        (window as { gtag: (...args: unknown[]) => void }).gtag('event', 'conversion', {
-          'send_to': 'AW-17863845026/xm_vCN7IheAbEKLJksZC'
-        });
-      }
-
-      // Google Tag Manager dataLayer push
-      const dataLayer = (window as DataLayerWindow).dataLayer;
-      if (Array.isArray(dataLayer)) {
-        dataLayer.push({
-          event: "form_submission",
-          form_name: "contact_form",
-        });
-      }
-    }
-  }, [status]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -106,6 +83,25 @@ const ContactForm = ({ initialMessage, onSent, title, subtitle, buttonText, mess
           userData: { em: email, ph: phone, fn: firstName, ln: lastName },
         }
       );
+
+      // Google Ads conversion + GTM dataLayer push. Fired here — right after
+      // the submit succeeds and BEFORE setStatus("sent")/onSent() — instead of
+      // in a [status] effect: in modal mode onSent() unmounts this component in
+      // the same commit as the status change, so a "sent" effect may never run
+      // and the conversion would be silently lost.
+      if (typeof window !== "undefined") {
+        const w = window as { gtag?: (...args: unknown[]) => void };
+        if (w.gtag) {
+          w.gtag("event", "conversion", {
+            send_to: "AW-17863845026/xm_vCN7IheAbEKLJksZC",
+          });
+        }
+        const dataLayer = (window as DataLayerWindow).dataLayer;
+        if (Array.isArray(dataLayer)) {
+          dataLayer.push({ event: "form_submission", form_name: "contact_form" });
+        }
+      }
+
       setStatus("sent");
       form.reset();
       if (onSent) onSent();
