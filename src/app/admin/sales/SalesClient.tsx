@@ -435,23 +435,17 @@ function IncludedInvoicesTable({ entries }: { entries: CommissionEntryItem[] }) 
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60 text-xs font-medium uppercase tracking-wide text-slate-400">
-                <th className="px-5 py-2.5 text-left">Faktura #</th>
-                <th className="px-5 py-2.5 text-left">Betald</th>
-                <th className="px-5 py-2.5 text-right">Ex moms</th>
-                <th className="px-5 py-2.5 text-right">Moms</th>
-                <th className="px-5 py-2.5 text-right">Totalt</th>
+                <th className="px-5 py-2.5 text-left">Företag</th>
+                <th className="px-5 py-2.5 text-left">Betald datum</th>
+                <th className="px-5 py-2.5 text-right">Belopp ex moms</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {entries.map((e) => (
-                <tr key={e.invoiceId} className="transition-colors hover:bg-slate-50/60">
-                  <td className="px-5 py-3 font-mono text-sm text-slate-500">
-                    {e.invoiceNumber != null ? `#${e.invoiceNumber}` : "–"}
-                  </td>
+              {entries.map((e, idx) => (
+                <tr key={e.invoiceId ?? `${e.customerId ?? "c"}-${e.paidAt ?? ""}-${idx}`} className="transition-colors hover:bg-slate-50/60">
+                  <td className="px-5 py-3 text-sm text-slate-900">{e.companyName ?? e.customerName ?? "–"}</td>
                   <td className="px-5 py-3 text-sm text-slate-500">{formatDate(e.paidAt)}</td>
                   <td className="px-5 py-3 text-right text-sm tabular-nums text-slate-900">{formatCurrency(e.amountExVat)}</td>
-                  <td className="px-5 py-3 text-right text-sm tabular-nums text-slate-400">{formatCurrency(e.vatAmount)}</td>
-                  <td className="px-5 py-3 text-right text-sm font-medium tabular-nums text-slate-900">{formatCurrency(e.total)}</td>
                 </tr>
               ))}
             </tbody>
