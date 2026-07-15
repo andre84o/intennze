@@ -111,6 +111,8 @@ const ICONS = {
     "M15.98 1.804a1 1 0 00-1.96 0l-.24 1.192a1 1 0 01-.784.785l-1.192.238a1 1 0 000 1.962l1.192.238a1 1 0 01.785.785l.238 1.192a1 1 0 001.962 0l.238-1.192a1 1 0 01.785-.785l1.192-.238a1 1 0 000-1.962l-1.192-.238a1 1 0 01-.785-.785l-.238-1.192zM6.949 5.684a1 1 0 00-1.898 0l-.683 2.051a1 1 0 01-.633.633l-2.051.683a1 1 0 000 1.898l2.051.684a1 1 0 01.633.632l.683 2.051a1 1 0 001.898 0l.683-2.051a1 1 0 01.633-.633l2.051-.683a1 1 0 000-1.898l-2.051-.683a1 1 0 01-.633-.633L6.95 5.684zM13.949 13.684a1 1 0 00-1.898 0l-.184.551a1 1 0 01-.632.633l-.551.183a1 1 0 000 1.898l.551.183a1 1 0 01.633.633l.183.551a1 1 0 001.898 0l.184-.551a1 1 0 01.632-.633l.551-.183a1 1 0 000-1.898l-.551-.184a1 1 0 01-.633-.632l-.183-.551z",
   users:
     "M4.5 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM14.25 8.625a3.375 3.375 0 116.75 0 3.375 3.375 0 01-6.75 0zM1.5 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM17.25 19.128l-.001.144a2.25 2.25 0 01-.233.96 10.088 10.088 0 005.06-1.01.75.75 0 00.42-.643 4.875 4.875 0 00-6.957-4.611 8.586 8.586 0 011.71 5.157v.003z",
+  bell:
+    "M12 2.25A6.75 6.75 0 005.25 9v.75a8.217 8.217 0 01-2.119 5.52.75.75 0 00.298 1.206c1.544.57 3.16.99 4.831 1.243a3.75 3.75 0 107.478 0 24.583 24.583 0 004.83-1.244.75.75 0 00.298-1.205 8.217 8.217 0 01-2.118-5.52V9A6.75 6.75 0 0012 2.25zM9.75 18c0-.034 0-.067.002-.1a25.05 25.05 0 004.496 0l.002.1a2.25 2.25 0 01-4.5 0z",
 } as const;
 
 type Tone = "indigo" | "violet" | "emerald" | "amber" | "sky";
@@ -342,15 +344,26 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function SectionHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
+/**
+ * Overdue-reminders indicator — a bell button with a small red notification
+ * badge (SMS-style) showing the company-wide count of customers to follow up.
+ */
+function OverdueBell({ count }: { count: number }) {
   return (
-    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-      <div className="min-w-0">
-        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-sm text-slate-400">{subtitle}</p>}
-      </div>
-      {right && <div className="w-full sm:w-auto">{right}</div>}
-    </div>
+    <span
+      className="relative inline-flex flex-none"
+      title={`${count} försenade påminnelser`}
+      aria-label={`${count} försenade påminnelser`}
+    >
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm">
+        <Icon path={ICONS.bell} className="h-[1.1rem] w-[1.1rem]" />
+      </span>
+      {count > 0 && (
+        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold leading-none text-white ring-2 ring-white">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -608,9 +621,12 @@ function CompanySection({
 
   return (
     <section className="mb-12">
-      <SectionHeader
-        title="Företagsöversikt"
-        right={
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-base font-semibold text-slate-900">Företagsöversikt</h2>
+          {overdue != null && <OverdueBell count={overdue} />}
+        </div>
+        <div className="w-full sm:w-auto">
           <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             {monthControl}
             <button
@@ -621,26 +637,11 @@ function CompanySection({
               Registrera betalning
             </button>
           </div>
-        }
-      />
+        </div>
+      </div>
 
       {error && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{error}</div>
-      )}
-
-      {overdue != null && (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 sm:max-w-sm">
-          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-orange-400 text-white shadow-sm shadow-rose-500/30">
-            <Icon path={ICONS.unpaid} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm text-slate-400">Försenade påminnelser</p>
-            <p className="text-2xl font-bold tabular-nums text-slate-900 [font-family:var(--font-numbers)]">
-              {overdue}
-            </p>
-          </div>
-          <span className="ml-auto text-xs text-slate-400">kunder att följa upp</span>
-        </div>
       )}
 
       {loading ? (
