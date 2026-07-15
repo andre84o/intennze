@@ -258,26 +258,6 @@ export default function AdminSidebar() {
           </Link>
         </div>
 
-        {/* Edit mode toggle */}
-        {shouldExpand && (
-          <div className="px-3 pt-3 sm:px-4">
-            <button
-              onClick={() => setIsEditMode(!isEditMode)}
-              title={isEditMode ? "Klar" : "Ändra ordning"}
-              className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-all"
-              style={
-                isEditMode
-                  ? { background: "#EDE9FC", color: "#6E5CF3", border: "1px solid #DDD6F7" }
-                  : { background: "#F4F2FB", color: "#8A87A0" }
-              }
-            >
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
-            </button>
-          </div>
-        )}
-
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3 sm:p-4">
           {shouldExpand && (
@@ -351,6 +331,30 @@ export default function AdminSidebar() {
           })}
         </nav>
 
+        {/* Reorder (edit mode) toggle — sits just above the bottom-section
+            divider. Expanded only, since drag reordering needs the labels. */}
+        {shouldExpand && (
+          <div className="px-3 pb-2 sm:px-4">
+            <button
+              onClick={() => setIsEditMode(!isEditMode)}
+              title={isEditMode ? "Klar" : "Ändra ordning"}
+              className={`${NEUTRAL_ITEM} w-full gap-3 ${isEditMode ? "" : NEUTRAL_HOVER}`}
+              style={
+                isEditMode
+                  ? { background: "#EDE9FC", color: "#6E5CF3", border: "1px solid #DDD6F7" }
+                  : undefined
+              }
+            >
+              <span className="flex-shrink-0">
+                <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.7">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              </span>
+              <span className={labelHidden}>{isEditMode ? "Klar" : "Ändra ordning"}</span>
+            </button>
+          </div>
+        )}
+
         {/* Bottom section */}
         <div className="space-y-2 p-3 sm:p-4" style={{ borderTop: "1px solid #EFEDF6" }}>
           {/* View public site */}
@@ -370,7 +374,7 @@ export default function AdminSidebar() {
                 />
               </svg>
             </span>
-            <span className={labelHidden}>Visa sidan</span>
+            <span className={labelHidden}>Home</span>
           </Link>
 
           {/* User card — the lavender card chrome only shows when expanded; when
