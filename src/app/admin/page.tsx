@@ -131,12 +131,10 @@ export default async function AdminPage() {
   return (
     <div
       // Full-bleed: cancel the admin <main> padding (p-3 sm:p-6) so the dashboard
-      // background reaches every edge, and fill the viewport below the header.
+      // content reaches every edge. The mesh-gradient background is painted by the
+      // admin layout (AdminLayoutClient) on the outer container, so it extends up
+      // behind the transparent header seamlessly — this div stays transparent.
       className="-m-3 min-h-[calc(100vh-3.5rem)] px-4 pb-10 pt-6 sm:-m-6 sm:min-h-[calc(100vh-4rem)] sm:px-6 lg:px-8"
-      style={{
-        background:
-          "radial-gradient(120% 90% at 88% -12%, #F7F1FC 0%, #F0EEF8 42%, #EBE9F4 100%)",
-      }}
     >
       {commissionEligible && (
         <div className="mx-auto max-w-[1180px]">
