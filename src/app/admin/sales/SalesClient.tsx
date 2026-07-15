@@ -343,12 +343,12 @@ function StatusBadge({ status }: { status: string }) {
 
 function SectionHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
   return (
-    <div className="mb-5 flex items-end justify-between gap-4">
-      <div>
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+      <div className="min-w-0">
         <h2 className="text-base font-semibold text-slate-900">{title}</h2>
         {subtitle && <p className="mt-0.5 text-sm text-slate-400">{subtitle}</p>}
       </div>
-      {right}
+      {right && <div className="w-full sm:w-auto">{right}</div>}
     </div>
   );
 }
@@ -471,20 +471,20 @@ function MonthSelector({ month, onChange }: { month: string; onChange: (next: st
     </svg>
   );
   return (
-    <div className="inline-flex items-center rounded-lg bg-white p-0.5 shadow-sm ring-1 ring-slate-100">
+    <div className="flex w-full items-center justify-between rounded-lg bg-white p-0.5 shadow-sm ring-1 ring-slate-100 sm:inline-flex sm:w-auto sm:justify-start">
       <button
         onClick={() => onChange(shiftMonth(month, -1))}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+        className="flex h-7 w-7 flex-none items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
         aria-label="Föregående månad"
       >
         {chevron("l")}
       </button>
-      <span className="min-w-[7rem] text-center text-sm font-medium capitalize text-slate-700">
+      <span className="flex-1 text-center text-sm font-medium capitalize text-slate-700 sm:min-w-[7rem] sm:flex-none">
         {monthLabel(month)}
       </span>
       <button
         onClick={() => onChange(shiftMonth(month, 1))}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+        className="flex h-7 w-7 flex-none items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
         aria-label="Nästa månad"
       >
         {chevron("r")}
@@ -608,12 +608,13 @@ function CompanySection({
         title="Företagsöversikt"
         subtitle="Alla säljare denna period"
         right={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             {monthControl}
             <button
               onClick={() => setPaymentOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+              className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 sm:w-auto sm:py-1.5"
             >
+              <Icon path={ICONS.revenue} className="h-4 w-4" />
               Registrera betalning
             </button>
           </div>
