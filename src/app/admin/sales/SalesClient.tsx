@@ -19,6 +19,8 @@ import {
   type SalespersonCommissionRow,
   type TrendPoint,
 } from "./actions";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 // "Mina siffror" (the logged-in user's own panel) is the redesigned dashboard
 // from design_handoff_mina_siffror — kept in its own module. Re-exported here so
@@ -50,6 +52,18 @@ function formatDate(d: string | null | undefined): string {
   const date = new Date(d);
   if (Number.isNaN(date.getTime())) return "–";
   return date.toLocaleDateString("sv-SE");
+}
+
+function toISODate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
+
+function parseISODate(value: string): Date | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!m) return undefined;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
 
 function monthLabel(month: string): string {
@@ -369,6 +383,73 @@ function ModalShell({
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">{children}</div>
         <div className="flex flex-none justify-end gap-2 border-t border-slate-100 px-6 py-4">{footer}</div>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Date field — the global calendar (react-day-picker) inside a Popover, the
+// same component used across the app (see staff/StaffClient DateField). Styled
+// to match this modal's indigo/slate inputs. Value is an ISO "YYYY-MM-DD".
+// ---------------------------------------------------------------------------
+
+function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const date = parseISODate(value);
+
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={`flex w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-left transition-shadow focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 ${
+              date ? "text-slate-900" : "text-slate-400"
+            }`}
+          >
+            <span className="truncate">
+              {date ? date.toLocaleDateString("sv-SE") : "Välj datum"}
+            </span>
+            <svg
+              className="size-4 flex-shrink-0 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+              />
+            </svg>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="date-popover-content z-[60] w-auto rounded-2xl border border-slate-200 p-0 shadow-xl"
+          align="start"
+        >
+          <Calendar
+            mode="single"
+            selected={date}
+            defaultMonth={date}
+            onSelect={(d) => {
+              onChange(d ? toISODate(d) : "");
+              setOpen(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
@@ -921,10 +1002,7 @@ function RecordPaymentModal({
               className={inputClass}
             />
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Betaldatum</label>
-            <input type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} className={inputClass} />
-          </div>
+          <DateField label="Betaldatum" value={paidDate} onChange={setPaidDate} />
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Notering (valfri)</label>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className={inputClass} />
