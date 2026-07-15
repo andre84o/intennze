@@ -106,7 +106,7 @@ const NEUTRAL_ITEM =
 const NEUTRAL_HOVER = "text-[#67637E] hover:bg-[#F1EFFA] hover:text-[#211D33]";
 
 export default function AdminSidebar() {
-  const { sidebarState, setSidebarState, openSidebar, role, commissionEligible, userEmail, userName } =
+  const { sidebarState, setSidebarState, openSidebar, closeSidebar, isMobile, role, commissionEligible, userEmail, userName } =
     useAdmin();
   const pathname = usePathname();
   const router = useRouter();
@@ -132,17 +132,18 @@ export default function AdminSidebar() {
     router.refresh();
   };
 
-  // Close (collapse) when clicking outside the sidebar while it's open
+  // Close when clicking outside the sidebar while it's open — to the resting
+  // state for the viewport (hidden on mobile, the icon rail on desktop).
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (asideRef.current && !asideRef.current.contains(e.target as Node)) {
-        setSidebarState("collapsed");
+        closeSidebar();
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, setSidebarState]);
+  }, [isOpen, closeSidebar]);
 
   // Load sidebar order from database
   useEffect(() => {
@@ -304,7 +305,13 @@ export default function AdminSidebar() {
                 <Link
                   href={isEditMode ? "#" : item.href}
                   onClick={(e) => {
-                    if (isEditMode || isCollapsed) e.preventDefault();
+                    if (isEditMode || isCollapsed) {
+                      e.preventDefault();
+                      return;
+                    }
+                    // On mobile the sidebar is a drawer — close it fully once a
+                    // page is chosen.
+                    if (isMobile) setSidebarState("hidden");
                   }}
                   style={isActive ? ACTIVE_NAV_STYLE : undefined}
                   className={`${NEUTRAL_ITEM} ${shouldExpand ? "gap-3" : "justify-center"} ${
