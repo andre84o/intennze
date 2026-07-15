@@ -20,6 +20,9 @@ export interface DesignProps {
   questionnaires: Questionnaire[];
   quotes: Quote[];
   today: string;
+  /** Count of the logged-in user's OWN overdue (missed) reminders — shown as a
+   *  stat card in the pipeline header next to Kunder. */
+  myRemindersMissed: number;
   savingCustomer: string | null;
   sendingQuestionnaire: string | null;
   // helpers

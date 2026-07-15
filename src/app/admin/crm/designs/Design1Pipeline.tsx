@@ -264,11 +264,12 @@ export default function Design1Pipeline(p: DesignProps) {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Totalt", count: p.customers.length, color: "text-slate-800" },
           { label: "Leads", count: p.customers.filter(c => c.status === "lead").length, color: "text-blue-600" },
           { label: "Kunder", count: p.customers.filter(c => c.status === "customer").length, color: "text-green-600" },
+          { label: "Påminnelse", count: p.myRemindersMissed, color: p.myRemindersMissed > 0 ? "text-rose-600" : "text-slate-800" },
         ].map((s) => (
           <div key={s.label} className="border border-slate-200 rounded-xl bg-white py-3 px-4">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-0.5">{s.label}</p>
@@ -279,8 +280,10 @@ export default function Design1Pipeline(p: DesignProps) {
 
       {/* Tabs + Table */}
       <Card className="border border-slate-200 shadow-none overflow-hidden">
-        {/* Mobile Call Companion control bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-100">
+        {/* Mobile Call Companion control bar — phone/tablet only. The companion is
+            started from an agent's phone, so this bar (Start button + live status)
+            is hidden on desktop where it would just be a dead extra header row. */}
+        <div className="md:hidden flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-100">
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile/tablet only — agents start the companion from their phone. */}
             <button
@@ -308,7 +311,7 @@ export default function Design1Pipeline(p: DesignProps) {
             )}
           </div>
         </div>
-        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelected(null); }}>
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelected(null); }} className="gap-0">
           <div className="border-b border-slate-100 px-4 pt-1">
             <TabsList className="bg-transparent h-auto gap-1 p-0">
               {tabs.map(t => (

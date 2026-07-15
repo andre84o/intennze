@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { buildCallQueue, stockholmToday, type QueueReminder } from "@/lib/nextLead";
 import { DesignProps, Questionnaire, ReminderFormData } from "./designs/types";
 import Design1Pipeline from "./designs/Design1Pipeline";
-import MyReminders, { type MyReminderRow } from "./MyReminders";
+import { type MyReminderRow } from "./MyReminders";
 
 function upsertById<T extends { id: string }>(list: T[], row: T): T[] {
   const i = list.findIndex((x) => x.id === row.id);
@@ -218,8 +218,13 @@ export default function SalesClient({ customers: init, reminders: initR, interac
       : q));
   };
 
+  // The logged-in user's OWN overdue reminders — surfaced as the "Påminnelse"
+  // stat card in the pipeline header (next to Kunder).
+  const myRemindersMissed = myReminders.filter((r) => r.reminder_date < today).length;
+
   const designProps: DesignProps = {
     customers, reminders, interactions, questionnaires, quotes, today,
+    myRemindersMissed,
     savingCustomer, sendingQuestionnaire, canDeleteInteraction: isAdmin,
     getCustomerReminders, getCustomerInteractions, getNextReminder,
     hasOverdueReminder, hasTodayReminder, hasQuestionnaire, getCallQueue, getCustomerQuotes, isServiceExpired,
@@ -246,8 +251,6 @@ export default function SalesClient({ customers: init, reminders: initR, interac
       </div>
 
       {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>}
-
-      <MyReminders reminders={myReminders} />
 
       <Design1Pipeline {...designProps} />
 
