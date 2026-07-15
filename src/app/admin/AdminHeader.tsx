@@ -75,8 +75,7 @@ export default function AdminHeader({ userEmail }: AdminHeaderProps) {
 
       {/* Main header */}
       <header
-        style={{ borderBottom: "1px solid #ECEAF5" }}
-        className={`fixed right-0 top-0 z-30 h-14 bg-white/80 backdrop-blur-md [font-family:var(--font-jakarta)] transition-all duration-300 ease-in-out sm:h-16 ${
+        className={`fixed right-0 top-0 z-30 h-14 bg-transparent [font-family:var(--font-jakarta)] transition-all duration-300 ease-in-out sm:h-16 ${
           isOpen ? "left-52 sm:left-64" : isCollapsed ? "left-14 sm:left-20" : "left-0"
         }`}
       >
