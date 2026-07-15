@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type CSSProperties } from "react";
+import { useEffect, useId, useState, type CSSProperties, type ReactNode } from "react";
 import {
   getMyCommissionSummary,
   getMyCommissionBreakdown,
@@ -19,6 +19,22 @@ const INK = { primary: "#211D33", secondary: "#67637E", mut: "#8A87A0", weak: "#
 const ACCENT = { violet: "#6E5CF3", violetLight: "#9E8CFF", teal: "#14B8C4", purple: "#8B5CF6" };
 const CARD_BORDER = "#ECE9F4";
 const CARD_SHADOW = "0 1px 2px rgba(31,26,58,0.04), 0 20px 44px -26px rgba(74,58,130,0.3)";
+
+// Shared frosted-purple glass background (used by GlassKpiCard + NextTierCard so
+// every glass card matches exactly). Two radial glows over a linear base.
+const GLASS_BG =
+  "radial-gradient(120% 120% at 0% 0%, rgba(158,140,255,0.55), transparent 60%)," +
+  "radial-gradient(130% 130% at 100% 100%, rgba(110,92,243,0.5), transparent 55%)," +
+  "linear-gradient(150deg, rgba(110,92,243,0.72) 0%, rgba(76,63,140,0.66) 100%)";
+
+// Very light mesh-gradient wash (soft tints from each corner over white) — used
+// on the "Årlig försäljning" card. Barely there, stays almost white.
+const LIGHT_MESH_BG =
+  "radial-gradient(at 10% 6%, rgba(240,232,255,0.6) 0px, transparent 55%)," +
+  "radial-gradient(at 92% 4%, rgba(230,236,252,0.55) 0px, transparent 50%)," +
+  "radial-gradient(at 94% 96%, rgba(251,238,247,0.5) 0px, transparent 50%)," +
+  "radial-gradient(at 6% 96%, rgba(231,245,246,0.5) 0px, transparent 48%)," +
+  "#ffffff";
 
 const cardBase: CSSProperties = {
   background: "#fff",
@@ -131,23 +147,6 @@ function computeDelta(series: number[]): { up: boolean; pct: number } | null {
 // Small building blocks
 // ---------------------------------------------------------------------------
 
-function DeltaBadge({ delta, size = "md" }: { delta: { up: boolean; pct: number } | null; size?: "md" | "sm" }) {
-  if (!delta) return null;
-  const style: CSSProperties = delta.up
-    ? { color: "#0E9E63", background: "#EAFBF3" }
-    : { color: "#C05470", background: "#FBEEF1" };
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-[9px] font-bold ${
-        size === "sm" ? "px-2.5 py-1 text-[11.5px]" : "px-2.5 py-1.5 text-[11.5px]"
-      } ${numberFont}`}
-      style={style}
-    >
-      {delta.up ? "▲" : "▼"} {delta.pct.toFixed(0)}%
-    </span>
-  );
-}
-
 function StatusPill({ status, className = "" }: { status: string; className?: string }) {
   // Design shows a green "Godkänd" pill; open falls back to amber.
   const map: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
@@ -167,12 +166,13 @@ function StatusPill({ status, className = "" }: { status: string; className?: st
   );
 }
 
-function Chevron({ dir }: { dir: "l" | "r" }) {
+function Chevron({ dir, small = false }: { dir: "l" | "r"; small?: boolean }) {
+  const s = small ? 13 : 15;
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d={dir === "l" ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"}
-        stroke="#6A6683"
+        stroke={small ? "currentColor" : "#6A6683"}
         strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -181,102 +181,290 @@ function Chevron({ dir }: { dir: "l" | "r" }) {
   );
 }
 
-function MonthPill({ month, onChange }: { month: string; onChange: (next: string) => void }) {
+function MonthPill({
+  month,
+  onChange,
+  variant = "default",
+}: {
+  month: string;
+  onChange: (next: string) => void;
+  // "soft" = lighter, flatter, pill-shaped (desktop). "default" = mobile.
+  variant?: "default" | "soft";
+}) {
+  const soft = variant === "soft";
+  // Desktop ("soft") is compact — smaller buttons, tighter padding, a short
+  // "Jul 2026" label — so it doesn't hog width/height in the header.
+  const btn = soft
+    ? "flex h-5 w-4 items-center justify-center rounded-full text-[#8A87A0] transition-colors hover:bg-[#EFEBFB] hover:text-[#6E5CF3]"
+    : "flex h-6 w-5 items-center justify-center rounded-full transition-colors hover:bg-[#F5F4FB]";
   return (
     <div
-      className="flex items-center gap-0.5 rounded-[13px] bg-white p-[5px]"
-      style={{ border: "1px solid #ECEAF5", boxShadow: "0 6px 16px -10px rgba(60,50,120,0.28)" }}
+      className={`inline-flex items-center ${soft ? "gap-0 p-[2px] rounded-full" : "gap-0 p-[2px] rounded-full"}`}
+      style={
+        soft
+          ? { background: "rgba(255,255,255,0.6)", border: "1px solid #E9E5F5" }
+          : {
+              background: "rgba(255,255,255,0.72)",
+              border: "1px solid rgba(255,255,255,0.5)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+            }
+      }
     >
       <button
         type="button"
         onClick={() => onChange(shiftMonth(month, -1))}
         aria-label="Föregående månad"
-        className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:bg-[#F5F4FB]"
+        className={btn}
       >
-        <Chevron dir="l" />
+        <Chevron dir="l" small={soft} />
       </button>
-      <span className="min-w-[82px] px-2 text-center text-[13.5px] font-bold" style={{ color: INK.primary }}>
-        {monthLabel(month)}
+      <span
+        className={`whitespace-nowrap text-center ${
+          soft ? "min-w-0 px-0.5 text-[11.5px] font-semibold" : "min-w-0 px-0.5 text-[10px] font-bold"
+        }`}
+        style={{ color: INK.primary }}
+      >
+        {monthShortLabel(month)}
       </span>
       <button
         type="button"
         onClick={() => onChange(shiftMonth(month, 1))}
         aria-label="Nästa månad"
-        className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:bg-[#F5F4FB]"
+        className={btn}
       >
-        <Chevron dir="r" />
+        <Chevron dir="r" small={soft} />
       </button>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Sparkline (design version: double stroke — soft glow + crisp line)
-// ---------------------------------------------------------------------------
-
-function MiniSparkline({ values, accent }: { values: number[]; accent: string }) {
-  if (!values || values.length < 2 || Math.max(...values) <= 0) {
-    return <div style={{ height: 32, marginTop: 14 }} />;
-  }
-  const w = 200;
-  const h = 40;
-  const mn = Math.min(...values);
-  const mx = Math.max(...values);
-  const rng = mx - mn || 1;
-  const sx = w / (values.length - 1);
-  const d = values
-    .map((v, i) => `${i === 0 ? "M" : "L"}${(i * sx).toFixed(1)} ${(h - 4 - ((v - mn) / rng) * (h - 8)).toFixed(1)}`)
-    .join(" ");
-  return (
-    <svg
-      viewBox="0 0 200 40"
-      width="100%"
-      preserveAspectRatio="none"
-      style={{ display: "block", height: 32, marginTop: 14, overflow: "visible" }}
-      aria-hidden="true"
-    >
-      <path d={d} fill="none" stroke={accent} strokeOpacity="0.15" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d={d} fill="none" stroke={accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+// Compact "Jul 2026" label for the desktop month control.
+function monthShortLabel(month: string): string {
+  const [y, m] = month.split("-").map((v) => parseInt(v, 10));
+  const s = new Date(y, m - 1, 1).toLocaleDateString("sv-SE", { month: "short", year: "numeric" }).replace(".", "");
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 // ---------------------------------------------------------------------------
 // KPI cards
 // ---------------------------------------------------------------------------
 
-function BigValue({ value, unit, size = 28 }: { value: string; unit: string; size?: number }) {
+// Smooth (Catmull-Rom → cubic bezier) path through points, for the soft flowing
+// look of the feathered graph.
+function smoothPath(pts: readonly (readonly [number, number])[]): string {
+  if (pts.length < 2) return "";
+  const t = 0.18; // tension
+  let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] ?? p2;
+    const c1x = p1[0] + (p2[0] - p0[0]) * t;
+    const c1y = p1[1] + (p2[1] - p0[1]) * t;
+    const c2x = p2[0] - (p3[0] - p1[0]) * t;
+    const c2y = p2[1] - (p3[1] - p1[1]) * t;
+    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+
+/**
+ * Soft "feathered" graph behind the glass card's content — a bundle of thin,
+ * faint, smoothly-curved lines slightly fanned out (tight in the middle,
+ * spreading toward the ends), in two soft tones, with a small dot at the peak.
+ * Stretched to fill the card; low opacity so the numbers read on top.
+ */
+function GlassSpark({ values }: { values: number[] }) {
+  if (!values || values.length < 2 || Math.max(...values) <= 0) return null;
+  const w = 200;
+  const h = 60;
+  const midY = h / 2;
+  const ampSpan = 30; // vertical travel of the wave (viewBox units)
+  const mn = Math.min(...values);
+  const mx = Math.max(...values);
+  const rng = mx - mn || 1;
+  const sx = w / (values.length - 1);
+  const norm = values.map((v) => (v - mn) / rng); // 0..1
+  const lastIdx = values.length - 1;
+
+  const PRIMARY = "#EAE7FF"; // soft lavender-white
+  const SECONDARY = "#A9F0E4"; // faint mint accent
+
+  const N = 7;
+  const lines = Array.from({ length: N }, (_, k) => {
+    const tt = k / (N - 1); // 0..1 across the bundle
+    const off = (tt - 0.5) * 13; // base vertical spread, -6.5..6.5
+    const ampF = 1 - Math.abs(tt - 0.5) * 0.22; // slight amplitude variation
+    const pts = norm.map((n, i) => {
+      // Fan out toward the ends: small offset at the centre, larger at the edges.
+      const edge = 0.35 + Math.abs(i / lastIdx - 0.5) * 2 * 0.65;
+      const y = midY - (n - 0.5) * ampSpan * ampF + off * edge;
+      return [i * sx, y] as const;
+    });
+    const centerness = 1 - Math.abs(tt - 0.5) * 2; // 1 centre → 0 edges
+    return {
+      d: smoothPath(pts),
+      opacity: 0.1 + centerness * 0.32, // edges faint, centre stronger
+      stroke: k % 3 === 1 ? SECONDARY : PRIMARY,
+    };
+  });
+
+  // Dot at the peak on the central line.
+  const peakIdx = norm.indexOf(Math.max(...norm));
+  const dotX = peakIdx * sx;
+  const dotY = midY - (norm[peakIdx] - 0.5) * ampSpan;
+
   return (
-    <div
-      className={numberFont}
-      style={{ fontSize: size, fontWeight: 800, color: INK.primary, letterSpacing: "-1.1px", marginTop: 3 }}
+    <svg
+      viewBox="0 0 200 60"
+      width="100%"
+      height="100%"
+      preserveAspectRatio="none"
+      style={{ position: "absolute", inset: 0, opacity: 0.9 }}
+      aria-hidden="true"
     >
-      {value} <span style={{ fontSize: 16, fontWeight: 700, color: INK.weak }}>{unit}</span>
-    </div>
+      {lines.map((ln, k) => (
+        <path
+          key={k}
+          d={ln.d}
+          fill="none"
+          stroke={ln.stroke}
+          strokeOpacity={ln.opacity}
+          strokeWidth={1.1}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      ))}
+      <circle cx={dotX} cy={dotY} r={2} fill="#fff" fillOpacity={0.95} />
+    </svg>
   );
 }
 
-function KpiCard({
+/**
+ * Frosted-glass KPI card (design test for "Betald omsättning"). Translucent
+ * purple mesh + backdrop blur, a small status dot next to the label, a large
+ * white value, a subtle subtitle, and the soft graph behind the numbers.
+ */
+function GlassKpiCard({
   label,
   parts,
   delta,
   spark,
+  sublabel,
+  topRight,
+  variant = "solid",
 }: {
   label: string;
   parts: { value: string; unit: string };
   delta?: { up: boolean; pct: number } | null;
   spark?: { values: number[]; accent: string };
+  // Static subtitle used when there is no delta (e.g. the no-chart cards).
+  sublabel?: string;
+  // Optional control rendered at the top-right of the card (e.g. month selector).
+  topRight?: ReactNode;
+  // "solid" = frosted but mostly opaque purple; "glass" = same tint with extra
+  // shine (a glossy top highlight + brighter rim).
+  variant?: "solid" | "glass";
 }) {
+  const glass = variant === "glass";
+  const subtitle = delta
+    ? `${delta.up ? "▲" : "▼"} ${delta.pct.toFixed(0)}% mot förra månaden`
+    : sublabel;
   return (
-    <div style={{ ...cardBase, padding: "22px 24px" }}>
-      {delta !== undefined && (
-        <div className="flex h-[26px] items-center justify-end">
-          <DeltaBadge delta={delta ?? null} />
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 22,
+        padding: "22px 24px",
+        background: GLASS_BG,
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        border: `1px solid rgba(255,255,255,${glass ? 0.3 : 0.22})`,
+        boxShadow: glass
+          ? "0 22px 46px -24px rgba(76,63,140,0.6), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 0 32px -10px rgba(255,255,255,0.28)"
+          : "0 22px 46px -24px rgba(76,63,140,0.6), inset 0 1px 0 rgba(255,255,255,0.28)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        minHeight: 150,
+      }}
+    >
+      {spark ? (
+        <GlassSpark values={spark.values} />
+      ) : (
+        // No chart → soft floating glow orbs so the card still has depth and
+        // doesn't read as empty.
+        <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+          <div
+            style={{
+              position: "absolute",
+              right: -34,
+              bottom: -46,
+              width: 168,
+              height: 168,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(224,220,255,0.30), transparent 70%)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              left: -26,
+              top: -34,
+              width: 120,
+              height: 120,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(158,140,255,0.22), transparent 70%)",
+            }}
+          />
         </div>
       )}
-      <div style={{ fontSize: 12.5, fontWeight: 600, color: INK.mut, marginTop: 16 }}>{label}</div>
-      <BigValue value={parts.value} unit={parts.unit} />
-      {spark && <MiniSparkline values={spark.values} accent={spark.accent} />}
+      {glass && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            // Glossy light reflection — a bright top band + a diagonal sheen.
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.06) 24%, rgba(255,255,255,0) 46%)," +
+              "linear-gradient(115deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0) 34%)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: "50%",
+                background: "#D6D0FF",
+                boxShadow: "0 0 0 3px rgba(214,208,255,0.22)",
+              }}
+            />
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.82)" }}>{label}</span>
+          </div>
+          {topRight && <div style={{ marginRight: -10 }}>{topRight}</div>}
+        </div>
+        <div
+          className={numberFont}
+          style={{ fontSize: 40, fontWeight: 800, color: "#fff", letterSpacing: "-1.4px", marginTop: 8, lineHeight: 1 }}
+        >
+          {parts.value} <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{parts.unit}</span>
+        </div>
+        {subtitle && (
+          <div style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.72)", marginTop: 8 }}>
+            {subtitle}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -291,44 +479,83 @@ function NextTierCard({ figures }: { figures: SafeFigures }) {
   return (
     <div
       style={{
-        background: "linear-gradient(155deg,#F6F3FF 0%,#FFFFFF 60%)",
-        border: "1px solid #E7E2F8",
-        borderRadius: 24,
-        padding: "22px 24px",
-        boxShadow: "0 1px 2px rgba(31,26,58,0.04), 0 20px 44px -26px rgba(109,94,246,0.4)",
         position: "relative",
         overflow: "hidden",
+        borderRadius: 22,
+        padding: "22px 24px",
+        background: GLASS_BG,
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        border: "1px solid rgba(255,255,255,0.22)",
+        boxShadow: "0 22px 46px -24px rgba(76,63,140,0.6), inset 0 1px 0 rgba(255,255,255,0.28)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        minHeight: 150,
       }}
     >
-      <div style={{ fontSize: 12.5, fontWeight: 600, color: INK.mut, marginTop: 16 }}>Kvar till nästa nivå</div>
-      <BigValue value={parts.value} unit={parts.unit} />
-      <div style={{ position: "relative", height: 7, borderRadius: 7, background: "#EAE5FA", marginTop: 14 }}>
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <div className="flex items-center gap-2">
+          <span
+            style={{
+              width: 9,
+              height: 9,
+              borderRadius: "50%",
+              background: "#D6D0FF",
+              boxShadow: "0 0 0 3px rgba(214,208,255,0.22)",
+            }}
+          />
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.82)" }}>Kvar till nästa nivå</span>
+        </div>
+        <div
+          className={numberFont}
+          style={{ fontSize: 40, fontWeight: 800, color: "#fff", letterSpacing: "-1.4px", marginTop: 8, lineHeight: 1 }}
+        >
+          {parts.value} <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{parts.unit}</span>
+        </div>
+
+        {/* Improved progress bar — translucent glowing track/fill on the glass,
+            with a percentage label and a soft knob. */}
+        <div className="flex items-center justify-between" style={{ marginTop: 16, marginBottom: 7 }}>
+          <span style={{ fontSize: 10.5, fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
+            {atTop ? "Högsta nivån uppnådd" : `${formatKr(rev)} av ${formatKr(target)}`}
+          </span>
+          <span className={numberFont} style={{ fontSize: 11.5, fontWeight: 800, color: "#fff" }}>
+            {Math.round(pct)}%
+          </span>
+        </div>
         <div
           style={{
-            width: `${pct}%`,
-            height: "100%",
-            borderRadius: 7,
-            background: "linear-gradient(90deg,#6E5CF3,#9E8CFF)",
-            boxShadow: "0 3px 8px -2px rgba(109,94,246,0.6)",
+            position: "relative",
+            height: 9,
+            borderRadius: 9,
+            background: "rgba(255,255,255,0.18)",
+            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.18)",
           }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: `${pct}%`,
-            transform: "translate(-50%,-50%)",
-            width: 13,
-            height: 13,
-            borderRadius: "50%",
-            background: "#fff",
-            border: "3px solid #6E5CF3",
-            boxShadow: "0 2px 6px -1px rgba(109,94,246,0.6)",
-          }}
-        />
-      </div>
-      <div style={{ fontSize: 10.5, fontWeight: 600, color: INK.soft, marginTop: 8 }}>
-        {atTop ? "Högsta nivån uppnådd" : `${formatKr(rev)} av ${formatKr(target)} mål`}
+        >
+          <div
+            style={{
+              width: `${pct}%`,
+              height: "100%",
+              borderRadius: 9,
+              background: "linear-gradient(90deg, #C9C2FF, #ffffff)",
+              boxShadow: "0 0 12px -2px rgba(255,255,255,0.7)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: `${pct}%`,
+              transform: "translate(-50%,-50%)",
+              width: 14,
+              height: 14,
+              borderRadius: "50%",
+              background: "#fff",
+              boxShadow: "0 0 0 3px rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.25)",
+            }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -359,7 +586,7 @@ function AnnualSalesChart({ points }: { points: TrendPoint[] }) {
   const delta = computeDelta(rev);
 
   return (
-    <div style={{ ...cardBase, padding: "24px 26px" }}>
+    <div style={{ ...cardBase, background: LIGHT_MESH_BG, padding: "24px 26px" }}>
       <div className="mb-2 flex items-start justify-between">
         <div>
           <div style={{ fontSize: 16, fontWeight: 800, color: INK.primary, letterSpacing: "-0.4px" }}>
@@ -623,20 +850,6 @@ function MobileView({
 
   return (
     <div className="lg:hidden" style={{ paddingBottom: 24 }}>
-      {/* top bar */}
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: INK.mut }}>Välkommen tillbaka,</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: INK.primary, letterSpacing: "-0.6px" }}>Mina siffror</div>
-        </div>
-        {figures.periodExists && <StatusPill status={figures.status} />}
-      </div>
-
-      {/* month */}
-      <div className="mb-4 flex items-center justify-end">
-        <MonthPill month={month} onChange={onMonth} />
-      </div>
-
       {/* hero card */}
       <div
         style={{
@@ -662,7 +875,10 @@ function MobileView({
           }}
         />
         <div style={{ position: "relative" }}>
-          <div style={{ fontSize: 12.5, fontWeight: 600, color: "#C6C0E4" }}>Betald omsättning ex moms</div>
+          <div className="flex items-start justify-between gap-3">
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: "#C6C0E4" }}>Betald omsättning ex moms</div>
+            <MonthPill month={month} onChange={onMonth} />
+          </div>
           <div className={numberFont} style={{ fontSize: 36, fontWeight: 800, color: "#fff", letterSpacing: "-1.2px", marginTop: 5 }}>
             {revP.value} <span style={{ fontSize: 20, color: "#9d95cc" }}>{revP.unit}</span>
           </div>
@@ -834,7 +1050,7 @@ export function MyCommission({ initialMonth }: { initialMonth: string }) {
   const spark = (s: number[]) => s.slice(-8);
   const bars = trend.slice(-8);
 
-  const monthControl = <MonthPill month={month} onChange={setMonth} />;
+  const monthControl = <MonthPill month={month} onChange={setMonth} variant="soft" />;
 
   return (
     <section className="[font-family:var(--font-jakarta)]" style={{ color: INK.primary }}>
@@ -853,7 +1069,6 @@ export function MyCommission({ initialMonth }: { initialMonth: string }) {
               Din personliga försäljning &amp; provision
             </p>
           </div>
-          {monthControl}
         </header>
 
         {error && (
@@ -870,25 +1085,36 @@ export function MyCommission({ initialMonth }: { initialMonth: string }) {
           <>
             {/* KPI grid — 6 cards */}
             <div className="mb-[22px] grid gap-[22px]" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
-              <KpiCard
+              <GlassKpiCard
                 label="Betald omsättning ex moms"
                 parts={krParts(figures.revenueExVat)}
                 delta={computeDelta(revSeries)}
                 spark={{ values: spark(revSeries), accent: ACCENT.violet }}
               />
-              <KpiCard
+              <GlassKpiCard
+                variant="glass"
                 label="Intjänad provision"
                 parts={krParts(figures.earnedCommission)}
                 delta={computeDelta(commSeries)}
                 spark={{ values: spark(commSeries), accent: ACCENT.purple }}
               />
-              <KpiCard
+              <GlassKpiCard
                 label="Aktuell provisionsnivå"
                 parts={pctParts(figures.tierRatePercent)}
+                delta={computeDelta(rateSeries)}
                 spark={{ values: spark(rateSeries), accent: ACCENT.teal }}
+                topRight={monthControl}
               />
-              <KpiCard label="Utbetald provision" parts={krParts(figures.paidCommission)} />
-              <KpiCard label="Ej utbetald provision" parts={krParts(figures.unpaidCommission)} />
+              <GlassKpiCard
+                label="Utbetald provision"
+                parts={krParts(figures.paidCommission)}
+                sublabel="utbetalt hittills"
+              />
+              <GlassKpiCard
+                label="Ej utbetald provision"
+                parts={krParts(figures.unpaidCommission)}
+                sublabel="väntar på utbetalning"
+              />
               <NextTierCard figures={figures} />
             </div>
 
