@@ -9,8 +9,13 @@ import {
   markPeriodPaid,
   createAdjustment,
   getInvoiceBacking,
+  listEligibleSalespeople,
+  listPaymentCustomers,
+  recordCommissionPayment,
   type CommissionEntryItem,
   type CompanyCommissionOverviewResult,
+  type EligibleSalesperson,
+  type PaymentCustomer,
   type SalespersonCommissionRow,
   type TrendPoint,
 } from "./actions";
@@ -479,6 +484,7 @@ function CompanySection({
 
   const [adjustFor, setAdjustFor] = useState<SalespersonCommissionRow | null>(null);
   const [backingFor, setBackingFor] = useState<SalespersonCommissionRow | null>(null);
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -521,7 +527,21 @@ function CompanySection({
 
   return (
     <section className="mb-12">
-      <SectionHeader title="Företagsöversikt" subtitle="Alla säljare denna period" right={monthControl} />
+      <SectionHeader
+        title="Företagsöversikt"
+        subtitle="Alla säljare denna period"
+        right={
+          <div className="flex items-center gap-2">
+            {monthControl}
+            <button
+              onClick={() => setPaymentOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            >
+              Registrera betalning
+            </button>
+          </div>
+        }
+      />
 
       {error && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{error}</div>
@@ -669,6 +689,18 @@ function CompanySection({
       )}
 
       {backingFor && backingFor.periodId && <BackingModal seller={backingFor} onClose={() => setBackingFor(null)} />}
+
+      {paymentOpen && (
+        <RecordPaymentModal
+          onClose={() => setPaymentOpen(false)}
+          onDone={async () => {
+            setPaymentOpen(false);
+            onToast("success", "Betalning registrerad");
+            await reload();
+          }}
+          onError={(m) => onToast("error", m)}
+        />
+      )}
     </section>
   );
 }
@@ -763,6 +795,148 @@ function AdjustmentModal({
         <label className="mb-1 block text-sm font-medium text-slate-700">Anledning</label>
         <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} className={inputClass} />
       </div>
+    </ModalShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Record payment modal (admin) — standalone commission payment
+// ---------------------------------------------------------------------------
+
+function RecordPaymentModal({
+  onClose,
+  onDone,
+  onError,
+}: {
+  onClose: () => void;
+  onDone: () => void;
+  onError: (msg: string) => void;
+}) {
+  const [people, setPeople] = useState<EligibleSalesperson[]>([]);
+  const [customers, setCustomers] = useState<PaymentCustomer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [salespersonUserId, setSalespersonUserId] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [amount, setAmount] = useState("");
+  const [paidDate, setPaidDate] = useState("");
+  const [note, setNote] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const inputClass =
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 transition-shadow focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10";
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [pp, cc] = await Promise.all([listEligibleSalespeople(), listPaymentCustomers()]);
+      if (!active) return;
+      if (pp.ok) setPeople(pp.people ?? []);
+      else setErr(pp.error ?? "Kunde inte hämta säljare");
+      if (cc.ok) setCustomers(cc.customers ?? []);
+      else setErr(cc.error ?? "Kunde inte hämta kunder");
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const submit = () =>
+    startTransition(async () => {
+      setErr(null);
+      if (!salespersonUserId) return setErr("Välj en säljare.");
+      if (!customerId) return setErr("Välj en kund.");
+      const amt = parseFloat(amount.replace(",", "."));
+      if (!Number.isFinite(amt) || amt <= 0) return setErr("Ange ett belopp större än noll.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(paidDate)) return setErr("Ange ett betaldatum.");
+      const res = await recordCommissionPayment({
+        salespersonUserId,
+        customerId,
+        amountExVat: amt,
+        paidDate,
+        note: note.trim() || undefined,
+      });
+      if (!res.ok) {
+        setErr(res.error ?? "Kunde inte registrera betalning.");
+        onError(res.error ?? "Kunde inte registrera betalning.");
+        return;
+      }
+      onDone();
+    });
+
+  return (
+    <ModalShell
+      title="Registrera betalning"
+      onClose={onClose}
+      footer={
+        <>
+          <button onClick={onClose} className="rounded-lg px-4 py-2 font-medium text-slate-600 transition-colors hover:bg-slate-100">
+            Avbryt
+          </button>
+          <button
+            onClick={submit}
+            disabled={pending || loading}
+            className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {pending ? "Sparar…" : "Registrera betalning"}
+          </button>
+        </>
+      }
+    >
+      {err && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{err}</div>}
+      {loading ? (
+        <div className="p-4 text-center text-slate-400">Laddar…</div>
+      ) : (
+        <>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Säljare</label>
+            <select
+              value={salespersonUserId}
+              onChange={(e) => setSalespersonUserId(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Välj säljare…</option>
+              {people.map((p) => (
+                <option key={p.userId} value={p.userId}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Kund</label>
+            <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className={inputClass}>
+              <option value="">Välj kund…</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Belopp ex moms (kr)</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="t.ex. 12500"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Betaldatum</label>
+            <input type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} className={inputClass} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Notering (valfri)</label>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className={inputClass} />
+          </div>
+        </>
+      )}
     </ModalShell>
   );
 }

@@ -879,3 +879,141 @@ export async function getSalesTrend(
 
   return { ok: true, points };
 }
+
+// ---------------------------------------------------------------------------
+// Standalone commission payment — ADMIN ONLY
+//
+// The business has no invoices yet: an admin records a paid sale directly
+// (salesperson + customer + amount ex-VAT + paid date + optional note), which
+// the record_commission_payment RPC turns into a commission entry. All three
+// actions re-verify an active admin server-side; the RPC is itself admin-only
+// (raises 42501 otherwise). No service-role usage; inputs validated here.
+// ---------------------------------------------------------------------------
+
+export interface EligibleSalesperson {
+  userId: string;
+  name: string;
+}
+export interface ListEligibleSalespeopleResult {
+  ok: boolean;
+  error?: string;
+  people?: EligibleSalesperson[];
+}
+
+/** Active, commission-eligible salespeople for the payment dropdown. */
+export async function listEligibleSalespeople(): Promise<ListEligibleSalespeopleResult> {
+  const guard = await requireAdmin();
+  if ("error" in guard) return { ok: false, error: guard.error };
+
+  const { data, error } = await guard.supabase
+    .from("profiles")
+    .select("user_id, first_name, last_name, email")
+    .eq("commission_eligible", true)
+    .eq("is_active", true);
+
+  if (error) return { ok: false, error: error.message };
+
+  const people: EligibleSalesperson[] = (data ?? []).map((p) => {
+    const row = p as {
+      user_id: string;
+      first_name: string | null;
+      last_name: string | null;
+      email: string | null;
+    };
+    const name =
+      `${(row.first_name ?? "").trim()} ${(row.last_name ?? "").trim()}`.trim() ||
+      (row.email ?? "Okänd");
+    return { userId: row.user_id, name };
+  });
+
+  people.sort((a, b) => a.name.localeCompare(b.name, "sv"));
+  return { ok: true, people };
+}
+
+export interface PaymentCustomer {
+  id: string;
+  label: string;
+}
+export interface ListPaymentCustomersResult {
+  ok: boolean;
+  error?: string;
+  customers?: PaymentCustomer[];
+}
+
+/** Customers for the payment dropdown (capped for large tables). */
+export async function listPaymentCustomers(): Promise<ListPaymentCustomersResult> {
+  const guard = await requireAdmin();
+  if ("error" in guard) return { ok: false, error: guard.error };
+
+  const { data, error } = await guard.supabase
+    .from("customers")
+    .select("id, first_name, last_name, company_name")
+    .order("company_name", { ascending: true })
+    .limit(500);
+
+  if (error) return { ok: false, error: error.message };
+
+  const customers: PaymentCustomer[] = (data ?? []).map((c) => {
+    const row = c as {
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+      company_name: string | null;
+    };
+    const label =
+      row.company_name?.trim() ||
+      `${(row.first_name ?? "").trim()} ${(row.last_name ?? "").trim()}`.trim() ||
+      "Okänd kund";
+    return { id: row.id, label };
+  });
+
+  customers.sort((a, b) => a.label.localeCompare(b.label, "sv"));
+  return { ok: true, customers };
+}
+
+export interface RecordCommissionPaymentInput {
+  salespersonUserId: string;
+  customerId: string;
+  amountExVat: number;
+  paidDate: string;
+  note?: string;
+}
+
+/**
+ * Record a standalone commission payment via record_commission_payment. The RPC
+ * enforces admin-only, amount > 0, existing customer, eligible salesperson and
+ * unlocked period; we validate the shape here first.
+ */
+export async function recordCommissionPayment(
+  input: RecordCommissionPaymentInput
+): Promise<PeriodActionResult> {
+  const guard = await requireAdmin();
+  if ("error" in guard) return { ok: false, error: guard.error };
+
+  if (!isUuid(input?.salespersonUserId)) return { ok: false, error: "Ogiltig säljare" };
+  if (!isUuid(input?.customerId)) return { ok: false, error: "Ogiltig kund" };
+
+  const amount = num(input?.amountExVat);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { ok: false, error: "Ange ett belopp större än noll" };
+  }
+
+  const paidDate = input?.paidDate ?? "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(paidDate)) {
+    return { ok: false, error: "Ogiltigt betaldatum" };
+  }
+
+  const note = (input?.note ?? "").trim() || null;
+
+  const { error } = await guard.supabase.rpc("record_commission_payment", {
+    p_salesperson_user_id: input.salespersonUserId,
+    p_customer_id: input.customerId,
+    p_amount_ex_vat: amount,
+    p_paid_date: paidDate,
+    p_note: note,
+  });
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/sales");
+  return { ok: true };
+}
