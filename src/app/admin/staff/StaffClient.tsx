@@ -1,13 +1,16 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   inviteStaff,
   updateStaff,
   setStaffStatus,
   replaceStaffPermissions,
+  getSalespersonCommissionConfig,
+  saveSalespersonCommissionConfig,
   type StaffListItem,
+  type CommissionTierInput,
 } from "./actions";
 import {
   Select,
@@ -330,7 +333,7 @@ function DateField({
           </button>
         </PopoverTrigger>
         <PopoverContent
-          className="z-[60] w-auto rounded-2xl border border-slate-200 p-0 shadow-xl"
+          className="date-popover-content z-[60] w-auto rounded-2xl border border-slate-200 p-0 shadow-xl"
           align="start"
         >
           <Calendar
@@ -658,6 +661,156 @@ function InviteModal({
 // Detail / edit modal
 // ---------------------------------------------------------------------------
 
+/**
+ * Per-salesperson commission editor: an editable ladder (add/remove rows, own
+ * thresholds + rates) plus an optional base salary. Base salary is stored for
+ * ADMIN REFERENCE ONLY — never shown to the salesperson, never counted in their
+ * sales figures. Loads/saves via admin-only server actions.
+ */
+function CommissionSection({ userId }: { userId: string }) {
+  const [tiers, setTiers] = useState<CommissionTierInput[]>([]);
+  const [baseSalary, setBaseSalary] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setErr(null);
+    getSalespersonCommissionConfig(userId).then((res) => {
+      if (!active) return;
+      if (res.ok && res.config) {
+        setTiers(res.config.tiers);
+        setBaseSalary(res.config.baseSalary == null ? "" : String(res.config.baseSalary));
+      } else if (!res.ok) {
+        setErr(res.error ?? "Could not load commission settings.");
+      }
+      setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  const updateTier = (i: number, patch: Partial<CommissionTierInput>) =>
+    setTiers((prev) => prev.map((t, idx) => (idx === i ? { ...t, ...patch } : t)));
+
+  const addTier = () =>
+    setTiers((prev) => {
+      const last = prev[prev.length - 1];
+      const nextMin = last ? (last.maxRevenueExVat ?? last.minRevenueExVat) + 1 : 0;
+      return [...prev, { minRevenueExVat: nextMin, maxRevenueExVat: null, ratePercent: 0 }];
+    });
+
+  const removeTier = (i: number) => setTiers((prev) => prev.filter((_, idx) => idx !== i));
+
+  const save = () =>
+    startTransition(async () => {
+      setErr(null);
+      setMsg(null);
+      const res = await saveSalespersonCommissionConfig(userId, {
+        tiers,
+        baseSalary: baseSalary.trim() === "" ? null : parseFloat(baseSalary.replace(",", ".")),
+      });
+      if (!res.ok) return setErr(res.error ?? "Save failed.");
+      setMsg("Commission saved.");
+    });
+
+  const cell = "w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/10";
+
+  return (
+    <div className="pt-2 border-t border-gray-100">
+      <div className="mb-2 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-gray-500">Commission ladder</p>
+          <p className="text-[11px] text-gray-400">Own thresholds + rates per level. Falls back to the global ladder if left empty.</p>
+        </div>
+        <button
+          onClick={save}
+          disabled={pending || loading}
+          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          {pending ? "Saving…" : "Save commission"}
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="py-3 text-sm text-gray-400">Loading…</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-[1fr_1fr_5rem_2rem] gap-2 px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-gray-400">
+            <span>From (kr)</span>
+            <span>To (kr)</span>
+            <span>Rate %</span>
+            <span />
+          </div>
+          <div className="space-y-1.5">
+            {tiers.map((t, i) => (
+              <div key={i} className="grid grid-cols-[1fr_1fr_5rem_2rem] items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={t.minRevenueExVat}
+                  onChange={(e) => updateTier(i, { minRevenueExVat: e.target.value === "" ? 0 : Number(e.target.value) })}
+                  className={cell}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="∞ (open)"
+                  value={t.maxRevenueExVat ?? ""}
+                  onChange={(e) => updateTier(i, { maxRevenueExVat: e.target.value === "" ? null : Number(e.target.value) })}
+                  className={cell}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.5"
+                  value={t.ratePercent}
+                  onChange={(e) => updateTier(i, { ratePercent: e.target.value === "" ? 0 : Number(e.target.value) })}
+                  className={cell}
+                />
+                <button
+                  onClick={() => removeTier(i)}
+                  title="Remove row"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={addTier}
+            className="mt-2 text-sm px-3 py-1.5 rounded-lg border border-dashed border-gray-300 text-gray-600 hover:bg-gray-50"
+          >
+            + Add row
+          </button>
+
+          <div className="mt-4">
+            <p className="text-xs text-gray-500 mb-1">Base salary (kr) — optional</p>
+            <input
+              type="number"
+              min={0}
+              value={baseSalary}
+              onChange={(e) => setBaseSalary(e.target.value)}
+              placeholder="e.g. 25000"
+              className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/10"
+            />
+            <p className="mt-1 text-[11px] text-gray-400">Admin reference only — not shown to the salesperson and not counted in their sales figures.</p>
+          </div>
+
+          {msg && <div className="mt-3 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-700">{msg}</div>}
+          {err && <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{err}</div>}
+        </>
+      )}
+    </div>
+  );
+}
+
 function StaffDetailModal({
   row,
   isSelf,
@@ -883,6 +1036,9 @@ function StaffDetailModal({
           onSelectAll={setAllPerms}
         />
       </div>
+
+      {/* Commission ladder + base salary (only for commission-eligible members) */}
+      {commissionEligible && <CommissionSection userId={row.user_id} />}
 
       {/* Status actions */}
       <div className="pt-2 border-t border-gray-100">
