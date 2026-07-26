@@ -25,19 +25,31 @@ export function isDomainStatus(v: unknown): v is DomainStatus {
   return typeof v === "string" && DOMAIN_STATUS_SET.has(v);
 }
 
-export const DOMAIN_REGISTRARS = ["manual", "openprovider"] as const;
+// Provider owning a domain. 'openprovider' was removed in the Hostup pivot
+// (no rows/write path ever used it). The column stays named `registrar`.
+export const DOMAIN_REGISTRARS = ["manual", "hostup"] as const;
 export type DomainRegistrar = (typeof DOMAIN_REGISTRARS)[number];
+const DOMAIN_REGISTRAR_SET = new Set<string>(DOMAIN_REGISTRARS);
+export function isDomainRegistrar(v: unknown): v is DomainRegistrar {
+  return typeof v === "string" && DOMAIN_REGISTRAR_SET.has(v);
+}
 
 // ── Row shapes ───────────────────────────────────────────────────────────────
 export type Domain = {
   id: string;
   created_at: string;
   updated_at: string;
-  customer_id: string;
+  // Nullable since the Hostup pivot: a discovered/unlinked Hostup domain has no
+  // Intennze customer yet (admin-only visible via RLS).
+  customer_id: string | null;
   name: string;
+  // status/expires_at/auto_renew/nameservers/locked are a CACHE of Hostup data;
+  // Hostup is the source of truth (see the migration column comments).
   status: DomainStatus;
   registrar: DomainRegistrar;
   provider_domain_id: string | null;
+  provider_order_id: string | null;
+  last_synced_at: string | null;
   registered_at: string | null;
   expires_at: string | null;
   auto_renew: boolean;
@@ -49,7 +61,7 @@ export type Domain = {
 
 /** Columns safe to return in list/detail views — excludes nothing sensitive. */
 export const DOMAIN_COLUMNS =
-  "id, created_at, updated_at, customer_id, name, status, registrar, provider_domain_id, registered_at, expires_at, auto_renew, locked, nameservers, created_by, archived_at" as const;
+  "id, created_at, updated_at, customer_id, name, status, registrar, provider_domain_id, provider_order_id, last_synced_at, registered_at, expires_at, auto_renew, locked, nameservers, created_by, archived_at" as const;
 
 export type DomainRegistrant = {
   id: string;
