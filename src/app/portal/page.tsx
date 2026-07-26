@@ -1,15 +1,20 @@
 import { getEffectiveActor } from "@/lib/auth/customerView";
+import { getDomainsForCurrentCustomer } from "@/lib/domains/service";
 
 export const metadata = {
   title: "Portal",
 };
 
 /**
- * Simple portal overview. Intentionally has NO domain features yet (no domains,
- * DNS, billing, etc.) — this is only the customer-portal foundation.
+ * Simple portal overview. Intentionally minimal — no domain management UI, DNS,
+ * search, billing, etc. It only reads the customer's domain count through the
+ * server-side ownership rules (Phase 2A backend), showing a neutral empty state.
  */
 export default async function PortalPage() {
   const actor = await getEffectiveActor();
+
+  const domainsResult = await getDomainsForCurrentCustomer();
+  const domainCount = domainsResult.ok ? domainsResult.data.length : 0;
 
   return (
     <div className="space-y-8">
@@ -38,6 +43,17 @@ export default async function PortalPage() {
             {actor.isCustomerView
               ? "An administrator is previewing this portal on the customer's behalf."
               : "You are signed in to your customer portal."}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+            Domains
+          </h2>
+          <p className="mt-2 text-slate-300">
+            {domainCount === 0
+              ? "No domains yet"
+              : `${domainCount} ${domainCount === 1 ? "domain" : "domains"}`}
           </p>
         </div>
       </section>
