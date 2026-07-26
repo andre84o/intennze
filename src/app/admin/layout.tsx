@@ -43,6 +43,11 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
+  // Portal customers must never reach the admin shell — send them to /portal.
+  if (profile.role === "customer") {
+    redirect("/portal");
+  }
+
   const role: "admin" | "staff" = profile.role === "admin" ? "admin" : "staff";
   const commissionEligible = profile.commission_eligible === true;
   const userName =

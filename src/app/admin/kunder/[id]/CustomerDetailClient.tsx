@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { EmailInteractionItem, type EmailPreview } from "@/app/admin/crm/components/EmailInteractionItem";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from "@/utils/supabase/client";
+import { startCustomerView } from "../actions";
 import {
   Customer,
   CustomerInteraction,
@@ -152,6 +153,22 @@ export default function CustomerDetailClient({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {/* Open the customer portal in a controlled, audited customer-view.
+              The admin's real session is kept; the server verifies admin + the
+              customer before starting (customerId is never trusted alone). */}
+          <form action={startCustomerView.bind(null, customer.id)}>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+              title="Open the portal as this customer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Open portal
+            </button>
+          </form>
           <Select
             value={customer.status}
             onValueChange={(value) => handleUpdateStatus(value as CustomerStatus)}

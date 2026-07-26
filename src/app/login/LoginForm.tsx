@@ -39,7 +39,12 @@ export default function LoginForm() {
       return;
     }
 
-    router.push(redirect);
+    // Role-aware destination: customers always land in /portal; admin/staff keep
+    // the existing behaviour (honour a validated same-origin ?redirect=, else
+    // /admin). A customer never follows an /admin redirect target.
+    const destination = result.role === "customer" ? "/portal" : redirect;
+
+    router.push(destination);
     router.refresh();
   };
 

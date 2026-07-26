@@ -136,7 +136,15 @@ export async function requireActiveProfilePage(): Promise<ActiveProfileResult> {
     redirect("/login");
   }
 
-  return { user, profile, role: normalizeRole(profile) };
+  const role = normalizeRole(profile);
+
+  // Portal customers belong in /portal, never in staff/admin pages. (The /admin
+  // layout already bounces them, but keep this guard self-sufficient.)
+  if (role === "customer") {
+    redirect("/portal");
+  }
+
+  return { user, profile, role };
 }
 
 /**
