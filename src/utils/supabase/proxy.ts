@@ -11,8 +11,11 @@ export async function updateSession(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // If Supabase is not configured, block admin access
-    if (request.nextUrl.pathname.startsWith("/admin")) {
+    // If Supabase is not configured, block admin + portal access
+    if (
+      request.nextUrl.pathname.startsWith("/admin") ||
+      request.nextUrl.pathname.startsWith("/portal")
+    ) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);
@@ -24,7 +27,12 @@ export async function updateSession(request: NextRequest) {
   // /api/call/* is included so long-open Mobile Call Companion sessions get
   // their auth token refreshed on outcome/next calls (no redirect for APIs).
   const pathname = request.nextUrl.pathname;
-  if (!pathname.startsWith("/admin") && pathname !== "/login" && !pathname.startsWith("/api/call")) {
+  if (
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/portal") &&
+    pathname !== "/login" &&
+    !pathname.startsWith("/api/call")
+  ) {
     return supabaseResponse;
   }
 
@@ -55,8 +63,13 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected routes - redirect to login if not authenticated
-  if (request.nextUrl.pathname.startsWith("/admin")) {
+  // Protected routes - redirect to login if not authenticated. Role gating for
+  // /admin and /portal happens in their respective layouts (this only checks
+  // that a session exists, keeping the middleware free of DB queries).
+  if (
+    request.nextUrl.pathname.startsWith("/admin") ||
+    request.nextUrl.pathname.startsWith("/portal")
+  ) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";

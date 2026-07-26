@@ -45,7 +45,14 @@ function getClientIpFromHeaders(h: Headers): string {
   return "anonymous";
 }
 
-export type SignInResult = { ok: boolean; rateLimited?: boolean };
+export type SignInResult = {
+  ok: boolean;
+  rateLimited?: boolean;
+  // Normalised role, only present on success — drives the post-login
+  // destination (customer -> /portal, admin/staff -> /admin). Never leaked on
+  // the generic-failure paths.
+  role?: "admin" | "staff" | "customer";
+};
 
 // Server-side sign-in. Resolves username -> email internally and signs in via
 // the @supabase/ssr server client so the auth session cookie is set on the
@@ -97,9 +104,10 @@ export async function signIn(identifier: string, password: string): Promise<Sign
   // password — no "this account exists but is disabled" oracle.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_active, account_status, employment_start, employment_end")
+    .select("role, is_active, account_status, employment_start, employment_end")
     .eq("user_id", data.user.id)
     .maybeSingle<{
+      role: string | null;
       is_active: boolean | null;
       account_status: string | null;
       employment_start: string | null;
@@ -123,5 +131,12 @@ export async function signIn(identifier: string, password: string): Promise<Sign
     return { ok: false };
   }
 
-  return { ok: true };
+  const role =
+    profile?.role === "admin"
+      ? "admin"
+      : profile?.role === "customer"
+      ? "customer"
+      : "staff";
+
+  return { ok: true, role };
 }

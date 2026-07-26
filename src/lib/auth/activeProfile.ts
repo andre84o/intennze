@@ -19,7 +19,7 @@ import "server-only";
  * CONTACT_TO, no service-role usage here.
  */
 
-export type ProfileRole = "admin" | "staff";
+export type ProfileRole = "admin" | "staff" | "customer";
 
 /** Fields required to evaluate the "active profile" rule. */
 export type GuardProfile = {
@@ -59,7 +59,14 @@ export function isActiveProfile(
   );
 }
 
-/** Normalise the free-text `role` column to the two roles the app recognises. */
+/**
+ * Normalise the free-text `role` column to the roles the app recognises.
+ * IMPORTANT: `customer` must NOT collapse into `staff` — a customer that reads
+ * as staff would pass the staff-level guards. Anything unknown still defaults to
+ * `staff` (the historical behaviour for the two internal roles).
+ */
 export function normalizeRole(profile: GuardProfile): ProfileRole {
-  return profile.role === "admin" ? "admin" : "staff";
+  if (profile.role === "admin") return "admin";
+  if (profile.role === "customer") return "customer";
+  return "staff";
 }

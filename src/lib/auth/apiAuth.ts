@@ -134,5 +134,15 @@ export async function requireAdminApi(): Promise<ApiAuthResult> {
  * 401 if unauthenticated; 403 if the profile is inactive/suspended/ended.
  */
 export async function requireActiveProfileApi(): Promise<ApiAuthResult> {
-  return resolveActiveCaller();
+  const result = await resolveActiveCaller();
+  if (!result.ok) return result;
+
+  // Staff/admin CRM & customer flows only. Portal customers are active profiles
+  // but are NOT authorized on these internal routes — reject them explicitly so
+  // adding the `customer` role never widens access to staff endpoints.
+  if (result.role === "customer") {
+    return forbidden();
+  }
+
+  return result;
 }
