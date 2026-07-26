@@ -261,7 +261,10 @@ begin;
   end $$;
 rollback;
 
--- D11 · only admin may set customers.portal_user_id (protect_customer_columns)
+-- D11 · a non-admin (staff) cannot set customers.portal_user_id. Whether the
+--   attempt is blocked by RLS (0 rows affected) or by the protect_customer_columns
+--   trigger (raise), the security property is identical: the link must NOT change.
+--   We assert the outcome (link still unset), not the mechanism.
 begin;
   insert into auth.users(id,email) values
     ('00000000-0000-0000-0000-0000000000a0','adm@x.se'),
@@ -278,12 +281,19 @@ begin;
             '00000000-0000-0000-0000-000000000051','00000000-0000-0000-0000-000000000051');
   set local role authenticated;
   set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000051';  -- staff owner
-  do $$ declare ok boolean:=false; begin
+  do $$ begin
     begin
       update public.customers set portal_user_id='00000000-0000-0000-0000-0000000000d1'
-        where id='00000000-0000-0000-0000-0000000000c1'; ok:=true;
-    exception when sqlstate 'P0001' then ok:=false; end;
-    if ok then raise exception 'D11 FAIL: staff set portal_user_id'; end if;
+        where id='00000000-0000-0000-0000-0000000000c1';
+    exception when others then null;  -- a trigger raise is an acceptable block
+    end;
+  end $$;
+  -- verify as admin: the portal link must still be unset
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-0000000000a0';
+  do $$ begin
+    if (select portal_user_id from public.customers
+          where id='00000000-0000-0000-0000-0000000000c1') is not null
+      then raise exception 'D11 FAIL: non-admin changed portal_user_id'; end if;
   end $$;
 rollback;
 

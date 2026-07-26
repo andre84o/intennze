@@ -248,30 +248,30 @@ begin
   end if;
 
   if tg_op = 'UPDATE' then
-    if new.first_name    is distinct from old.first_name    then changed := changed || 'first_name'; end if;
-    if new.last_name     is distinct from old.last_name     then changed := changed || 'last_name'; end if;
-    if new.organization  is distinct from old.organization  then changed := changed || 'organization'; end if;
-    if new.email         is distinct from old.email         then changed := changed || 'email'; end if;
-    if new.phone         is distinct from old.phone         then changed := changed || 'phone'; end if;
-    if new.address_line1 is distinct from old.address_line1 then changed := changed || 'address_line1'; end if;
-    if new.address_line2 is distinct from old.address_line2 then changed := changed || 'address_line2'; end if;
-    if new.city          is distinct from old.city          then changed := changed || 'city'; end if;
-    if new.postal_code   is distinct from old.postal_code   then changed := changed || 'postal_code'; end if;
-    if new.state         is distinct from old.state         then changed := changed || 'state'; end if;
-    if new.country_code  is distinct from old.country_code  then changed := changed || 'country_code'; end if;
+    if new.first_name    is distinct from old.first_name    then changed := changed || 'first_name'::text; end if;
+    if new.last_name     is distinct from old.last_name     then changed := changed || 'last_name'::text; end if;
+    if new.organization  is distinct from old.organization  then changed := changed || 'organization'::text; end if;
+    if new.email         is distinct from old.email         then changed := changed || 'email'::text; end if;
+    if new.phone         is distinct from old.phone         then changed := changed || 'phone'::text; end if;
+    if new.address_line1 is distinct from old.address_line1 then changed := changed || 'address_line1'::text; end if;
+    if new.address_line2 is distinct from old.address_line2 then changed := changed || 'address_line2'::text; end if;
+    if new.city          is distinct from old.city          then changed := changed || 'city'::text; end if;
+    if new.postal_code   is distinct from old.postal_code   then changed := changed || 'postal_code'::text; end if;
+    if new.state         is distinct from old.state         then changed := changed || 'state'::text; end if;
+    if new.country_code  is distinct from old.country_code  then changed := changed || 'country_code'::text; end if;
     if array_length(changed, 1) is null then return new; end if;
   else -- INSERT: record which fields were provided (names only)
-    if new.first_name    is not null then changed := changed || 'first_name'; end if;
-    if new.last_name     is not null then changed := changed || 'last_name'; end if;
-    if new.organization  is not null then changed := changed || 'organization'; end if;
-    if new.email         is not null then changed := changed || 'email'; end if;
-    if new.phone         is not null then changed := changed || 'phone'; end if;
-    if new.address_line1 is not null then changed := changed || 'address_line1'; end if;
-    if new.address_line2 is not null then changed := changed || 'address_line2'; end if;
-    if new.city          is not null then changed := changed || 'city'; end if;
-    if new.postal_code   is not null then changed := changed || 'postal_code'; end if;
-    if new.state         is not null then changed := changed || 'state'; end if;
-    if new.country_code  is not null then changed := changed || 'country_code'; end if;
+    if new.first_name    is not null then changed := changed || 'first_name'::text; end if;
+    if new.last_name     is not null then changed := changed || 'last_name'::text; end if;
+    if new.organization  is not null then changed := changed || 'organization'::text; end if;
+    if new.email         is not null then changed := changed || 'email'::text; end if;
+    if new.phone         is not null then changed := changed || 'phone'::text; end if;
+    if new.address_line1 is not null then changed := changed || 'address_line1'::text; end if;
+    if new.address_line2 is not null then changed := changed || 'address_line2'::text; end if;
+    if new.city          is not null then changed := changed || 'city'::text; end if;
+    if new.postal_code   is not null then changed := changed || 'postal_code'::text; end if;
+    if new.state         is not null then changed := changed || 'state'::text; end if;
+    if new.country_code  is not null then changed := changed || 'country_code'::text; end if;
   end if;
 
   perform public.log_audit('domain.registrant_changed','domain', new.domain_id::text, null,
