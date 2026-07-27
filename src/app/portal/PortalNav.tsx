@@ -15,6 +15,7 @@ const LINKS: { href: string; label: string }[] = [
   { href: "/portal", label: "Översikt" },
   { href: "/portal/domains", label: "Domäner" },
   { href: "/portal/domains/search", label: "Sök domän" },
+  { href: "/portal/domains/checkout", label: "Kundkorg" },
   { href: "/portal/domains/orders", label: "Beställningar" },
 ];
 

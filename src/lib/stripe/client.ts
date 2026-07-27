@@ -49,16 +49,22 @@ export function getWebhookSecret(): string {
   return secret;
 }
 
-export type CreateCheckoutSessionInput = {
-  orderId: string;
+export type CheckoutLineItem = {
   domainName: string;
   operation: string;
   years: number;
   /** GROSS amount incl. VAT, integer minor units. Server-computed — never from the browser. */
   amountGrossMinor: number;
+};
+
+export type CreateCheckoutSessionInput = {
+  /** One or more domain line items (a cart). Each is priced at its gross amount. */
+  items: CheckoutLineItem[];
   currency: string; // lowercase ISO, e.g. "sek"
   successUrl: string;
   cancelUrl: string;
+  /** Opaque reference for traceability (e.g. the first order id). Settlement is by session id. */
+  reference?: string;
   customerEmail?: string | null;
 };
 
@@ -68,35 +74,35 @@ export type CheckoutSessionResult = {
 };
 
 /**
- * Create a TEST-mode Checkout Session for one domain order. A single line item
- * priced at the already-VAT-inclusive gross amount (automatic tax is NOT enabled,
- * so Stripe adds nothing on top). The order id travels in metadata +
- * client_reference_id so the webhook can settle exactly this order.
+ * Create a TEST-mode Checkout Session for a domain cart. Each item is one line,
+ * priced at its already-VAT-inclusive gross amount (automatic tax is NOT enabled,
+ * so Stripe adds nothing on top). All orders in this session share its id, so the
+ * webhook settles every order for the session together (see mark_domain_order_paid).
  */
 export async function createCheckoutSession(
   input: CreateCheckoutSessionInput
 ): Promise<CheckoutSessionResult> {
+  if (!input.items?.length) {
+    throw new StripeConfigError("Checkout requires at least one item.");
+  }
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: input.currency,
-          unit_amount: input.amountGrossMinor,
-          product_data: {
-            name: `Domän ${input.domainName}`,
-            description: `${input.operation} · ${input.years} år (inkl. moms)`,
-          },
+    line_items: input.items.map((it) => ({
+      quantity: 1,
+      price_data: {
+        currency: input.currency,
+        unit_amount: it.amountGrossMinor,
+        product_data: {
+          name: `Domän ${it.domainName}`,
+          description: `${it.operation} · ${it.years} år (inkl. moms)`,
         },
       },
-    ],
+    })),
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
-    client_reference_id: input.orderId,
-    metadata: { order_id: input.orderId },
-    payment_intent_data: { metadata: { order_id: input.orderId } },
+    ...(input.reference ? { client_reference_id: input.reference } : {}),
+    metadata: { item_count: String(input.items.length) },
     ...(input.customerEmail ? { customer_email: input.customerEmail } : {}),
   });
 

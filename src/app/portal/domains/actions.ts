@@ -3,6 +3,7 @@
 import { searchDomainsForCustomer, type SearchInput } from "@/lib/domains/search-service";
 import { refreshDomainStatusForCustomer } from "@/lib/domains/portal-service";
 import { prepareDomainQuote, type PrepareQuoteInput } from "@/lib/domains/quote-service";
+import { addToCart, removeFromCart, readCartView, type AddToCartInput } from "@/lib/domains/cart-service";
 import { createDomainCheckout, getCustomerDomainOrderStatus } from "@/lib/domains/checkout-service";
 
 /**
@@ -24,6 +25,21 @@ export async function refreshDomainStatus(localDomainId: string) {
 /** Prepare a domain quote (signed cookie). Creates no order. */
 export async function prepareQuote(input: PrepareQuoteInput) {
   return prepareDomainQuote(input);
+}
+
+/** Add a domain to the reserved cart (signed cookie). Creates no order. */
+export async function addDomainToCart(input: AddToCartInput) {
+  return addToCart(input);
+}
+
+/** Remove a domain from the cart. */
+export async function removeDomainFromCart(domainName: string) {
+  return removeFromCart(domainName);
+}
+
+/** Read the current cart (pruned of expired reservations). */
+export async function getCart() {
+  return readCartView();
 }
 
 /**

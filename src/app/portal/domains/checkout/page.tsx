@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { getCheckoutSummary } from "@/lib/domains/checkout-service";
-import { formatMinor } from "@/lib/domains/money";
-import { operationLabel } from "../orders/ui";
 import CheckoutClient from "./CheckoutClient";
 
-export const metadata = { title: "Kassa | Portal" };
+export const metadata = { title: "Kundkorg | Portal" };
 
 /**
- * Domain checkout. Reads the prepared quote and shows the SERVER-recomputed price
- * (never a browser value). The "Betala" button opens a Stripe TEST-mode session.
- * No live payment, no Hostup order is created.
+ * Domain cart + checkout. Reads the reserved cart and shows the SERVER-recomputed
+ * prices (never a browser value). "Betala" opens a Stripe TEST-mode session for
+ * the whole cart. No live payment, no Hostup order is created.
  */
 export default async function CheckoutPage() {
   const res = await getCheckoutSummary();
@@ -17,7 +15,7 @@ export default async function CheckoutPage() {
   if (!res.ok) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-slate-900">Kassa</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Kundkorg</h1>
         <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           {res.error}
         </div>
@@ -32,52 +30,10 @@ export default async function CheckoutPage() {
   }
 
   const s = res.data;
-  const priced = s.priceConfigured && s.netAmountMinor != null && s.grossAmountMinor != null;
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold text-slate-900">Kassa</h1>
-        <p className="text-slate-500">Granska din beställning innan du betalar. Betalning sker i testläge.</p>
-      </header>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <dl className="space-y-3 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-slate-500">Domän</dt>
-            <dd className="font-medium text-slate-900">{s.domainName}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-slate-500">Åtgärd</dt>
-            <dd className="text-slate-700">{operationLabel(s.operation)}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-slate-500">Period</dt>
-            <dd className="text-slate-700">{s.years} år</dd>
-          </div>
-
-          {priced ? (
-            <>
-              <div className="mt-2 flex justify-between gap-4 border-t border-slate-200 pt-3">
-                <dt className="text-slate-500">Pris exkl. moms</dt>
-                <dd className="text-slate-700">{formatMinor(s.netAmountMinor, s.currencyCode)}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Moms</dt>
-                <dd className="text-slate-700">{formatMinor(s.vatAmountMinor, s.currencyCode)}</dd>
-              </div>
-              <div className="flex justify-between gap-4 border-t border-slate-200 pt-3 text-base">
-                <dt className="font-medium text-slate-600">Totalt</dt>
-                <dd className="font-semibold text-slate-900">{formatMinor(s.grossAmountMinor, s.currencyCode)}</dd>
-              </div>
-            </>
-          ) : (
-            <div className="mt-2 border-t border-slate-200 pt-3 text-amber-700">
-              Priset för denna domän är inte konfigurerat ännu. Kontakta oss så hjälper vi dig.
-            </div>
-          )}
-        </dl>
-      </div>
+      <h1 className="text-2xl font-bold text-slate-900">Kundkorg</h1>
 
       {s.isCustomerView && (
         <div role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
@@ -86,7 +42,10 @@ export default async function CheckoutPage() {
       )}
 
       <CheckoutClient
-        canPay={priced}
+        items={s.items}
+        currencyCode={s.currencyCode}
+        totalVatMinor={s.totalVatMinor}
+        totalGrossMinor={s.totalGrossMinor}
         isCustomerView={s.isCustomerView}
         registrant={s.registrant}
         missingFields={s.missingFields}

@@ -1,8 +1,8 @@
 import "server-only";
 import { getEffectiveActor, type EffectiveActor } from "@/lib/auth/customerView";
 import type { ServiceResult } from "@/lib/domains/service";
-import { readDomainQuote } from "@/lib/domains/quote-service";
-import { isQuoteExpired } from "@/lib/domains/quote";
+import { readCartForCheckout, clearCart } from "@/lib/domains/cart-service";
+import { cartTotals } from "@/lib/domains/cart";
 import { loadActiveRules, customerPricingFor } from "@/lib/domains/pricing-service";
 import { tldOf } from "@/lib/domains/normalize";
 import { checkDomainAvailability, isHostupConfigured } from "@/lib/hostup/client";
@@ -165,15 +165,26 @@ async function priceForQuote(
 }
 
 // ── checkout summary (server-recomputed price for display) ────────────────────
-export type CheckoutSummary = {
+export type CheckoutItem = {
   domainName: string;
   operation: string;
   years: number;
-  currencyCode: string;
   priceConfigured: boolean;
   netAmountMinor: number | null;
   vatAmountMinor: number | null;
   grossAmountMinor: number | null;
+  /** Reservation expiry (ms since epoch) so the UI can count down. */
+  expiresAtMs: number;
+};
+
+export type CheckoutSummary = {
+  items: CheckoutItem[];
+  currencyCode: string;
+  totalNetMinor: number;
+  totalVatMinor: number;
+  totalGrossMinor: number;
+  /** Items with a configured price — the only ones that are payable. */
+  payableCount: number;
   /** True when an admin is viewing as the customer — the flow is visible but not payable. */
   isCustomerView: boolean;
   /** The customer's existing contact details, pre-filled for the form. */
@@ -187,23 +198,46 @@ export async function getCheckoutSummary(): Promise<ServiceResult<CheckoutSummar
   if (!gate.ok) return gate;
   const actor = gate.actor;
 
-  const quote = await readDomainQuote();
-  if (!quote || isQuoteExpired(quote, Date.now())) {
-    return fail("Din förberedda beställning har gått ut. Sök domänen igen.", 410);
-  }
-  const price = await priceForQuote(actor, quote);
-  const registrant = await fetchCustomerContact(actor);
-  return {
-    ok: true,
-    data: {
-      domainName: quote.domainName,
-      operation: quote.operation,
-      years: quote.years,
-      currencyCode: price.currency,
+  const cart = await readCartForCheckout();
+  if (cart.items.length === 0) return fail("Kundkorgen är tom.", 410);
+
+  // Recompute every item's price SERVER-SIDE (never the cookie amount).
+  const items: CheckoutItem[] = [];
+  let currencyCode = "SEK";
+  for (const it of cart.items) {
+    const price = await priceForQuote(actor, { domainName: it.domainName, years: it.years, premium: it.premium });
+    currencyCode = price.currency;
+    items.push({
+      domainName: it.domainName,
+      operation: it.operation,
+      years: it.years,
       priceConfigured: price.priceConfigured && !!price.net,
       netAmountMinor: price.net?.netAmountMinor ?? null,
       vatAmountMinor: price.net?.vatAmountMinor ?? null,
       grossAmountMinor: price.net?.grossAmountMinor ?? null,
+      expiresAtMs: it.expiresAtMs,
+    });
+  }
+  const totals = cartTotals({
+    items: cart.items.map((it, i) => ({
+      ...it,
+      priceConfigured: items[i].priceConfigured,
+      netAmountMinor: items[i].netAmountMinor,
+      vatAmountMinor: items[i].vatAmountMinor,
+      grossAmountMinor: items[i].grossAmountMinor,
+    })),
+  });
+
+  const registrant = await fetchCustomerContact(actor);
+  return {
+    ok: true,
+    data: {
+      items,
+      currencyCode,
+      totalNetMinor: totals.netAmountMinor,
+      totalVatMinor: totals.vatAmountMinor,
+      totalGrossMinor: totals.grossAmountMinor,
+      payableCount: totals.priceable,
       isCustomerView: actor.isCustomerView,
       registrant,
       missingFields: missingRegistrantFields(registrant),
@@ -211,9 +245,9 @@ export async function getCheckoutSummary(): Promise<ServiceResult<CheckoutSummar
   };
 }
 
-// ── create checkout (recompute price → order → Stripe session) ────────────────
+// ── create checkout (recompute price → N orders → one Stripe session) ─────────
 
-export type CreateCheckoutResult = { url: string; orderId: string };
+export type CreateCheckoutResult = { url: string };
 
 export async function createDomainCheckout(
   registrantInput: unknown
@@ -229,82 +263,83 @@ export async function createDomainCheckout(
   const registrant = validateRegistrantContact(registrantInput);
   if (!registrant.ok) return fail(registrant.error, 400);
 
-  // 1-2. Validate the prepared quote (signed cookie; not expired).
-  const quote = await readDomainQuote();
-  if (!quote || isQuoteExpired(quote, Date.now())) {
-    return fail("Din förberedda beställning har gått ut. Sök domänen igen.", 410);
-  }
+  // 1. Read the cart (signed cookie; expired reservations already pruned).
+  const cart = await readCartForCheckout();
+  if (cart.items.length === 0) return fail("Kundkorgen är tom.", 410);
 
-  // 3. Recheck availability (when Hostup is configured).
-  if (isHostupConfigured()) {
-    try {
-      const avail = await checkDomainAvailability(quote.domainName);
-      const registerable =
-        quote.operation === "register"
-          ? avail.state === "available" && avail.actions.canRegister.allowed
-          : avail.actions.canTransfer.allowed;
-      if (!registerable) {
-        return fail("Domänen är inte längre tillgänglig för denna åtgärd.", 409);
-      }
-    } catch {
-      return fail("Kunde inte bekräfta tillgänglighet just nu. Försök igen.", 502);
-    }
-  }
-
-  // 4. Recompute the customer price SERVER-SIDE (never trust the cookie amount).
   const currency = "SEK";
-  const price = await priceForQuote(actor, quote);
-  const tld = price.tld;
-  const net: VatSplit | null = price.net;
-  if (!price.priceConfigured || !net || net.grossAmountMinor <= 0) {
-    return fail("Priset är inte konfigurerat för denna domän. Kontakta oss.", 409);
+  const orderIds: string[] = [];
+  const lineItems: { domainName: string; operation: string; years: number; amountGrossMinor: number }[] = [];
+
+  // 2. Per item: recheck availability, recompute price, create a DRAFT order.
+  for (const it of cart.items) {
+    if (isHostupConfigured()) {
+      try {
+        const avail = await checkDomainAvailability(it.domainName);
+        const registerable =
+          it.operation === "register"
+            ? avail.state === "available" && avail.actions.canRegister.allowed
+            : avail.actions.canTransfer.allowed;
+        if (!registerable) return fail(`${it.domainName} är inte längre tillgänglig.`, 409);
+      } catch {
+        return fail("Kunde inte bekräfta tillgänglighet just nu. Försök igen.", 502);
+      }
+    }
+
+    const price = await priceForQuote(actor, { domainName: it.domainName, years: it.years, premium: it.premium });
+    const net: VatSplit | null = price.net;
+    if (!price.priceConfigured || !net || net.grossAmountMinor <= 0) {
+      return fail(`Priset är inte satt för ${it.domainName}.`, 409);
+    }
+
+    const snapshot = {
+      domainName: it.domainName,
+      tld: price.tld,
+      operation: it.operation,
+      years: it.years,
+      currencyCode: currency,
+      net: net.netAmountMinor,
+      vat: net.vatAmountMinor,
+      gross: net.grossAmountMinor,
+    };
+    const { data: orderId, error: createErr } = await actor.supabase.rpc("create_domain_order", {
+      p_domain_name: it.domainName,
+      p_operation: it.operation,
+      p_years: it.years,
+      p_net_amount_minor: net.netAmountMinor,
+      p_vat_amount_minor: net.vatAmountMinor,
+      p_gross_amount_minor: net.grossAmountMinor,
+      p_vat_rate_basis_points: net.vatRateBasisPoints,
+      p_quote_snapshot: snapshot,
+      p_currency_code: currency,
+      // Paying caller is always a REAL customer; customer_id is derived server-side.
+      p_customer_id: null,
+      p_registrant_details: registrant.value,
+    });
+    if (createErr || typeof orderId !== "string") {
+      console.error("[checkout.createOrder]", createErr?.message ?? "no id");
+      return fail("Kunde inte skapa beställningen.", 500);
+    }
+    orderIds.push(orderId);
+    lineItems.push({
+      domainName: it.domainName,
+      operation: it.operation,
+      years: it.years,
+      amountGrossMinor: net.grossAmountMinor,
+    });
   }
 
-  // 5. Create the local order (DRAFT). customer_id is derived server-side by the RPC.
-  const snapshot = {
-    domainName: quote.domainName,
-    tld,
-    operation: quote.operation,
-    years: quote.years,
-    currencyCode: currency,
-    net: net.netAmountMinor,
-    vat: net.vatAmountMinor,
-    gross: net.grossAmountMinor,
-  };
-  const { data: orderId, error: createErr } = await actor.supabase.rpc("create_domain_order", {
-    p_domain_name: quote.domainName,
-    p_operation: quote.operation,
-    p_years: quote.years,
-    p_net_amount_minor: net.netAmountMinor,
-    p_vat_amount_minor: net.vatAmountMinor,
-    p_gross_amount_minor: net.grossAmountMinor,
-    p_vat_rate_basis_points: net.vatRateBasisPoints,
-    p_quote_snapshot: snapshot,
-    p_currency_code: currency,
-    // A paying caller is always a REAL customer (admin-in-view is blocked above),
-    // so customer_id is derived server-side by the RPC from auth.uid().
-    p_customer_id: null,
-    p_registrant_details: registrant.value,
-  });
-  if (createErr || typeof orderId !== "string") {
-    console.error("[checkout.createOrder]", createErr?.message ?? "no id");
-    return fail("Kunde inte skapa beställningen.", 500);
-  }
-
-  // 6. Create the Stripe TEST-mode Checkout Session (amount = server gross).
+  // 3. Create ONE Stripe TEST-mode session for the whole cart (server gross amounts).
   const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "");
   if (!site) return fail("Sajt-URL saknas i konfigurationen.", 503);
   let session;
   try {
     session = await createCheckoutSession({
-      orderId,
-      domainName: quote.domainName,
-      operation: quote.operation,
-      years: quote.years,
-      amountGrossMinor: net.grossAmountMinor,
+      items: lineItems,
       currency: currency.toLowerCase(),
-      successUrl: `${site}/portal/domains/checkout/success?order=${orderId}`,
-      cancelUrl: `${site}/portal/domains/checkout/cancel?order=${orderId}`,
+      reference: orderIds[0],
+      successUrl: `${site}/portal/domains/checkout/success`,
+      cancelUrl: `${site}/portal/domains/checkout/cancel`,
       customerEmail: actor.user?.email ?? null,
     });
   } catch (err) {
@@ -312,21 +347,26 @@ export async function createDomainCheckout(
     return fail("Kunde inte starta betalningen.", 502);
   }
 
-  // Attach the session and move DRAFT → CHECKOUT_CREATED (ownership re-checked in the RPC).
-  const { error: attachErr } = await actor.supabase.rpc("attach_domain_order_checkout", {
-    p_order_id: orderId,
-    p_session_id: session.sessionId,
-  });
-  if (attachErr) {
-    console.error("[checkout.attach]", attachErr.message);
-    return fail("Kunde inte förbereda betalningen.", 500);
+  // 4. Attach the shared session to every order (DRAFT → CHECKOUT_CREATED).
+  for (const orderId of orderIds) {
+    const { error: attachErr } = await actor.supabase.rpc("attach_domain_order_checkout", {
+      p_order_id: orderId,
+      p_session_id: session.sessionId,
+    });
+    if (attachErr) {
+      console.error("[checkout.attach]", attachErr.message);
+      return fail("Kunde inte förbereda betalningen.", 500);
+    }
   }
 
+  // 5. Empty the cart now that the session owns the reservations.
+  await clearCart();
+
   await logCustomerEvent(actor, "CUSTOMER_DOMAIN_CHECKOUT_CREATED", {
-    metadata: { tld, operation: quote.operation, years: quote.years },
+    metadata: { item_count: orderIds.length },
   });
 
-  return { ok: true, data: { url: session.url, orderId } };
+  return { ok: true, data: { url: session.url } };
 }
 
 // ── ownership-scoped reads ────────────────────────────────────────────────────
