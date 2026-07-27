@@ -24,13 +24,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const OPERATIONS = ["register", "renew", "transfer"] as const;
-const CALC_TYPES = ["fixed", "fixed_markup", "percentage_markup", "fixed_and_percentage"] as const;
+const CALC_TYPES = ["percentage_markup", "fixed_markup"] as const;
 const OP_LABEL: Record<string, string> = { register: "Registrering", renew: "Förnyelse", transfer: "Transfer" };
 const CALC_LABEL: Record<string, string> = {
-  fixed: "Fast kundpris",
   fixed_markup: "Fast påslag",
   percentage_markup: "Procentpåslag",
-  fixed_and_percentage: "Fast + procent",
 };
 const PINNED_TLDS = ["se", "nu", "com"];
 
@@ -137,7 +135,7 @@ type FormState = {
 const EMPTY: FormState = {
   editingId: null,
   operation: "register",
-  calculationType: "fixed",
+  calculationType: "percentage_markup",
   editingTld: null,
   currencyCode: "SEK",
   fixedKr: "",
@@ -163,6 +161,7 @@ export default function PricingRulesClient({
   const [form, setForm] = useState<FormState>(EMPTY);
   const [error, setError] = useState<string | null>(initialError);
   const [notice, setNotice] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
   const [pending, startTransition] = useTransition();
 
   // TLD multi-select (create mode only).
@@ -260,6 +259,11 @@ export default function PricingRulesClient({
     setSelectedTlds((prev) => (prev.includes(tld) ? prev.filter((t) => t !== tld) : [...prev, tld]));
   };
   const save = () => {
+    const errs: Record<string, boolean> = {};
+    if (form.calculationType === "percentage_markup" && !form.percent.trim()) errs.percent = true;
+    if (form.calculationType === "fixed_markup" && !form.markupFixedKr.trim()) errs.markupFixedKr = true;
+    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+    setFieldErrors({});
     startTransition(async () => {
       setError(null);
       setNotice(null);
@@ -384,9 +388,8 @@ export default function PricingRulesClient({
     });
   };
 
-  const showFixed = form.calculationType === "fixed";
-  const showFixedMarkup = form.calculationType === "fixed_markup" || form.calculationType === "fixed_and_percentage";
-  const showPercent = form.calculationType === "percentage_markup" || form.calculationType === "fixed_and_percentage";
+  const showFixedMarkup = form.calculationType === "fixed_markup";
+  const showPercent = form.calculationType === "percentage_markup";
   const isEditing = !!form.editingId;
 
   return (
@@ -514,7 +517,7 @@ export default function PricingRulesClient({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <label className={labelCls}>Beräkningsmetod</label>
-                <Select value={form.calculationType} onValueChange={(v) => set({ calculationType: v })}>
+                <Select value={form.calculationType} onValueChange={(v) => { set({ calculationType: v }); setFieldErrors({}); }}>
                   <SelectTrigger className={inputCls}>
                     <SelectValue />
                   </SelectTrigger>
@@ -526,28 +529,28 @@ export default function PricingRulesClient({
                 </Select>
               </div>
 
-              {showFixed && (
-                <>
-                  <div>
-                    <label className={labelCls}>Fast kundpris (kr, exkl. moms)</label>
-                    <input className={inputCls} inputMode="decimal" placeholder="149.00" value={form.fixedKr} onChange={(e) => set({ fixedKr: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Gäller antal år</label>
-                    <input className={inputCls} inputMode="numeric" value={form.fixedPriceYears} onChange={(e) => set({ fixedPriceYears: e.target.value })} />
-                  </div>
-                </>
-              )}
               {showFixedMarkup && (
                 <div>
                   <label className={labelCls}>Fast påslag (kr)</label>
-                  <input className={inputCls} inputMode="decimal" placeholder="50.00" value={form.markupFixedKr} onChange={(e) => set({ markupFixedKr: e.target.value })} />
+                  <input
+                    className={`${inputCls} ${fieldErrors.markupFixedKr ? "border-red-400 focus:border-red-400 focus:ring-red-400/10" : ""}`}
+                    inputMode="decimal"
+                    placeholder="50.00"
+                    value={form.markupFixedKr}
+                    onChange={(e) => { set({ markupFixedKr: e.target.value }); if (e.target.value.trim()) setFieldErrors((p) => ({ ...p, markupFixedKr: false })); }}
+                  />
                 </div>
               )}
               {showPercent && (
                 <div>
                   <label className={labelCls}>Procentpåslag (%)</label>
-                  <input className={inputCls} inputMode="decimal" placeholder="20" value={form.percent} onChange={(e) => set({ percent: e.target.value })} />
+                  <input
+                    className={`${inputCls} ${fieldErrors.percent ? "border-red-400 focus:border-red-400 focus:ring-red-400/10" : ""}`}
+                    inputMode="decimal"
+                    placeholder="20"
+                    value={form.percent}
+                    onChange={(e) => { set({ percent: e.target.value }); if (e.target.value.trim()) setFieldErrors((p) => ({ ...p, percent: false })); }}
+                  />
                 </div>
               )}
               <div>
