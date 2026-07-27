@@ -27,12 +27,13 @@ export async function prepareQuote(input: PrepareQuoteInput) {
 }
 
 /**
- * Validate the prepared quote, recheck availability, create a local order and a
- * Stripe TEST-mode Checkout Session. Returns the Stripe URL (the client redirects).
- * Creates NO Hostup order and captures NO live payment.
+ * Validate the prepared quote + registrant, recheck availability, create a local
+ * order and a Stripe TEST-mode Checkout Session. Returns the Stripe URL (the
+ * client redirects). Only a real logged-in CUSTOMER may pay (admin-in-view is
+ * blocked server-side). Creates NO Hostup order and captures NO live payment.
  */
-export async function createCheckout() {
-  return createDomainCheckout();
+export async function createCheckout(registrant: unknown) {
+  return createDomainCheckout(registrant);
 }
 
 /** Poll one owned order's status (the paid state comes from the webhook). */

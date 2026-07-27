@@ -79,7 +79,18 @@ export default async function CheckoutPage() {
         </dl>
       </div>
 
-      <CheckoutClient canPay={priced} />
+      {s.isCustomerView && (
+        <div role="note" className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Du visar portalen i kundvy. Betalning kan endast göras av kunden själv.
+        </div>
+      )}
+
+      <CheckoutClient
+        canPay={priced}
+        isCustomerView={s.isCustomerView}
+        registrant={s.registrant}
+        missingFields={s.missingFields}
+      />
 
       <p className="text-xs text-slate-500">
         Testläge: ingen riktig betalning genomförs och ingen domän registreras i detta steg.

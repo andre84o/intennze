@@ -9,6 +9,13 @@ import { checkDomainAvailability, isHostupConfigured } from "@/lib/hostup/client
 import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe/client";
 import { logCustomerEvent } from "@/lib/domains/customer-audit";
 import { isOrderStatus, type OrderStatus } from "@/lib/domains/order-status";
+import {
+  normalizeRegistrant,
+  missingRegistrantFields,
+  validateRegistrantContact,
+  type RegistrantContact,
+  type RegistrantField,
+} from "@/lib/domains/registrant-contact";
 import type { VatSplit } from "@/lib/domains/money";
 
 /**
@@ -79,6 +86,7 @@ function isUuid(v: unknown): v is string {
   return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 }
 
+/** Read/view gate: a real portal CUSTOMER, or an ADMIN in customer-view. */
 async function gateCustomer(): Promise<
   { ok: true; actor: EffectiveActor } | { ok: false; error: string; status: number }
 > {
@@ -86,6 +94,47 @@ async function gateCustomer(): Promise<
   if (!actor.realUserId) return fail("Not authenticated.", 401);
   if (!actor.isCustomerView && actor.realRole !== "customer") return fail("Forbidden.", 403);
   return { ok: true, actor };
+}
+
+/**
+ * Payment gate: ONLY a real, logged-in portal CUSTOMER may pay. An admin in
+ * customer-view can SEE the checkout but must NOT pay on the customer's behalf;
+ * sellers/staff are rejected. Enforced server-side, not just in the UI.
+ */
+async function gatePayingCustomer(): Promise<
+  { ok: true; actor: EffectiveActor } | { ok: false; error: string; status: number }
+> {
+  const actor = await getEffectiveActor();
+  if (!actor.realUserId) return fail("Not authenticated.", 401);
+  if (actor.isCustomerView) {
+    return fail("I kundvy kan du inte genomföra betalning åt kunden.", 403);
+  }
+  if (actor.realRole !== "customer") return fail("Forbidden.", 403);
+  return { ok: true, actor };
+}
+
+/** The caller's existing contact details, pre-filled for the checkout form. */
+async function fetchCustomerContact(actor: EffectiveActor): Promise<RegistrantContact> {
+  try {
+    const { data } = await actor.supabase.rpc("get_portal_customer_contact", {
+      p_customer_id: actor.isCustomerView ? actor.viewedCustomerId : null,
+    });
+    const row = (Array.isArray(data) ? data[0] : null) as Record<string, unknown> | null;
+    if (!row) return normalizeRegistrant({});
+    return normalizeRegistrant({
+      firstName: row.first_name,
+      lastName: row.last_name,
+      email: row.email,
+      phone: row.phone,
+      address: row.address,
+      postalCode: row.postal_code,
+      city: row.city,
+      country: row.country,
+      organization: row.company_name,
+    });
+  } catch {
+    return normalizeRegistrant({});
+  }
 }
 
 /**
@@ -125,6 +174,12 @@ export type CheckoutSummary = {
   netAmountMinor: number | null;
   vatAmountMinor: number | null;
   grossAmountMinor: number | null;
+  /** True when an admin is viewing as the customer — the flow is visible but not payable. */
+  isCustomerView: boolean;
+  /** The customer's existing contact details, pre-filled for the form. */
+  registrant: RegistrantContact;
+  /** Required registrant fields still missing (customer completes these). */
+  missingFields: RegistrantField[];
 };
 
 export async function getCheckoutSummary(): Promise<ServiceResult<CheckoutSummary>> {
@@ -137,6 +192,7 @@ export async function getCheckoutSummary(): Promise<ServiceResult<CheckoutSummar
     return fail("Din förberedda beställning har gått ut. Sök domänen igen.", 410);
   }
   const price = await priceForQuote(actor, quote);
+  const registrant = await fetchCustomerContact(actor);
   return {
     ok: true,
     data: {
@@ -148,6 +204,9 @@ export async function getCheckoutSummary(): Promise<ServiceResult<CheckoutSummar
       netAmountMinor: price.net?.netAmountMinor ?? null,
       vatAmountMinor: price.net?.vatAmountMinor ?? null,
       grossAmountMinor: price.net?.grossAmountMinor ?? null,
+      isCustomerView: actor.isCustomerView,
+      registrant,
+      missingFields: missingRegistrantFields(registrant),
     },
   };
 }
@@ -156,12 +215,19 @@ export async function getCheckoutSummary(): Promise<ServiceResult<CheckoutSummar
 
 export type CreateCheckoutResult = { url: string; orderId: string };
 
-export async function createDomainCheckout(): Promise<ServiceResult<CreateCheckoutResult>> {
-  const gate = await gateCustomer();
+export async function createDomainCheckout(
+  registrantInput: unknown
+): Promise<ServiceResult<CreateCheckoutResult>> {
+  // ONLY a real, logged-in customer may pay — admin-in-view is blocked here.
+  const gate = await gatePayingCustomer();
   if (!gate.ok) return gate;
   const actor = gate.actor;
 
   if (!isStripeConfigured()) return fail("Betalning är inte konfigurerad.", 503);
+
+  // Validate the registrant contact (existing details + fields filled at checkout).
+  const registrant = validateRegistrantContact(registrantInput);
+  if (!registrant.ok) return fail(registrant.error, 400);
 
   // 1-2. Validate the prepared quote (signed cookie; not expired).
   const quote = await readDomainQuote();
@@ -215,7 +281,10 @@ export async function createDomainCheckout(): Promise<ServiceResult<CreateChecko
     p_vat_rate_basis_points: net.vatRateBasisPoints,
     p_quote_snapshot: snapshot,
     p_currency_code: currency,
-    p_customer_id: actor.isCustomerView ? actor.viewedCustomerId : null,
+    // A paying caller is always a REAL customer (admin-in-view is blocked above),
+    // so customer_id is derived server-side by the RPC from auth.uid().
+    p_customer_id: null,
+    p_registrant_details: registrant.value,
   });
   if (createErr || typeof orderId !== "string") {
     console.error("[checkout.createOrder]", createErr?.message ?? "no id");

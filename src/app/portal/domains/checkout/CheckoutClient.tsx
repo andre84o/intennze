@@ -3,20 +3,43 @@
 import { useState, useTransition } from "react";
 import { CreditCard } from "lucide-react";
 import { createCheckout } from "../actions";
+import {
+  REGISTRANT_FIELDS,
+  missingRegistrantFields,
+  type RegistrantContact,
+  type RegistrantField,
+} from "@/lib/domains/registrant-contact";
 
 /**
- * Pay button for the checkout page. Calls the server action (which recomputes the
- * price, creates the order + Stripe TEST session server-side) and redirects the
- * browser to the returned Stripe URL. The amount is NEVER sent from here.
+ * Checkout registrant form + pay button. The contact is pre-filled from the
+ * customer's existing details; missing fields are completed here. The amount is
+ * NEVER sent from the client — the server recomputes it. Payment is disabled in
+ * admin customer-view (the server also blocks it).
  */
-export default function CheckoutClient({ canPay }: { canPay: boolean }) {
+export default function CheckoutClient({
+  canPay,
+  isCustomerView,
+  registrant,
+  missingFields,
+}: {
+  canPay: boolean;
+  isCustomerView: boolean;
+  registrant: RegistrantContact;
+  missingFields: RegistrantField[];
+}) {
+  const [form, setForm] = useState<RegistrantContact>(registrant);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  const set = (key: RegistrantField, value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const stillMissing = missingRegistrantFields(form);
+  const payable = canPay && !isCustomerView && stillMissing.length === 0;
+
   const onPay = () => {
+    if (isCustomerView) return;
     startTransition(async () => {
       setError(null);
-      const res = await createCheckout();
+      const res = await createCheckout(form);
       if (!res.ok) {
         setError(res.error);
         return;
@@ -25,24 +48,70 @@ export default function CheckoutClient({ canPay }: { canPay: boolean }) {
     });
   };
 
+  const inputCls =
+    "w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/20";
+
   return (
-    <div className="space-y-3">
-      <button
-        type="button"
-        onClick={onPay}
-        disabled={!canPay || pending}
-        title={canPay ? "Öppna Stripe-kassan i testläge" : "Priset är inte konfigurerat"}
-        className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+    <div className="space-y-5">
+      <fieldset
+        disabled={isCustomerView}
+        className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 disabled:opacity-60"
       >
-        <CreditCard className="h-4 w-4" aria-hidden="true" />
-        {pending ? "Öppnar kassan…" : "Betala med kort (testläge)"}
-      </button>
-      <div aria-live="assertive">
-        {error && (
-          <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300">
-            {error}
-          </p>
-        )}
+        <legend className="px-1 text-sm font-semibold text-slate-300">Registreringsuppgifter</legend>
+        <p className="mb-4 text-xs text-slate-500">
+          Förifyllt från dina uppgifter. Komplettera det som saknas.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {REGISTRANT_FIELDS.map((f) => {
+            const wasMissing = missingFields.includes(f.key);
+            return (
+              <div key={f.key} className={f.key === "address" ? "sm:col-span-2" : undefined}>
+                <label htmlFor={`reg-${f.key}`} className="mb-1 block text-xs font-medium text-slate-400">
+                  {f.label}
+                  {f.required && <span className="text-red-400"> *</span>}
+                </label>
+                <input
+                  id={`reg-${f.key}`}
+                  type={f.key === "email" ? "email" : "text"}
+                  value={form[f.key]}
+                  onChange={(e) => set(f.key, e.target.value)}
+                  required={f.required}
+                  aria-invalid={f.required && form[f.key].trim() === "" ? true : undefined}
+                  className={inputCls}
+                  placeholder={wasMissing ? "Fylls i här" : undefined}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={onPay}
+          disabled={!payable || pending}
+          title={
+            isCustomerView
+              ? "Betalning kan endast göras av kunden"
+              : !canPay
+                ? "Priset är inte konfigurerat"
+                : stillMissing.length > 0
+                  ? "Fyll i alla obligatoriska uppgifter"
+                  : "Öppna Stripe-kassan i testläge"
+          }
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <CreditCard className="h-4 w-4" aria-hidden="true" />
+          {pending ? "Öppnar kassan…" : "Betala med kort (testläge)"}
+        </button>
+        <div aria-live="assertive">
+          {error && (
+            <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+              {error}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
