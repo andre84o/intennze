@@ -1,14 +1,15 @@
 import { requireAdminPage } from "@/lib/auth/adminGuard";
-import { listPricingRules } from "@/lib/domains/pricing-service";
+import { listPricingRules, getTldOptionsForAdmin } from "@/lib/domains/pricing-service";
 import PricingRulesClient from "./PricingRulesClient";
 
 export const metadata = { title: "Domänpriser | Admin" };
 
 export default async function DomainPricingPage() {
   await requireAdminPage();
-  const res = await listPricingRules();
-  const rules = res.ok ? res.data : [];
-  const error = res.ok ? null : res.error;
+  const [rulesRes, tldRes] = await Promise.all([listPricingRules(), getTldOptionsForAdmin()]);
+  const rules = rulesRes.ok ? rulesRes.data : [];
+  const error = rulesRes.ok ? null : rulesRes.error;
+  const tldOptions = tldRes.ok ? tldRes.data : [];
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -19,7 +20,7 @@ export default async function DomainPricingPage() {
           exklusive moms.
         </p>
       </div>
-      <PricingRulesClient initialRules={rules} initialError={error} />
+      <PricingRulesClient initialRules={rules} initialError={error} tldOptions={tldOptions} />
     </div>
   );
 }
