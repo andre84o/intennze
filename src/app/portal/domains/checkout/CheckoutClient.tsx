@@ -169,12 +169,12 @@ export default function CheckoutClient({
                 ? "Någon domän saknar pris"
                 : stillMissing.length > 0
                   ? "Fyll i alla obligatoriska uppgifter"
-                  : "Öppna Stripe-kassan i testläge"
+                  : "Öppna kassan"
           }
           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25 disabled:cursor-not-allowed disabled:border disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
         >
           <CreditCard className="h-4 w-4" aria-hidden="true" />
-          {pending ? "Öppnar kassan…" : "Betala med kort (testläge)"}
+          {pending ? "Öppnar kassan…" : "Betala med kort"}
         </button>
         <div aria-live="assertive">
           {error && (

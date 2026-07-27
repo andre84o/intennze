@@ -15,7 +15,7 @@ export default function CheckoutSuccessPage() {
       </h1>
 
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-sm text-emerald-700 shadow-sm">
-        Betalningen tas emot och dina beställningar uppdateras strax.
+        Betalning genomförd.
       </div>
 
       <Link
@@ -24,10 +24,6 @@ export default function CheckoutSuccessPage() {
       >
         Visa beställningar
       </Link>
-
-      <p className="text-xs text-slate-400">
-        Testläge: ingen riktig betalning har genomförts och ingen domän har registrerats.
-      </p>
     </div>
   );
 }

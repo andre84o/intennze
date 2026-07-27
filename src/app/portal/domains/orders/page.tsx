@@ -27,9 +27,8 @@ export default async function OrdersPage() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
+      <header>
         <h1 className="text-2xl font-bold text-slate-900">Beställningar</h1>
-        <p className="text-slate-500">Dina domänbeställningar och deras status.</p>
       </header>
 
       {orders.length === 0 ? (

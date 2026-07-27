@@ -50,10 +50,6 @@ export default async function CheckoutPage() {
         registrant={s.registrant}
         missingFields={s.missingFields}
       />
-
-      <p className="text-xs text-slate-400">
-        Testläge: ingen riktig betalning genomförs och ingen domän registreras i detta steg.
-      </p>
     </div>
   );
 }

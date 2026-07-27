@@ -16,7 +16,7 @@ import {
   type RegistrantContact,
   type RegistrantField,
 } from "@/lib/domains/registrant-contact";
-import type { VatSplit } from "@/lib/domains/money";
+import { providerMajorToMinor, type VatSplit } from "@/lib/domains/money";
 
 /**
  * Domain CHECKOUT service (SERVER-ONLY). Validates a prepared quote, rechecks
@@ -145,7 +145,8 @@ async function fetchCustomerContact(actor: EffectiveActor): Promise<RegistrantCo
  */
 async function priceForQuote(
   actor: EffectiveActor,
-  quote: { domainName: string; years: number; premium: boolean }
+  quote: { domainName: string; years: number; premium: boolean },
+  providerRegistrationAmountMinor: number | null
 ): Promise<{ priceConfigured: boolean; net: VatSplit | null; currency: string; tld: string | null }> {
   const currency = "SEK";
   const tld = tldOf(quote.domainName);
@@ -156,12 +157,25 @@ async function priceForQuote(
     currencyCode: currency,
     premium: quote.premium,
     requiresRegistrarFeeAcceptance: false,
-    providerRegistrationAmountMinor: null,
+    providerRegistrationAmountMinor,
     providerRenewalAmountMinor: null,
-    premiumProviderAmountMinor: null,
+    // For a premium domain the registration provider amount IS the premium price.
+    premiumProviderAmountMinor: quote.premium ? providerRegistrationAmountMinor : null,
   });
   const view = pricing.registration; // register|transfer both use the registration sale price
   return { priceConfigured: view.priceConfigured, net: view.net, currency, tld };
+}
+
+/** Fetch the provider (Hostup) registration price in minor units, or null. Used so
+ *  percentage/fixed-markup rules resolve at checkout exactly as on the search page. */
+async function providerAmountFor(domainName: string): Promise<number | null> {
+  if (!isHostupConfigured()) return null;
+  try {
+    const avail = await checkDomainAvailability(domainName);
+    return providerMajorToMinor(avail.providerBilling?.amount ?? null);
+  } catch {
+    return null;
+  }
 }
 
 // ── checkout summary (server-recomputed price for display) ────────────────────
@@ -205,7 +219,8 @@ export async function getCheckoutSummary(): Promise<ServiceResult<CheckoutSummar
   const items: CheckoutItem[] = [];
   let currencyCode = "SEK";
   for (const it of cart.items) {
-    const price = await priceForQuote(actor, { domainName: it.domainName, years: it.years, premium: it.premium });
+    const provider = await providerAmountFor(it.domainName);
+    const price = await priceForQuote(actor, { domainName: it.domainName, years: it.years, premium: it.premium }, provider);
     currencyCode = price.currency;
     items.push({
       domainName: it.domainName,
@@ -269,10 +284,12 @@ export async function createDomainCheckout(
 
   const currency = "SEK";
   const orderIds: string[] = [];
-  const lineItems: { domainName: string; operation: string; years: number; amountGrossMinor: number }[] = [];
+  const lineItems: { domainName: string; operation: string; years: number; amountNetMinor: number }[] = [];
+  let vatBasisPoints = 2500; // SE output VAT; overwritten from the computed split below
 
   // 2. Per item: recheck availability, recompute price, create a DRAFT order.
   for (const it of cart.items) {
+    let providerAmount: number | null = null;
     if (isHostupConfigured()) {
       try {
         const avail = await checkDomainAvailability(it.domainName);
@@ -281,12 +298,13 @@ export async function createDomainCheckout(
             ? avail.state === "available" && avail.actions.canRegister.allowed
             : avail.actions.canTransfer.allowed;
         if (!registerable) return fail(`${it.domainName} är inte längre tillgänglig.`, 409);
+        providerAmount = providerMajorToMinor(avail.providerBilling?.amount ?? null);
       } catch {
         return fail("Kunde inte bekräfta tillgänglighet just nu. Försök igen.", 502);
       }
     }
 
-    const price = await priceForQuote(actor, { domainName: it.domainName, years: it.years, premium: it.premium });
+    const price = await priceForQuote(actor, { domainName: it.domainName, years: it.years, premium: it.premium }, providerAmount);
     const net: VatSplit | null = price.net;
     if (!price.priceConfigured || !net || net.grossAmountMinor <= 0) {
       return fail(`Priset är inte satt för ${it.domainName}.`, 409);
@@ -321,11 +339,12 @@ export async function createDomainCheckout(
       return fail("Kunde inte skapa beställningen.", 500);
     }
     orderIds.push(orderId);
+    if (net.vatRateBasisPoints != null) vatBasisPoints = net.vatRateBasisPoints;
     lineItems.push({
       domainName: it.domainName,
       operation: it.operation,
       years: it.years,
-      amountGrossMinor: net.grossAmountMinor,
+      amountNetMinor: net.netAmountMinor,
     });
   }
 
@@ -336,6 +355,7 @@ export async function createDomainCheckout(
   try {
     session = await createCheckoutSession({
       items: lineItems,
+      vatBasisPoints,
       currency: currency.toLowerCase(),
       reference: orderIds[0],
       successUrl: `${site}/portal/domains/checkout/success`,

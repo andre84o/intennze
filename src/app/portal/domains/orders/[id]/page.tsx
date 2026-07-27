@@ -54,10 +54,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {o.paidAt && <Row label="Betald" value={formatOrderDate(o.paidAt)} />}
         </dl>
       </div>
-
-      <p className="text-xs text-slate-500">
-        Betalning i testläge. Domänen registreras inte i detta steg.
-      </p>
     </div>
   );
 }

@@ -53,13 +53,15 @@ export type CheckoutLineItem = {
   domainName: string;
   operation: string;
   years: number;
-  /** GROSS amount incl. VAT, integer minor units. Server-computed — never from the browser. */
-  amountGrossMinor: number;
+  /** NET amount ex-VAT, integer minor units. Server-computed — never from the browser. */
+  amountNetMinor: number;
 };
 
 export type CreateCheckoutSessionInput = {
-  /** One or more domain line items (a cart). Each is priced at its gross amount. */
+  /** One or more domain line items (a cart). Each is priced at its NET (ex-VAT) amount. */
   items: CheckoutLineItem[];
+  /** Output VAT rate in basis points (2500 = 25%), applied as an exclusive tax rate. */
+  vatBasisPoints: number;
   currency: string; // lowercase ISO, e.g. "sek"
   successUrl: string;
   cancelUrl: string;
@@ -73,11 +75,41 @@ export type CheckoutSessionResult = {
   url: string;
 };
 
+// Cache the reusable VAT TaxRate id per process (keyed by percentage) so we don't
+// list/create on every checkout.
+const vatRateIdCache = new Map<number, string>();
+
+/** Find (or create once) an EXCLUSIVE VAT TaxRate for the given percentage, so
+ *  Stripe Checkout shows a separate "Moms" line on top of the net amounts. */
+async function getVatTaxRateId(stripe: Stripe, percentage: number): Promise<string> {
+  const cached = vatRateIdCache.get(percentage);
+  if (cached) return cached;
+  const list = await stripe.taxRates.list({ active: true, limit: 100 });
+  const found = list.data.find(
+    (r) => r.inclusive === false && r.percentage === percentage && r.metadata?.intennze === "vat"
+  );
+  const id =
+    found?.id ??
+    (
+      await stripe.taxRates.create({
+        display_name: "Moms",
+        description: "Svensk moms",
+        percentage,
+        inclusive: false,
+        country: "SE",
+        metadata: { intennze: "vat" },
+      })
+    ).id;
+  vatRateIdCache.set(percentage, id);
+  return id;
+}
+
 /**
  * Create a TEST-mode Checkout Session for a domain cart. Each item is one line,
- * priced at its already-VAT-inclusive gross amount (automatic tax is NOT enabled,
- * so Stripe adds nothing on top). All orders in this session share its id, so the
- * webhook settles every order for the session together (see mark_domain_order_paid).
+ * priced at its NET (ex-VAT) amount, with an EXCLUSIVE VAT tax rate attached so
+ * Stripe shows Delsumma + Moms + Totalt separately. Per-line VAT = round(net×rate)
+ * matches computeVatSplit, so Stripe's total equals our stored gross. All orders in
+ * this session share its id, so the webhook settles them together.
  */
 export async function createCheckoutSession(
   input: CreateCheckoutSessionInput
@@ -86,16 +118,18 @@ export async function createCheckoutSession(
     throw new StripeConfigError("Checkout requires at least one item.");
   }
   const stripe = getStripe();
+  const taxRateId = await getVatTaxRateId(stripe, input.vatBasisPoints / 100);
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: input.items.map((it) => ({
       quantity: 1,
+      tax_rates: [taxRateId],
       price_data: {
         currency: input.currency,
-        unit_amount: it.amountGrossMinor,
+        unit_amount: it.amountNetMinor,
         product_data: {
           name: `Domän ${it.domainName}`,
-          description: `${it.operation} · ${it.years} år (inkl. moms)`,
+          description: `${it.operation} · ${it.years} år`,
         },
       },
     })),

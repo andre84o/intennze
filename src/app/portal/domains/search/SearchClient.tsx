@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import Link from "next/link";
 import { Check, ShoppingCart } from "lucide-react";
 import { searchDomains, addDomainToCart, getCart } from "../actions";
 import { formatMinor } from "@/lib/domains/money";
@@ -17,7 +16,7 @@ const STATE_LABEL: Record<CustomerDomainResult["state"], string> = {
 };
 
 const STATE_BADGE: Record<CustomerDomainResult["state"], string> = {
-  available: "bg-emerald-500 text-white ring-emerald-700/30",
+  available: "bg-emerald-300 text-white ring-emerald-700/30",
   unavailable: "bg-slate-400 text-white ring-slate-600/30",
   already_owned: "bg-amber-600 text-white ring-amber-700/30",
   checking: "bg-blue-600 text-white ring-blue-700/30",
@@ -37,18 +36,16 @@ export default function SearchClient() {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  // Cart state: which domains are reserved + the count, plus per-domain add errors.
+  // Which domains are already reserved (for the "I korgen" state) + add errors.
   const [cartNames, setCartNames] = useState<Set<string>>(new Set());
-  const [cartCount, setCartCount] = useState(0);
   const [adding, setAdding] = useState<string | null>(null);
   const [addErrors, setAddErrors] = useState<Record<string, string>>({});
   const [, startAdd] = useTransition();
 
-  // Seed the cart badge from the existing reservation cookie.
+  // Seed the reserved set from the existing cart cookie.
   useEffect(() => {
     getCart().then((cart) => {
       setCartNames(new Set(cart.items.map((i) => i.domainName)));
-      setCartCount(cart.totals.count);
     });
   }, []);
 
@@ -83,7 +80,8 @@ export default function SearchClient() {
         return;
       }
       setCartNames((p) => new Set(p).add(r.name));
-      setCartCount(res.data.totals.count);
+      // Notify the persistent cart button (in the portal layout) to update now.
+      window.dispatchEvent(new CustomEvent("portal-cart-changed", { detail: res.data.totals.count }));
     });
   };
 
@@ -167,7 +165,9 @@ export default function SearchClient() {
                         {label}
                         <span className="font-bold text-gray-950">{tld}</span>
                       </span>
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium leading-4 ring-1 ring-inset sm:text-[11px] ${STATE_BADGE[r.state]}`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium leading-4 ring-1 ring-inset sm:text-[11px] ${STATE_BADGE[r.state]}`}
+                      >
                         {STATE_LABEL[r.state]}
                       </span>
                       {r.premium && (
@@ -186,11 +186,17 @@ export default function SearchClient() {
                     <div className="flex items-center justify-between gap-4 sm:justify-end">
                       <div className="text-right">
                         {reg.premiumRequiresManualPrice ? (
-                          <span className="text-sm font-semibold text-amber-600">Manuellt pris</span>
+                          <span className="text-sm font-semibold text-amber-600">
+                            Manuellt pris
+                          </span>
                         ) : priceText ? (
-                          <span className="text-lg font-bold text-gray-900">{priceText}</span>
+                          <span className="text-lg font-bold text-gray-900">
+                            {priceText}
+                          </span>
                         ) : (
-                          <span className="text-sm font-medium text-gray-400">Pris ej satt</span>
+                          <span className="text-sm font-medium text-gray-400">
+                            Pris ej satt
+                          </span>
                         )}
                       </div>
                       {!r.canRegister ? (
@@ -202,32 +208,46 @@ export default function SearchClient() {
                         </span>
                       ) : inCart ? (
                         <span className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-                          <Check className="h-4 w-4" aria-hidden="true" />
-                          I korgen
+                          <Check className="h-4 w-4" aria-hidden="true" />I
+                          korgen
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => add(r)}
                           disabled={adding === r.name}
-                          className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-amber-400/70 px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm outline-none motion-safe:transition hover:bg-amber-500 focus-visible:ring-4 focus-visible:ring-amber-400/30 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-[#18D04F] px-2 sm:px-4 py-2 text-[10px] sm:text-sm font-semibold text-white shadow-sm outline-none motion-safe:transition hover:bg-[#19F75C] focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-                          {adding === r.name ? "Lägger till…" : "Lägg till domän"}
+                          <ShoppingCart
+                            className="h-4 w-4"
+                            aria-hidden="true"
+                          />
+                          {adding === r.name
+                            ? "Lägger till…"
+                            : "Lägg till domän"}
                         </button>
                       )}
                     </div>
                   </div>
 
                   {addErr && (
-                    <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                    <p
+                      role="alert"
+                      className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+                    >
                       {addErr}
                     </p>
                   )}
 
                   {r.state === "unknown" && (
-                    <button type="button" onClick={runSearch} className="mt-3 text-xs text-blue-600 hover:text-blue-700 hover:underline">
-                      Kunde inte avgöras{r.unknownReason ? ` (${r.unknownReason})` : ""} — försök igen
+                    <button
+                      type="button"
+                      onClick={runSearch}
+                      className="mt-3 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                    >
+                      Kunde inte avgöras
+                      {r.unknownReason ? ` (${r.unknownReason})` : ""} — försök
+                      igen
                     </button>
                   )}
                 </div>
@@ -236,19 +256,6 @@ export default function SearchClient() {
           </div>
         )}
       </div>
-
-      {/* Cart bar */}
-      {cartCount > 0 && (
-        <div className="sticky bottom-4 z-10 flex justify-center">
-          <Link
-            href="/portal/domains/checkout"
-            className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25"
-          >
-            <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-            Till kassan ({cartCount})
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

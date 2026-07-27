@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getEffectiveActor } from "@/lib/auth/customerView";
 import { exitCustomerView } from "@/app/admin/kunder/actions";
 import PortalNav from "./PortalNav";
+import PortalBottomNav from "./PortalBottomNav";
+import PortalCartButton from "./PortalCartButton";
 
 /**
  * Protected customer portal shell.
@@ -55,6 +57,22 @@ export default async function PortalLayout({
       `${customer.first_name} ${customer.last_name}`.trim();
   }
 
+  // Account chip: the logged-in user's email + best-available display name.
+  const accountEmail = actor.user?.email ?? "";
+  let accountName = accountEmail;
+  if (actor.isCustomerView) {
+    accountName = bannerName ?? accountEmail;
+  } else {
+    try {
+      const { data } = await actor.supabase.rpc("get_portal_customer_contact", { p_customer_id: null });
+      const row = Array.isArray(data) ? (data[0] as { first_name?: string; last_name?: string } | undefined) : null;
+      const full = row ? `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() : "";
+      if (full) accountName = full;
+    } catch {
+      /* fall back to email */
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       {actor.isCustomerView && (
@@ -73,8 +91,10 @@ export default async function PortalLayout({
           </form>
         </div>
       )}
-      <PortalNav />
-      <main className="mx-auto max-w-5xl px-4 pb-10 pt-12 sm:pb-12 sm:pt-16">{children}</main>
+      <PortalNav userName={accountName} userEmail={accountEmail} />
+      <main className="mx-auto max-w-5xl px-4 pb-24 pt-12 md:pb-12 md:pt-16">{children}</main>
+      <PortalCartButton />
+      <PortalBottomNav />
     </div>
   );
 }
