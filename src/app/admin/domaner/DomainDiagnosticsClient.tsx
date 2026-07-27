@@ -88,7 +88,6 @@ export default function DomainDiagnosticsClient() {
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Domän</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">State</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Leverantörspris (reg/förnya)</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Premium / avgift</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Perioder</th>
                 </tr>
@@ -105,10 +104,6 @@ export default function DomainDiagnosticsClient() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-700">
-                      {r.providerBilling?.amount ?? "—"} / {r.providerRenewalAmount ?? "—"}{" "}
-                      {r.currencyCode ?? r.providerBilling?.currencyCode ?? ""}
-                    </td>
-                    <td className="px-4 py-3 text-gray-700">
                       {r.premium ? "premium" : "nej"}
                       {r.requiresRegistrarFeeAcceptance ? " · registraravgift" : ""}
                     </td>
@@ -121,7 +116,11 @@ export default function DomainDiagnosticsClient() {
             </table>
           </div>
           <p className="text-xs text-gray-400">
-            Leverantörspris = Hostups inköpspris (endast admin). Kundpris konfigureras separat.
+            Tillgänglighetsdata från Hostup. Kundpris konfigureras under{" "}
+            <a href="/admin/domaner/priser" className="underline hover:text-gray-600">
+              Priser
+            </a>
+            .
           </p>
         </>
       )}

@@ -75,7 +75,7 @@ export type AdminDomainPriceResult = {
   marginBasisPoints: number | null;
 };
 
-/** CUSTOMER result — NEVER provider or margin. */
+/** CUSTOMER result — NEVER provider, margin, or internal rule fields. */
 export type CustomerDomainPriceResult = {
   priceConfigured: boolean;
   premiumRequiresManualPrice: boolean;
@@ -84,8 +84,6 @@ export type CustomerDomainPriceResult = {
   operation: DomainOperation;
   years: number;
   premium: boolean;
-  appliedRuleId: string | null;
-  calculationType: CalculationType | null;
 };
 
 export type EngineResult =
@@ -239,8 +237,8 @@ export function calculateDomainCustomerPrice(input: CalculateInput): EngineResul
 
 /**
  * Map an admin result to the customer-safe DTO. Explicit field-by-field pluck —
- * NEVER spread `a` (that would leak providerAmountMinor / margin). Enforced by a
- * no-leak test.
+ * NEVER spread `a` (that would leak providerAmountMinor / margin / internal rule
+ * fields). Enforced by a no-leak test.
  */
 export function toCustomerPrice(a: AdminDomainPriceResult): CustomerDomainPriceResult {
   return {
@@ -251,7 +249,5 @@ export function toCustomerPrice(a: AdminDomainPriceResult): CustomerDomainPriceR
     operation: a.operation,
     years: a.years,
     premium: a.premium,
-    appliedRuleId: a.appliedRuleId,
-    calculationType: a.calculationType,
   };
 }

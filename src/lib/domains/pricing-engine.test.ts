@@ -102,7 +102,7 @@ test("no rule -> priceConfigured false (not an error)", () => {
   const v = ok(input({ rule: null }));
   assert.equal(v.priceConfigured, false);
   assert.equal(v.customerAmountMinor, null);
-  assert.equal(v.appliedRuleId, null);
+  assert.equal(v.appliedRuleId, null); // admin result still has this field
 });
 
 test("premium without a premium rule -> manual price required", () => {
@@ -143,11 +143,44 @@ test("resolver: register rule is never used for renew", () => {
   assert.equal(resolveDomainPricingRule([reg], "se", "renew"), null);
 });
 
-test("toCustomerPrice never leaks provider or margin", () => {
+test("toCustomerPrice never leaks provider, margin, or internal rule fields", () => {
   const v = ok(input());
   const cust = toCustomerPrice(v);
+  // Provider cost and margin must never reach the customer DTO.
   assert.ok(!("providerAmountMinor" in cust));
   assert.ok(!("marginAmountMinor" in cust));
   assert.ok(!("marginBasisPoints" in cust));
+  // Internal rule fields (rule id, calculation method) must not be sent to the browser.
+  assert.ok(!("appliedRuleId" in cust));
+  assert.ok(!("calculationType" in cust));
   assert.equal(cust.customerAmountMinor, v.customerAmountMinor);
+});
+
+test("toCustomerPrice customer DTO has exactly the safe fields", () => {
+  const v = ok(input());
+  const cust = toCustomerPrice(v);
+  const keys = new Set(Object.keys(cust));
+  const allowed = new Set([
+    "priceConfigured",
+    "premiumRequiresManualPrice",
+    "customerAmountMinor",
+    "currencyCode",
+    "operation",
+    "years",
+    "premium",
+  ]);
+  const forbidden = [...keys].filter((k) => !allowed.has(k));
+  assert.deepEqual(forbidden, [], `customer DTO must not contain: ${forbidden.join(", ")}`);
+});
+
+test("toCustomerPrice: configured result carries correct price and no admin fields", () => {
+  const v = ok(input({ providerAmountMinor: 10000, rule: rule({ markupPercentageBasisPoints: 2500 }) }));
+  assert.equal(v.customerAmountMinor, 12500);
+  const cust = toCustomerPrice(v);
+  assert.equal(cust.customerAmountMinor, 12500);
+  assert.equal(cust.priceConfigured, true);
+  // Admin-only fields must be absent — not just undefined but not present at all.
+  assert.ok(!("providerAmountMinor" in cust));
+  assert.ok(!("marginAmountMinor" in cust));
+  assert.ok(!("appliedRuleId" in cust));
 });
