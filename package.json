@@ -25,14 +25,14 @@
     "hamburger-react": "^2.5.2",
     "imap-simple": "^5.1.0",
     "isomorphic-dompurify": "^2.34.0",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.562.0",
     "mailparser": "^3.9.1",
     "next": "^16.0.10",
-    "nodemailer": "^7.0.6",
+    "nodemailer": "^9.0.3",
     "radix-ui": "^1.4.3",
     "react": "19.1.0",
-    "react-cookie-consent": "^9.0.0",
+    "react-cookie-consent": "^10.0.1",
     "react-country-flag": "^3.1.0",
     "react-day-picker": "^10.0.1",
     "react-dom": "19.1.0",
@@ -41,8 +41,15 @@
     "server-only": "^0.0.1",
     "stripe": "^22.3.2",
     "tailwind-merge": "^3.4.0",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zustand": "^5.0.14"
+  },
+  "overrides": {
+    "utf7": {
+      "semver": "^7.7.2"
+    },
+    "postcss": "^8.5.18",
+    "sharp": "^0.35.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

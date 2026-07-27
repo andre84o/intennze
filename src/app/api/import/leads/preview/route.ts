@@ -1,12 +1,11 @@
-// SECURITY NOTE — xlsx (SheetJS community edition):
-//   - Has known npm audit vulnerabilities (Prototype Pollution, ReDoS).
-//   - No upstream fix available for the community npm package.
-//   - Mitigations in place: server-side only, admin-only route, 3 MB file
-//     size limit, 1 000 row limit, not exposed to public upload routes.
+// SECURITY NOTE — xlsx (SheetJS):
+//   - Pinned to the patched build from SheetJS's own CDN (0.20.x) in
+//     package.json, NOT the abandoned npm-registry version (0.18.5). The
+//     0.20.x build fixes the Prototype Pollution + ReDoS advisories.
+//   - `npm audit` cannot see the CDN build, so it no longer flags xlsx.
+//   - Defence in depth still applies: server-side only, admin-only route,
+//     3 MB file size limit, 1 000 row limit, not exposed to public uploads.
 //   - Do NOT import xlsx in client components or public-facing routes.
-//
-// TODO: Replace `xlsx` with a safer/maintained parser, or move XLSX parsing
-//       to an isolated worker, if this import endpoint ever becomes public-facing.
 
 export const runtime = "nodejs";
 
