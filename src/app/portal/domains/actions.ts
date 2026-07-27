@@ -3,6 +3,7 @@
 import { searchDomainsForCustomer, type SearchInput } from "@/lib/domains/search-service";
 import { refreshDomainStatusForCustomer } from "@/lib/domains/portal-service";
 import { prepareDomainQuote, type PrepareQuoteInput } from "@/lib/domains/quote-service";
+import { createDomainCheckout, getCustomerDomainOrderStatus } from "@/lib/domains/checkout-service";
 
 /**
  * Customer domain-portal server actions. Each is a thin wrapper — the service
@@ -23,4 +24,18 @@ export async function refreshDomainStatus(localDomainId: string) {
 /** Prepare a domain quote (signed cookie). Creates no order. */
 export async function prepareQuote(input: PrepareQuoteInput) {
   return prepareDomainQuote(input);
+}
+
+/**
+ * Validate the prepared quote, recheck availability, create a local order and a
+ * Stripe TEST-mode Checkout Session. Returns the Stripe URL (the client redirects).
+ * Creates NO Hostup order and captures NO live payment.
+ */
+export async function createCheckout() {
+  return createDomainCheckout();
+}
+
+/** Poll one owned order's status (the paid state comes from the webhook). */
+export async function readOrderStatus(orderId: string) {
+  return getCustomerDomainOrderStatus(orderId);
 }

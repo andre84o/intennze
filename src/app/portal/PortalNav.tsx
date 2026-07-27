@@ -14,13 +14,18 @@ const LINKS: { href: string; label: string }[] = [
   { href: "/portal", label: "Översikt" },
   { href: "/portal/domains", label: "Domäner" },
   { href: "/portal/domains/search", label: "Sök domän" },
+  { href: "/portal/domains/orders", label: "Beställningar" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/portal") return pathname === "/portal";
-  // "Domäner" stays active on detail pages, but not on the /search sibling.
+  // "Domäner" stays active on a domain detail page, but not on the search /
+  // orders / checkout siblings (which have their own or no nav entry).
   if (href === "/portal/domains") {
-    return pathname === "/portal/domains" || /^\/portal\/domains\/(?!search$).+/.test(pathname);
+    return (
+      pathname === "/portal/domains" ||
+      /^\/portal\/domains\/(?!search|orders|checkout)/.test(pathname)
+    );
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

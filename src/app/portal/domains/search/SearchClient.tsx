@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { searchDomains, prepareQuote } from "../actions";
 import { formatMinor } from "@/lib/domains/money";
 import type { CustomerDomainResult } from "@/lib/domains/search-service";
@@ -296,6 +297,14 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
                       <p className="mt-0.5 text-indigo-300/70">
                         Sparad till {formatQuoteTime(quote.expiresAtMs)}.
                       </p>
+                      {quote.priceConfigured && (
+                        <Link
+                          href="/portal/domains/checkout"
+                          className="mt-2 inline-block rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+                        >
+                          Gå till kassan
+                        </Link>
+                      )}
                     </div>
                   )}
 
