@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { searchDomains } from "../actions";
+import { formatMinor } from "@/lib/domains/money";
 import type { CustomerDomainResult } from "@/lib/domains/search-service";
 
 const STATE_LABEL: Record<CustomerDomainResult["state"], string> = {
@@ -169,20 +170,46 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
                 </div>
               </div>
 
-              {/* Price (customer sale price only — never the provider price) */}
-              <div className="mt-3 text-sm">
-                {r.price.state === "priced" && r.price.registrationAmount != null ? (
-                  <span className="text-slate-200">
-                    {r.price.registrationAmount} {r.price.currencyCode} / år
-                    {r.price.renewalAmount != null && (
+              {/* Price (customer sale price only — never the provider price).
+                  Rules are stored ex-VAT; we show ex moms and never reuse the
+                  registration price as the renewal price. */}
+              <div className="mt-3 space-y-0.5 text-sm">
+                {/* Registration */}
+                <div>
+                  {r.pricing.registration.premiumRequiresManualPrice ? (
+                    <span className="text-amber-300">
+                      Premiumdomän – pris bekräftas manuellt
+                    </span>
+                  ) : r.pricing.registration.priceConfigured && r.pricing.registration.net ? (
+                    <span className="text-slate-200">
+                      Registrering: {formatMinor(r.pricing.registration.net.netAmountMinor, r.pricing.currencyCode)}{" "}
+                      <span className="text-slate-500">exkl. moms</span>
                       <span className="text-slate-400">
                         {" "}
-                        (förnyelse {r.price.renewalAmount} {r.price.currencyCode})
+                        (
+                        {formatMinor(r.pricing.registration.net.grossAmountMinor, r.pricing.currencyCode)} inkl. moms)
                       </span>
-                    )}
-                  </span>
-                ) : (
-                  <span className="text-slate-400">Pris kommer snart</span>
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">Registreringspris ej konfigurerat</span>
+                  )}
+                </div>
+                {/* Renewal — shown separately; absence is never hidden by reusing registration */}
+                <div className="text-slate-400">
+                  {r.pricing.renewal.premiumRequiresManualPrice ? (
+                    <span>Förnyelse: bekräftas manuellt (premium)</span>
+                  ) : r.pricing.renewal.priceConfigured && r.pricing.renewal.net ? (
+                    <span>
+                      Förnyelse: {formatMinor(r.pricing.renewal.net.netAmountMinor, r.pricing.currencyCode)} exkl. moms
+                    </span>
+                  ) : (
+                    <span>Förnyelse: Pris ej konfigurerat</span>
+                  )}
+                </div>
+                {r.pricing.requiresRegistrarFeeAcceptance && (
+                  <div className="text-xs text-amber-300/80">
+                    Kräver godkännande av registraravgift vid beställning.
+                  </div>
                 )}
               </div>
 

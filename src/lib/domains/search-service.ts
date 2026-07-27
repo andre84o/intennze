@@ -14,7 +14,13 @@ import {
 import { HostupError } from "@/lib/hostup/types";
 import type { DomainAvailability, OrderPreviewResult } from "@/lib/hostup/search-types";
 import { nextBulkPollStep, requirementsForDisplay, type RequirementDisplay } from "@/lib/hostup/search-logic";
-import { providerQuoteFrom, quoteForCustomer, type CustomerPrice } from "@/lib/pricing";
+import {
+  customerPricingFor,
+  loadActiveRules,
+  type CustomerDomainPricing,
+} from "@/lib/domains/pricing-service";
+import { providerMajorToMinor } from "@/lib/domains/money";
+import type { DomainPricingRuleConfig } from "@/lib/domains/pricing-engine";
 import { cached, searchCacheKey } from "@/lib/hostup/search-cache";
 import { domainSearchIpLimiter, domainSearchUserLimiter, tryLimit, getClientIp } from "@/lib/ratelimit";
 
@@ -113,17 +119,26 @@ export type CustomerDomainResult = {
   supportedRegisterYears: number[];
   supportedTransferYears: number[];
   requirements: RequirementDisplay[];
-  price: CustomerPrice;
+  // Customer sale pricing (net/vat/gross), NEVER a provider price or margin.
+  pricing: CustomerDomainPricing;
 };
 
-function toCustomerResult(a: DomainAvailability): CustomerDomainResult {
-  const providerQuote = providerQuoteFrom({
-    registrationAmount: a.providerBilling?.amount ?? null,
-    renewalAmount: a.providerRenewalAmount,
+function toCustomerResult(
+  a: DomainAvailability,
+  rules: DomainPricingRuleConfig[]
+): CustomerDomainResult {
+  const premium = a.premium ?? false;
+  const providerReg = providerMajorToMinor(a.providerBilling?.amount ?? null);
+  const pricing = customerPricingFor(rules, {
+    tld: a.tld,
+    years: 1,
     currencyCode: a.currencyCode ?? a.providerBilling?.currencyCode ?? null,
-    billingCycle: null,
-    premium: a.premium,
-    requiresRegistrarFeeAcceptance: a.requiresRegistrarFeeAcceptance,
+    premium,
+    requiresRegistrarFeeAcceptance: a.requiresRegistrarFeeAcceptance ?? false,
+    providerRegistrationAmountMinor: providerReg,
+    providerRenewalAmountMinor: providerMajorToMinor(a.providerRenewalAmount),
+    // For a premium domain the registration provider amount IS the premium price.
+    premiumProviderAmountMinor: premium ? providerReg : null,
   });
   return {
     name: a.name,
@@ -138,8 +153,8 @@ function toCustomerResult(a: DomainAvailability): CustomerDomainResult {
     supportedRegisterYears: a.supportedRegisterYears,
     supportedTransferYears: a.supportedTransferYears,
     requirements: requirementsForDisplay(a.registryRequirements, "register"),
-    // Sale price only — provider amounts intentionally never included.
-    price: quoteForCustomer(a.tld ?? "", providerQuote),
+    // Customer sale price only — provider amounts intentionally never included.
+    pricing,
   };
 }
 
@@ -204,7 +219,22 @@ export async function searchDomainsForCustomer(
   const key = searchCacheKey(["cust", ...built.names]);
   try {
     const availability = await cached(key, AVAILABILITY_TTL_MS, () => runAvailability(built.names));
-    const results = availability.map(toCustomerResult);
+
+    // Load active pricing rules once per distinct currency (config only, no
+    // provider price), then resolve per result in-memory.
+    const currencies = new Set(
+      availability.map((a) => (a.currencyCode ?? a.providerBilling?.currencyCode ?? "SEK").toUpperCase())
+    );
+    const rulesByCurrency = new Map<string, DomainPricingRuleConfig[]>();
+    for (const cur of currencies) {
+      rulesByCurrency.set(cur, await loadActiveRules(gate.actor, cur));
+    }
+    const results = availability.map((a) =>
+      toCustomerResult(
+        a,
+        rulesByCurrency.get((a.currencyCode ?? a.providerBilling?.currencyCode ?? "SEK").toUpperCase()) ?? []
+      )
+    );
     const bulk = built.names.length > 1;
     await audit(gate.actor, bulk ? "DOMAIN_BULK_AVAILABILITY_CHECKED" : "DOMAIN_AVAILABILITY_CHECKED", "success", {
       domain_count: built.names.length,
