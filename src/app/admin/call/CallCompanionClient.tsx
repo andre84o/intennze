@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { useAgentCallSession } from "@/lib/useAgentCallSession";
 import { normalizePhoneForTel } from "@/lib/phone";
@@ -33,6 +34,7 @@ function stockholmToday(): string {
 }
 
 export default function CallCompanionClient() {
+  const router = useRouter();
   const { session, conn, loading, refetch } = useAgentCallSession();
   const [customer, setCustomer] = useState<MiniCustomer | null>(null);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
@@ -234,12 +236,25 @@ export default function CallCompanionClient() {
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
         <span className="text-sm font-semibold text-slate-900">Call Companion</span>
-        <span className="flex items-center gap-1.5 text-xs text-slate-500">
-          <span
-            className={`w-2 h-2 rounded-full ${conn === "connected" ? "bg-green-500" : conn === "offline" ? "bg-rose-400" : "bg-amber-400"}`}
-          />
-          {conn === "connected" ? "Online" : conn === "offline" ? "Offline" : "…"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-xs text-slate-500">
+            <span
+              className={`w-2 h-2 rounded-full ${conn === "connected" ? "bg-green-500" : conn === "offline" ? "bg-rose-400" : "bg-amber-400"}`}
+            />
+            {conn === "connected" ? "Online" : conn === "offline" ? "Offline" : "…"}
+          </span>
+          <button
+            type="button"
+            onClick={() => router.push("/admin/crm")}
+            className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+            aria-label="Avsluta Call Companion"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Avsluta
+          </button>
+        </div>
       </div>
 
       {offline && (
