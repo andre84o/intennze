@@ -17,21 +17,20 @@ const STATE_LABEL: Record<CustomerDomainResult["state"], string> = {
 };
 
 const STATE_BADGE: Record<CustomerDomainResult["state"], string> = {
-  available: "bg-green-500/15 text-green-300 border-green-500/30",
-  unavailable: "bg-slate-700 text-slate-300 border-slate-600",
-  already_owned: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  checking: "bg-blue-500/15 text-blue-300 border-blue-500/30",
-  invalid: "bg-red-500/15 text-red-300 border-red-500/30",
-  unknown: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  available: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  unavailable: "bg-slate-100 text-slate-600 border-slate-200",
+  already_owned: "bg-amber-50 text-amber-700 border-amber-200",
+  checking: "bg-blue-50 text-blue-700 border-blue-200",
+  invalid: "bg-red-50 text-red-700 border-red-200",
+  unknown: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
 function formatQuoteTime(ms: number): string {
   return new Intl.DateTimeFormat("sv-SE", { hour: "2-digit", minute: "2-digit" }).format(new Date(ms));
 }
 
-export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
+export default function SearchClient() {
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set(["se", "com"]));
   const [results, setResults] = useState<CustomerDomainResult[] | null>(null);
   const [truncated, setTruncated] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,14 +43,6 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
   const [preparing, setPreparing] = useState<string | null>(null);
   const [, startQuote] = useTransition();
 
-  const toggleTld = (tld: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(tld)) next.delete(tld);
-      else next.add(tld);
-      return next;
-    });
-
   const runSearch = () => {
     const q = query.trim();
     if (!q) {
@@ -62,7 +53,7 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
       setError(null);
       setQuotes({});
       setQuoteErrors({});
-      const res = await searchDomains({ query: q, tlds: [...selected] });
+      const res = await searchDomains({ query: q });
       if (!res.ok) {
         setResults(null);
         setError(res.error);
@@ -89,18 +80,18 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
   };
 
   const inputCls =
-    "w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/20";
+    "w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10";
   const btnPrimary =
-    "rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed";
+    "rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed";
   const btnDisabled =
-    "rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-400 cursor-not-allowed opacity-60";
+    "rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-400 cursor-not-allowed";
   const btnSecondary =
-    "rounded-lg border border-indigo-500/50 bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-200 transition-colors hover:bg-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed";
+    "rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
     <div className="space-y-6">
       {/* Search form */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -113,7 +104,7 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="t.ex. intenzze eller intenzze.se"
+              placeholder="Search domain here"
               className={inputCls}
               aria-label="Domän eller sökord"
             />
@@ -122,30 +113,6 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {commonTlds.map((tld) => {
-              const on = selected.has(tld);
-              return (
-                <button
-                  type="button"
-                  key={tld}
-                  onClick={() => toggleTld(tld)}
-                  className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-                    on
-                      ? "border-indigo-500 bg-indigo-500/20 text-indigo-200"
-                      : "border-slate-700 text-slate-400 hover:bg-slate-800/60"
-                  }`}
-                  aria-pressed={on}
-                >
-                  .{tld}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-xs text-slate-500">
-            Tips: skriv ett fullständigt domännamn (intenzze.se) eller ett sökord och välj
-            ändelser ovan.
-          </p>
         </form>
       </div>
 
@@ -153,7 +120,7 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
       {error && (
         <div
           role="alert"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           <span>{error}</span>
           <button type="button" onClick={runSearch} disabled={pending} className={btnPrimary}>
@@ -163,34 +130,34 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
       )}
 
       {/* Loading */}
-      {pending && !error && <p className="text-sm text-slate-400">Söker domäner…</p>}
+      {pending && !error && <p className="text-sm text-slate-500">Söker domäner…</p>}
 
       {/* Results */}
       <div aria-live="polite" aria-busy={pending}>
         {/* Empty state */}
         {!pending && results && results.length === 0 && (
-          <p className="py-8 text-center text-sm text-slate-400">Inga resultat.</p>
+          <p className="py-8 text-center text-sm text-slate-500">Inga resultat.</p>
         )}
 
         {!pending && results && results.length > 0 && (
           <div className="space-y-3">
             {truncated && (
-              <p className="text-xs text-amber-300/80">Visar de första ändelserna av din sökning.</p>
+              <p className="text-xs text-amber-700">Visar de första ändelserna av din sökning.</p>
             )}
             {results.map((r) => {
               const quote = quotes[r.name];
               const qErr = quoteErrors[r.name];
               const chosenYears = years[r.name] ?? r.supportedRegisterYears[0] ?? 1;
               return (
-                <div key={r.name} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+                <div key={r.name} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <span className="font-medium text-white">{r.name}</span>
+                      <span className="font-medium text-slate-900">{r.name}</span>
                       <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATE_BADGE[r.state]}`}>
                         {STATE_LABEL[r.state]}
                       </span>
                       {r.premium && (
-                        <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-300">
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
                           Premium
                         </span>
                       )}
@@ -219,9 +186,9 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
                   <div className="mt-3 space-y-0.5 text-sm">
                     <div>
                       {r.pricing.registration.premiumRequiresManualPrice ? (
-                        <span className="text-amber-300">Premiumdomän – pris bekräftas manuellt</span>
+                        <span className="text-amber-700">Premiumdomän – pris bekräftas manuellt</span>
                       ) : r.pricing.registration.priceConfigured && r.pricing.registration.net ? (
-                        <span className="text-slate-200">
+                        <span className="text-slate-700">
                           Registrering: {formatMinor(r.pricing.registration.net.netAmountMinor, r.pricing.currencyCode)}{" "}
                           <span className="text-slate-500">exkl. moms</span>
                           <span className="text-slate-400">
@@ -230,10 +197,10 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
                           </span>
                         </span>
                       ) : (
-                        <span className="text-slate-400">Registreringspris ej konfigurerat</span>
+                        <span className="text-slate-500">Registreringspris ej konfigurerat</span>
                       )}
                     </div>
-                    <div className="text-slate-400">
+                    <div className="text-slate-500">
                       {r.pricing.renewal.premiumRequiresManualPrice ? (
                         <span>Förnyelse: bekräftas manuellt (premium)</span>
                       ) : r.pricing.renewal.priceConfigured && r.pricing.renewal.net ? (
@@ -245,7 +212,7 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
                       )}
                     </div>
                     {r.pricing.requiresRegistrarFeeAcceptance && (
-                      <div className="text-xs text-amber-300/80">
+                      <div className="text-xs text-amber-700">
                         Kräver godkännande av registraravgift vid beställning.
                       </div>
                     )}
@@ -253,7 +220,7 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
 
                   {/* unknown → retry hint */}
                   {r.state === "unknown" && (
-                    <button type="button" onClick={runSearch} className="mt-2 text-xs text-indigo-300 hover:underline">
+                    <button type="button" onClick={runSearch} className="mt-2 text-xs text-blue-600 hover:text-blue-700 hover:underline">
                       Kunde inte avgöras{r.unknownReason ? ` (${r.unknownReason})` : ""} — försök igen
                     </button>
                   )}
@@ -268,7 +235,7 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
                         id={`years-${r.name}`}
                         value={chosenYears}
                         onChange={(e) => setYears((p) => ({ ...p, [r.name]: Number(e.target.value) }))}
-                        className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+                        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
                       >
                         {r.supportedRegisterYears.map((y) => (
                           <option key={y} value={y}>
@@ -281,26 +248,26 @@ export default function SearchClient({ commonTlds }: { commonTlds: string[] }) {
 
                   {/* Prepared-quote confirmation */}
                   {qErr && (
-                    <p role="alert" className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                    <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                       {qErr}
                     </p>
                   )}
                   {quote && (
-                    <div className="mt-3 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs text-indigo-100">
+                    <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
                       <p className="font-medium">Beställning förberedd (ingen beställning har skapats).</p>
-                      <p className="mt-1 text-indigo-200/90">
+                      <p className="mt-1 text-emerald-700">
                         {quote.domainName} · {quote.years} år ·{" "}
                         {quote.priceConfigured && quote.netAmountMinor != null
                           ? `${formatMinor(quote.netAmountMinor, quote.currencyCode)} exkl. moms`
                           : "pris bekräftas manuellt"}
                       </p>
-                      <p className="mt-0.5 text-indigo-300/70">
+                      <p className="mt-0.5 text-emerald-600">
                         Sparad till {formatQuoteTime(quote.expiresAtMs)}.
                       </p>
                       {quote.priceConfigured && (
                         <Link
                           href="/portal/domains/checkout"
-                          className="mt-2 inline-block rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+                          className="mt-2 inline-block rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25"
                         >
                           Gå till kassan
                         </Link>

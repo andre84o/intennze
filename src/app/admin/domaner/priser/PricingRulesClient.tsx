@@ -571,11 +571,11 @@ export default function PricingRulesClient({
             </div>
           </div>
 
-          {/* Section 4 — Pris från Hostup (default) */}
+          {/* Section 4 — Pris från leverantör (default) */}
           <div className="border-t border-gray-100 pt-5">
-            <p className={sectionLabel}>Pris från Hostup</p>
+            <p className={sectionLabel}>Pris från leverantör</p>
             <p className="mb-3 text-xs text-gray-500">
-              Hämtar Hostups aktuella leverantörspris för vald TLD och operation och beräknar kundpriset med regeln ovan.
+              Hämtar aktuellt leverantörspris för vald TLD och operation och beräknar kundpriset med regeln ovan.
               Providerpris och marginal visas endast här.
             </p>
             <div className="flex flex-wrap items-end gap-3">
@@ -589,7 +589,7 @@ export default function PricingRulesClient({
                 />
               </div>
               <button className={btnGhost} disabled={previewPending} onClick={runHostupPreview}>
-                {previewPending ? "Hämtar…" : "Hämta Hostup-pris"}
+                {previewPending ? "Hämtar…" : "Hämta leverantörspris"}
               </button>
             </div>
             {previewError && <p className="mt-3 text-sm text-red-700">{previewError}</p>}
@@ -597,11 +597,11 @@ export default function PricingRulesClient({
             {hostupPreview && (
               <div className="mt-4 rounded-lg bg-gray-50 border border-gray-100 px-4 py-3 space-y-3">
                 <dl className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm sm:grid-cols-4">
-                  <dt className="text-gray-500">Hostup registrering</dt>
+                  <dt className="text-gray-500">Leverantör registrering</dt>
                   <dd className="text-gray-900">{formatMinor(hostupPreview.hostup.registerMinor, hostupPreview.hostup.currencyCode ?? "SEK")}</dd>
-                  <dt className="text-gray-500">Hostup förnyelse</dt>
+                  <dt className="text-gray-500">Leverantör förnyelse</dt>
                   <dd className="text-gray-900">{formatMinor(hostupPreview.hostup.renewMinor, hostupPreview.hostup.currencyCode ?? "SEK")}</dd>
-                  <dt className="text-gray-500">Hostup transfer</dt>
+                  <dt className="text-gray-500">Leverantör transfer</dt>
                   <dd className="text-gray-900">
                     {hostupPreview.hostup.transferAvailable
                       ? formatMinor(hostupPreview.hostup.transferMinor, hostupPreview.hostup.currencyCode ?? "SEK")
@@ -618,7 +618,7 @@ export default function PricingRulesClient({
                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
                     Kundpris för {OP_LABEL[hostupPreview.preview?.operation ?? form.operation]}
                   </p>
-                  <PreviewBreakdown preview={hostupPreview.preview} unavailable={hostupPreview.operationPriceUnavailable} providerLabel="Hostups verkliga pris" />
+                  <PreviewBreakdown preview={hostupPreview.preview} unavailable={hostupPreview.operationPriceUnavailable} providerLabel="Leverantörens verkliga pris" />
                 </div>
               </div>
             )}
@@ -632,7 +632,7 @@ export default function PricingRulesClient({
             </button>
             {showAdvanced && (
               <div className="mt-3">
-                <p className="mb-3 text-xs text-gray-500">Testa med ett hypotetiskt providerpris utan att kontakta Hostup.</p>
+                <p className="mb-3 text-xs text-gray-500">Testa med ett hypotetiskt providerpris utan att kontakta leverantören.</p>
                 <div className="flex flex-wrap items-end gap-3">
                   <div>
                     <label className={labelCls}>Hypotetiskt providerpris (kr)</label>
@@ -736,7 +736,7 @@ function PreviewBreakdown({
   unavailable: boolean;
   providerLabel: string;
 }) {
-  if (unavailable) return <p className="text-sm text-gray-500">Hostup prissätter inte denna operation för denna TLD.</p>;
+  if (unavailable) return <p className="text-sm text-gray-500">Leverantören prissätter inte denna operation för denna TLD.</p>;
   if (!preview) return <p className="text-sm text-gray-500">Ingen prisberäkning.</p>;
   const cur = preview.currencyCode;
   if (preview.premiumRequiresManualPrice) return <p className="text-sm text-amber-700">Premiumdomän — kräver manuellt pris.</p>;

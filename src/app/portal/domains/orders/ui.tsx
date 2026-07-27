@@ -20,10 +20,10 @@ import {
  */
 
 const TONE_CLASS: Record<OrderTone, string> = {
-  neutral: "border-slate-600 bg-slate-700/40 text-slate-300",
-  warning: "border-amber-500/30 bg-amber-500/15 text-amber-300",
-  positive: "border-green-500/30 bg-green-500/15 text-green-300",
-  critical: "border-red-500/30 bg-red-500/15 text-red-300",
+  neutral: "border-slate-200 bg-slate-100 text-slate-600",
+  warning: "border-amber-200 bg-amber-50 text-amber-700",
+  positive: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  critical: "border-red-200 bg-red-50 text-red-700",
 };
 
 const STATUS_ICON: Record<OrderStatus, LucideIcon> = {

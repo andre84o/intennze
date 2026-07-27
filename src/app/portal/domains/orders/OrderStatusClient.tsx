@@ -43,7 +43,7 @@ export default function OrderStatusClient({
     <div aria-live="polite" className="space-y-2">
       <OrderStatusBadge status={status} />
       {pending && (
-        <p className="text-xs text-slate-400" aria-busy="true">
+        <p className="text-xs text-slate-500" aria-busy="true">
           Bekräftar betalning… sidan uppdateras automatiskt.
         </p>
       )}

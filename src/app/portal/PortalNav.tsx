@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -34,27 +35,44 @@ export default function PortalNav() {
   const pathname = usePathname() ?? "";
 
   return (
-    <nav aria-label="Portalnavigering" className="border-b border-slate-800 bg-slate-950/60">
-      <ul className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-2 sm:px-4">
-        {LINKS.map((l) => {
-          const active = isActive(pathname, l.href);
-          return (
-            <li key={l.href} className="shrink-0">
-              <Link
-                href={l.href}
-                aria-current={active ? "page" : undefined}
-                className={`block border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
-                  active
-                    ? "border-indigo-400 text-white"
-                    : "border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200"
-                }`}
-              >
-                {l.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <header className="border-b border-slate-200 bg-white">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <Link href="/portal" className="flex items-center" aria-label="Intenzze – till portalen">
+            <Image
+              src="/logony22.png"
+              alt="Intenzze"
+              width={260}
+              height={65}
+              className="h-25 w-auto object-contain object-left mt-10"
+              priority
+            />
+          </Link>
+          <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Kundportal</span>
+        </div>
+        <nav aria-label="Portalnavigering">
+          <ul className="-mb-px flex justify-center gap-1 overflow-x-auto">
+            {LINKS.map((l) => {
+              const active = isActive(pathname, l.href);
+              return (
+                <li key={l.href} className="shrink-0">
+                  <Link
+                    href={l.href}
+                    aria-current={active ? "page" : undefined}
+                    className={`block border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
+                      active
+                        ? "border-blue-600 text-blue-700"
+                        : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800"
+                    }`}
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
+    </header>
   );
 }

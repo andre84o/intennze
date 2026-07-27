@@ -24,7 +24,7 @@ export default async function PortalDomainDetailPage({
     return (
       <div className="space-y-6">
         <BackLink />
-        <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Kunde inte ladda domänen just nu. Försök igen om en stund.
         </div>
       </div>
@@ -41,7 +41,7 @@ export default async function PortalDomainDetailPage({
 
 function BackLink() {
   return (
-    <Link href="/portal/domains" className="inline-flex items-center text-sm text-slate-400 hover:text-slate-200">
+    <Link href="/portal/domains" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700">
       ← Tillbaka till domäner
     </Link>
   );

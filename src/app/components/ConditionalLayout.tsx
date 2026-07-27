@@ -16,8 +16,13 @@ export default function ConditionalLayout({
 }: ConditionalLayoutProps) {
   const pathname = usePathname();
 
-  // Hide header and footer on admin, login, and demo pages
-  const hideLayout = pathname.startsWith("/admin") || pathname === "/login" || pathname.startsWith("/demo");
+  // Hide the marketing header/footer on app shells that provide their own
+  // navigation (admin + customer portal) and on login/demo pages.
+  const hideLayout =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/portal") ||
+    pathname === "/login" ||
+    pathname.startsWith("/demo");
 
   return (
     <>

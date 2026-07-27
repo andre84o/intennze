@@ -42,36 +42,111 @@ function fail(error: string, status: number): { ok: false; error: string; status
 
 const SLD_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
+// Curated, ordered list of the popular extensions we offer. A search expands the
+// name across this set; the extension the user actually typed is always pinned
+// first. There is intentionally NO per-search extension filter — like other
+// registrars, a name is expanded across a fixed popular set of what we sell.
+const FEATURED_TLDS = [
+  "se", "com", "nu", "online", "info", "shop", "store", "one", "tech",
+  "net", "org", "eu", "io", "co", "site", "xyz", "me", "biz",
+];
+
+// Broader known-extension set used ONLY to reject a bare-extension query
+// ("se", ".com"): a lone extension has no name to register, so it returns no
+// results rather than expanding into nonsense.
+const KNOWN_TLDS = new Set<string>([
+  ...FEATURED_TLDS,
+  "app", "dev", "cloud", "email", "live", "pro", "name", "tv", "cc", "blog",
+  "de", "dk", "no", "fi", "uk", "fr", "es", "it", "nl", "link", "click",
+  "design", "agency", "digital", "group", "world", "today", "life", "fun",
+  "space", "website", "host", "press", "solutions", "art", "studio", "media",
+]);
+
 export type SearchInput = { query: string; tlds?: string[] };
 
-/** Turn {query, tlds} into concrete domain names (full domain, or SLD × TLDs). */
+/** SLD × the curated popular extensions, with `pinnedTld` (the one the user
+ *  typed) first, deduped and capped. */
+function expandAcrossFeaturedTlds(
+  sld: string,
+  pinnedTld: string | null
+): { ok: true; names: string[]; truncated: boolean } | { ok: false; error: string } {
+  const order: string[] = [];
+  const push = (t: string) => {
+    if (t && !order.includes(t)) order.push(t);
+  };
+  if (pinnedTld) push(pinnedTld);
+  for (const t of FEATURED_TLDS) push(t);
+
+  const capped = order.slice(0, MAX_TLDS);
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (const tld of capped) {
+    const n = normalizeDomainName(`${sld}.${tld}`);
+    if (n.ok && !seen.has(n.name)) {
+      seen.add(n.name);
+      names.push(n.name);
+    }
+  }
+  if (names.length === 0) return { ok: false, error: "No valid domains to check." };
+  const limited = names.slice(0, MAX_NAMES);
+  return {
+    ok: true,
+    names: limited,
+    truncated: order.length > capped.length || names.length > limited.length,
+  };
+}
+
+/**
+ * Turn a query into concrete domain names to check.
+ *  - keyword ("myntan")           → SLD × featured extensions
+ *  - full domain ("myntan.com")   → same, but the typed extension is pinned first
+ *  - bare extension ("se"/".com") → rejected (no name to register)
+ * There is no per-search extension filter (`input.tlds` is accepted but ignored).
+ */
 export function buildCandidateNames(
   input: SearchInput
 ): { ok: true; names: string[]; truncated: boolean } | { ok: false; error: string } {
   const raw = (input?.query ?? "").trim();
   if (!raw) return { ok: false, error: "Enter a domain or keyword." };
 
-  const full = normalizeDomainName(raw);
-  if (full.ok) return { ok: true, names: [full.name], truncated: false };
+  const lower = raw.toLowerCase();
+  const core = lower.replace(/^\.+|\.+$/g, "");
+  if (core === "") return { ok: false, error: "Enter a domain or keyword." };
 
-  // Treat as a keyword/SLD combined with the selected TLDs.
-  const sld = raw.toLowerCase().replace(/^\.+|\.+$/g, "");
-  if (!SLD_RE.test(sld)) return { ok: false, error: "Enter a valid domain or keyword." };
-
-  const tldsIn = Array.isArray(input.tlds) ? input.tlds : [];
-  const tlds = Array.from(
-    new Set(tldsIn.map((t) => t.trim().toLowerCase().replace(/^\.+/, "")).filter((t) => /^[a-z0-9.-]{2,}$/.test(t)))
-  );
-  if (tlds.length === 0) return { ok: false, error: "Select at least one extension." };
-
-  const truncated = tlds.length > MAX_TLDS;
-  const names: string[] = [];
-  for (const tld of tlds.slice(0, MAX_TLDS)) {
-    const n = normalizeDomainName(`${sld}.${tld}`);
-    if (n.ok) names.push(n.name);
+  // No inner dot → either a keyword to expand, or a bare extension to reject.
+  if (!core.includes(".")) {
+    if (lower.startsWith(".") || KNOWN_TLDS.has(core)) {
+      return { ok: false, error: "Skriv ett domännamn, t.ex. mittnamn eller mittnamn.se." };
+    }
+    if (!SLD_RE.test(core)) return { ok: false, error: "Ange ett giltigt domännamn eller sökord." };
+    return expandAcrossFeaturedTlds(core, null);
   }
-  if (names.length === 0) return { ok: false, error: "No valid domains to check." };
-  return { ok: true, names: names.slice(0, MAX_NAMES), truncated };
+
+  // Has an extension → normalize, then expand the first label across the featured
+  // set with the typed extension pinned first.
+  const full = normalizeDomainName(lower);
+  if (!full.ok) return { ok: false, error: "Ange ett giltigt domännamn." };
+  const dot = full.name.indexOf(".");
+  const sld = full.name.slice(0, dot);
+  const tld = full.name.slice(dot + 1);
+  if (!SLD_RE.test(sld)) {
+    // Multi-label host (e.g. a subdomain) — just check the exact name.
+    return { ok: true, names: [full.name], truncated: false };
+  }
+  return expandAcrossFeaturedTlds(sld, tld);
+}
+
+/** Reorder availability results to match our candidate order (the typed
+ *  extension first, then the featured list). Hostup returns results in an
+ *  arbitrary/queue-arrival order, so the UI relies on this for the "match on
+ *  top" requirement. */
+function orderByCandidates<T extends { name: string }>(results: T[], names: string[]): T[] {
+  const rank = new Map(names.map((n, i) => [n.toLowerCase(), i]));
+  return [...results].sort(
+    (a, b) =>
+      (rank.get(a.name.toLowerCase()) ?? Number.MAX_SAFE_INTEGER) -
+      (rank.get(b.name.toLowerCase()) ?? Number.MAX_SAFE_INTEGER)
+  );
 }
 
 /** Run a bulk availability check, polling a queued job with a bounded loop. */
@@ -124,13 +199,16 @@ export type CustomerDomainResult = {
   pricing: CustomerDomainPricing;
 };
 
-function toCustomerResult(
+/** Compute the customer sale price (net/vat/gross, with the configured markup)
+ *  for one availability result. Shared by the customer search and the admin
+ *  diagnostics (admin additionally sees the provider price alongside). */
+function pricingForAvailability(
   a: DomainAvailability,
   rules: DomainPricingRuleConfig[]
-): CustomerDomainResult {
+): CustomerDomainPricing {
   const premium = a.premium ?? false;
   const providerReg = providerMajorToMinor(a.providerBilling?.amount ?? null);
-  const pricing = customerPricingFor(rules, {
+  return customerPricingFor(rules, {
     tld: a.tld,
     years: 1,
     currencyCode: a.currencyCode ?? a.providerBilling?.currencyCode ?? null,
@@ -141,6 +219,18 @@ function toCustomerResult(
     // For a premium domain the registration provider amount IS the premium price.
     premiumProviderAmountMinor: premium ? providerReg : null,
   });
+}
+
+/** Currency key used to bucket a result for its active pricing rules. */
+function currencyKeyOf(a: DomainAvailability): string {
+  return (a.currencyCode ?? a.providerBilling?.currencyCode ?? "SEK").toUpperCase();
+}
+
+function toCustomerResult(
+  a: DomainAvailability,
+  rules: DomainPricingRuleConfig[]
+): CustomerDomainResult {
+  const pricing = pricingForAvailability(a, rules);
   return {
     name: a.name,
     tld: a.tld,
@@ -219,7 +309,10 @@ export async function searchDomainsForCustomer(
 
   const key = searchCacheKey(["cust", ...built.names]);
   try {
-    const availability = await cached(key, AVAILABILITY_TTL_MS, () => runAvailability(built.names));
+    const availability = orderByCandidates(
+      await cached(key, AVAILABILITY_TTL_MS, () => runAvailability(built.names)),
+      built.names
+    );
 
     // Load active pricing rules once per distinct currency (config only, no
     // provider price), then resolve per result in-memory.
@@ -261,8 +354,13 @@ export async function searchDomainsForCustomer(
 }
 
 // ── ADMIN diagnostics (provider price + raw state allowed) ───────────────────
+/** Raw availability PLUS the computed customer sale price (net/vat/gross with
+ *  the configured markup). Admin-only, so provider price + customer price may
+ *  both be shown. */
+export type AdminDomainResult = DomainAvailability & { pricing: CustomerDomainPricing };
+
 export type AdminAvailabilityDiagnostics = {
-  results: DomainAvailability[];
+  results: AdminDomainResult[];
   rateLimit: ReturnType<typeof getHostupRateLimit>;
 };
 
@@ -279,7 +377,19 @@ export async function searchDomainsForAdmin(
   if (await rateLimited(actor)) return fail("Too many searches. Please wait a moment.", 429);
 
   try {
-    const results = await runAvailability(built.names);
+    const availability = orderByCandidates(await runAvailability(built.names), built.names);
+
+    // Load active pricing rules once per distinct currency, then compute the
+    // customer sale price (with the configured markup) for each result.
+    const rulesByCurrency = new Map<string, DomainPricingRuleConfig[]>();
+    for (const cur of new Set(availability.map(currencyKeyOf))) {
+      rulesByCurrency.set(cur, await loadActiveRules(actor, cur));
+    }
+    const results: AdminDomainResult[] = availability.map((a) => ({
+      ...a,
+      pricing: pricingForAvailability(a, rulesByCurrency.get(currencyKeyOf(a)) ?? []),
+    }));
+
     await audit(actor, "DOMAIN_AVAILABILITY_CHECKED", "success", { domain_count: built.names.length, admin: true });
     return { ok: true, data: { results, rateLimit: getHostupRateLimit() } };
   } catch (err) {

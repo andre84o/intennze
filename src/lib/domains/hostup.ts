@@ -101,7 +101,7 @@ export async function syncHostupDomain(
 ): Promise<ServiceResult<{ outcome: SyncOutcome; domainId?: string; changedFields?: string[] }>> {
   const guard = await requireAdmin();
   if (!guard.ok) return fail(guard.error, guard.status);
-  if (!isHostupConfigured()) return fail("Hostup is not configured.", 503);
+  if (!isHostupConfigured()) return fail("The provider is not configured.", 503);
 
   let remote;
   try {
@@ -116,9 +116,9 @@ export async function syncHostupDomain(
         outcome: "error",
         metadata: { reason: "transient" },
       });
-      return fail("Hostup is temporarily unavailable.", 502);
+      return fail("The provider is temporarily unavailable.", 502);
     }
-    return fail("Could not read the domain from Hostup.", 502);
+    return fail("Could not read the domain from the provider.", 502);
   }
 
   const { data: row } = await guard.actor.supabase
@@ -165,14 +165,14 @@ export type SyncBatchResult = {
 export async function syncHostupDomains(): Promise<ServiceResult<SyncBatchResult>> {
   const guard = await requireAdmin();
   if (!guard.ok) return fail(guard.error, guard.status);
-  if (!isHostupConfigured()) return fail("Hostup is not configured.", 503);
+  if (!isHostupConfigured()) return fail("The provider is not configured.", 503);
 
   let remotes;
   try {
     remotes = await listAllHostupDomains();
   } catch (err) {
-    if (isTransient(err)) return fail("Hostup is temporarily unavailable.", 502);
-    return fail("Could not list domains from Hostup.", 502);
+    if (isTransient(err)) return fail("The provider is temporarily unavailable.", 502);
+    return fail("Could not list domains from the provider.", 502);
   }
 
   const { data: localRows } = await guard.actor.supabase
@@ -237,12 +237,12 @@ export async function linkHostupDomainToCustomer(input: {
   if (!guard.ok) return fail(guard.error, guard.status);
   // Customer-view must never create/change the ownership link.
   if (guard.actor.isCustomerView) return fail("Customer-view cannot link domains.", 403);
-  if (!isHostupConfigured()) return fail("Hostup is not configured.", 503);
+  if (!isHostupConfigured()) return fail("The provider is not configured.", 503);
 
   if (!isUuid(input?.customerId)) return fail("A valid customer is required.", 400);
   const providerDomainId = input?.providerDomainId;
   if (typeof providerDomainId !== "string" || !/^dom_[A-Za-z0-9]+$/.test(providerDomainId)) {
-    return fail("Invalid Hostup domain id.", 400);
+    return fail("Invalid provider domain id.", 400);
   }
 
   // Server-verify the domain against Hostup — never trust the id from the client.
@@ -253,8 +253,8 @@ export async function linkHostupDomainToCustomer(input: {
     if (err instanceof HostupError && err.code === "NOT_FOUND") {
       return fail("Domain not found at provider.", 404);
     }
-    if (isTransient(err)) return fail("Hostup is temporarily unavailable.", 502);
-    return fail("Could not verify the domain with Hostup.", 502);
+    if (isTransient(err)) return fail("The provider is temporarily unavailable.", 502);
+    return fail("Could not verify the domain with the provider.", 502);
   }
 
   const normalized = normalizeDomainName(remote.name);
@@ -324,7 +324,7 @@ export async function getHostupInfoForCustomerDomain(
   if (owned.data.registrar !== "hostup" || !providerDomainId) {
     return { ok: true, data: { linked: false } };
   }
-  if (!isHostupConfigured()) return fail("Hostup is not configured.", 503);
+  if (!isHostupConfigured()) return fail("The provider is not configured.", 503);
 
   try {
     const remote = await getHostupDomain(providerDomainId);
@@ -346,7 +346,7 @@ export async function getHostupInfoForCustomerDomain(
     if (err instanceof HostupError && err.code === "NOT_FOUND") {
       return fail("Domain not found at provider.", 404);
     }
-    if (isTransient(err)) return fail("Hostup is temporarily unavailable.", 502);
-    return fail("Could not read the domain from Hostup.", 502);
+    if (isTransient(err)) return fail("The provider is temporarily unavailable.", 502);
+    return fail("Could not read the domain from the provider.", 502);
   }
 }

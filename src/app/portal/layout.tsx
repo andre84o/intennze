@@ -56,17 +56,17 @@ export default async function PortalLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-slate-50 text-slate-800">
       {actor.isCustomerView && (
-        <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 border-b border-amber-400/30 bg-amber-500/10 px-4 py-3 backdrop-blur">
-          <p className="text-sm font-medium text-amber-200">
+        <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 border-b border-amber-300 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-medium text-amber-800">
             You are viewing the portal as{" "}
             <span className="font-semibold">{bannerName}</span>
           </p>
           <form action={exitCustomerView}>
             <button
               type="submit"
-              className="rounded-lg border border-amber-400/40 bg-amber-500/20 px-3 py-1.5 text-sm font-medium text-amber-100 transition-colors hover:bg-amber-500/30"
+              className="cursor-pointer rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 shadow-sm transition-colors hover:bg-amber-100"
             >
               Exit customer view
             </button>
@@ -74,7 +74,7 @@ export default async function PortalLayout({
         </div>
       )}
       <PortalNav />
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 pb-10 pt-12 sm:pb-12 sm:pt-16">{children}</main>
     </div>
   );
 }

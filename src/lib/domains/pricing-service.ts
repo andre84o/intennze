@@ -546,22 +546,22 @@ export async function previewPricingWithHostupForAdmin(
   if (!isCalculationType(input.calculationType)) return fail("Invalid calculation type.", 400);
   const tld = (input.tld ?? "").trim().toLowerCase().replace(/^\.+/, "");
   if (!/^[a-z0-9.-]{2,}$/.test(tld)) return fail("Ange en giltig TLD.", 400);
-  if (!isHostupConfigured()) return fail("Hostup är inte konfigurerad.", 503);
+  if (!isHostupConfigured()) return fail("Leverantörstjänsten är inte konfigurerad.", 503);
 
   let product;
   try {
     product = await getDomainProduct(tld);
   } catch (err) {
     if (err instanceof HostupError && err.code === "NOT_FOUND") {
-      return fail("TLD:n finns inte hos Hostup.", 404);
+      return fail("TLD:n finns inte hos leverantören.", 404);
     }
     if (
       err instanceof HostupError &&
       (err.code === "TIMEOUT" || err.code === "NETWORK" || err.code === "SERVER_ERROR")
     ) {
-      return fail("Hostup är tillfälligt otillgänglig.", 502);
+      return fail("Leverantören är tillfälligt otillgänglig.", 502);
     }
-    return fail("Kunde inte hämta pris från Hostup.", 502);
+    return fail("Kunde inte hämta pris från leverantören.", 502);
   }
 
   const registerMinor = moneyToMinor(product.providerRegister);

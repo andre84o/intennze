@@ -49,15 +49,15 @@ export default function CheckoutClient({
   };
 
   const inputCls =
-    "w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/20";
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10";
 
   return (
     <div className="space-y-5">
       <fieldset
         disabled={isCustomerView}
-        className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 disabled:opacity-60"
+        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm disabled:opacity-60"
       >
-        <legend className="px-1 text-sm font-semibold text-slate-300">Registreringsuppgifter</legend>
+        <legend className="px-1 text-sm font-semibold text-slate-700">Registreringsuppgifter</legend>
         <p className="mb-4 text-xs text-slate-500">
           Förifyllt från dina uppgifter. Komplettera det som saknas.
         </p>
@@ -66,9 +66,9 @@ export default function CheckoutClient({
             const wasMissing = missingFields.includes(f.key);
             return (
               <div key={f.key} className={f.key === "address" ? "sm:col-span-2" : undefined}>
-                <label htmlFor={`reg-${f.key}`} className="mb-1 block text-xs font-medium text-slate-400">
+                <label htmlFor={`reg-${f.key}`} className="mb-1 block text-xs font-medium text-slate-700">
                   {f.label}
-                  {f.required && <span className="text-red-400"> *</span>}
+                  {f.required && <span className="text-red-500"> *</span>}
                 </label>
                 <input
                   id={`reg-${f.key}`}
@@ -100,14 +100,14 @@ export default function CheckoutClient({
                   ? "Fyll i alla obligatoriska uppgifter"
                   : "Öppna Stripe-kassan i testläge"
           }
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25 disabled:cursor-not-allowed disabled:border disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
         >
           <CreditCard className="h-4 w-4" aria-hidden="true" />
           {pending ? "Öppnar kassan…" : "Betala med kort (testläge)"}
         </button>
         <div aria-live="assertive">
           {error && (
-            <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
               {error}
             </p>
           )}

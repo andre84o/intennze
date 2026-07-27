@@ -23,44 +23,28 @@ export default async function PortalDomainsPage() {
   if (!res.ok) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Domäner</h1>
-        <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <h1 className="text-2xl font-bold text-slate-900">Domäner</h1>
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Kunde inte ladda dina domäner just nu. Försök igen om en stund.
         </div>
       </div>
     );
   }
 
-  const { overview, items } = res.data;
+  const { items } = res.data;
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold text-white">Domäner</h1>
-        <p className="text-slate-400">Dina domäner, status, förnyelse och nameservrar.</p>
+      <header>
+        <h1 className="text-2xl font-bold text-slate-900">Domäner</h1>
       </header>
 
-      {/* Overview cards */}
-      <section aria-label="Översikt" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Domäner", value: overview.total },
-          { label: "Kräver åtgärd", value: overview.needsAttention },
-          { label: "Går ut snart", value: overview.expiringSoon },
-          { label: "Autoförnyelse av", value: overview.autoRenewOff },
-        ].map((c) => (
-          <div key={c.label} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-            <p className="text-sm font-medium text-slate-400">{c.label}</p>
-            <p className="mt-1 text-2xl font-bold text-white">{c.value}</p>
-          </div>
-        ))}
-      </section>
-
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-8 text-center">
-          <p className="text-slate-300">Du har inga domäner ännu.</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-slate-700">Du har inga domäner ännu.</p>
           <Link
             href="/portal/domains/search"
-            className="mt-4 inline-block rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
+            className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25"
           >
             Sök en domän
           </Link>
@@ -73,10 +57,10 @@ export default async function PortalDomainsPage() {
               <li key={d.id}>
                 <Link
                   href={`/portal/domains/${d.id}`}
-                  className="block rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-slate-700"
+                  className="block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm motion-safe:transition hover:border-slate-300 hover:shadow-md"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="font-medium text-white">{d.name}</span>
+                    <span className="font-medium text-slate-900">{d.name}</span>
                     <span
                       className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(
                         d.status.tone
@@ -89,19 +73,19 @@ export default async function PortalDomainsPage() {
                   <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <dt className="text-slate-500">Går ut</dt>
-                      <dd className="text-slate-300">{formatDate(d.expiresAt)}</dd>
+                      <dd className="text-slate-700">{formatDate(d.expiresAt)}</dd>
                     </div>
                     <div>
                       <dt className="text-slate-500">Förnyelse</dt>
-                      <dd className="text-slate-300">{renewalText(d.pricing.renewal, d.currencyCode)}</dd>
+                      <dd className="text-slate-700">{renewalText(d.pricing.renewal, d.currencyCode)}</dd>
                     </div>
                     <div>
                       <dt className="text-slate-500">Autoförnyelse</dt>
-                      <dd className="text-slate-300">{d.autoRenew ? "På" : "Av"}</dd>
+                      <dd className="text-slate-700">{d.autoRenew ? "På" : "Av"}</dd>
                     </div>
                     <div>
                       <dt className="text-slate-500">Nameservrar</dt>
-                      <dd className="text-slate-300">{d.nameserverCount}</dd>
+                      <dd className="text-slate-700">{d.nameserverCount}</dd>
                     </div>
                   </dl>
                   {d.needsAttention && (
@@ -120,9 +104,9 @@ export default async function PortalDomainsPage() {
           </ul>
 
           {/* Desktop: table */}
-          <div className="hidden overflow-x-auto rounded-2xl border border-slate-800 md:block">
+          <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-800 bg-slate-900/60 text-slate-400">
+              <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">Domän</th>
                   <th scope="col" className="px-4 py-3 font-medium">Status</th>
@@ -132,11 +116,11 @@ export default async function PortalDomainsPage() {
                   <th scope="col" className="px-4 py-3 font-medium">Åtgärd</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-200">
                 {items.map((d) => (
-                  <tr key={d.id} className="hover:bg-slate-900/40">
+                  <tr key={d.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <Link href={`/portal/domains/${d.id}`} className="font-medium text-indigo-300 hover:underline">
+                      <Link href={`/portal/domains/${d.id}`} className="font-medium text-blue-600 hover:text-blue-700 hover:underline">
                         {d.name}
                       </Link>
                     </td>
@@ -150,9 +134,9 @@ export default async function PortalDomainsPage() {
                         {d.status.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{formatDate(d.expiresAt)}</td>
-                    <td className="px-4 py-3 text-slate-300">{renewalText(d.pricing.renewal, d.currencyCode)}</td>
-                    <td className="px-4 py-3 text-slate-300">{d.autoRenew ? "På" : "Av"}</td>
+                    <td className="px-4 py-3 text-slate-700">{formatDate(d.expiresAt)}</td>
+                    <td className="px-4 py-3 text-slate-700">{renewalText(d.pricing.renewal, d.currencyCode)}</td>
+                    <td className="px-4 py-3 text-slate-700">{d.autoRenew ? "På" : "Av"}</td>
                     <td className="px-4 py-3">
                       {d.needsAttention ? (
                         <span
@@ -164,7 +148,7 @@ export default async function PortalDomainsPage() {
                           {d.attentionPrimary.label}
                         </span>
                       ) : (
-                        <span className="text-slate-500">—</span>
+                        <span className="text-slate-400">—</span>
                       )}
                     </td>
                   </tr>

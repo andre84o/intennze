@@ -15,10 +15,6 @@ export default async function DomainPricingPage() {
     <div className="max-w-5xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Domänpriser</h1>
-        <p className="text-gray-500">
-          Konfigurera Intennzes kundpriser ovanpå Hostups leverantörspriser. Ange belopp i kronor,
-          exklusive moms.
-        </p>
       </div>
       <PricingRulesClient initialRules={rules} initialError={error} tldOptions={tldOptions} />
     </div>
