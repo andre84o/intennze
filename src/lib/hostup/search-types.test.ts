@@ -126,6 +126,13 @@ test("parseDomainProduct: real .se shape (pricing + periods + requirements)", ()
   assert.equal(p.providerBillingCycle, "annually");
   assert.equal(p.domainPricing.length, 2);
   assert.equal(p.registryRequirements?.registration[0].key, "phoneNumber");
+  assert.equal(p.premium, null); // not reported for a standard TLD
+});
+
+test("parseDomainProduct: surfaces a premium flag when Hostup reports it", () => {
+  const p = parseDomainProduct({ tld: "ai", premium: true, register: { amount: 900, currencyCode: "USD" } })!;
+  assert.equal(p.premium, true);
+  assert.equal(p.providerRegister?.currencyCode, "USD");
 });
 
 test("parseOrderPreview: real shape, amounts, and createsNothing marker", () => {

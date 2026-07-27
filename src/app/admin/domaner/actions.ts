@@ -9,8 +9,10 @@ import {
 import type { OrderPreviewInput } from "@/lib/hostup/client";
 import {
   createPricingRule,
+  createPricingRulesForTlds,
   listPricingRules,
   previewPricingForAdmin,
+  previewPricingWithHostupForAdmin,
   setPricingRuleActive,
   updatePricingRule,
   type PricingRuleInput,
@@ -38,6 +40,15 @@ export async function adminCreatePricingRule(input: PricingRuleInput) {
   return res;
 }
 
+/** Create the same rule for many TLDs (or the Alla/null default) in one go. */
+export async function adminCreatePricingRulesForTlds(
+  input: Parameters<typeof createPricingRulesForTlds>[0]
+) {
+  const res = await createPricingRulesForTlds(input);
+  if (res.ok) revalidatePath("/admin/domaner/priser");
+  return res;
+}
+
 export async function adminUpdatePricingRule(id: string, input: PricingRuleUpdate) {
   const res = await updatePricingRule(id, input);
   if (res.ok) revalidatePath("/admin/domaner/priser");
@@ -50,9 +61,17 @@ export async function adminSetPricingRuleActive(id: string, active: boolean) {
   return res;
 }
 
-/** Live preview — same engine as production; provider + margin visible to admin. */
+/** Manual test preview — hypothetical provider price (advanced section). */
 export async function adminPreviewPricing(
   input: Parameters<typeof previewPricingForAdmin>[0]
 ) {
   return previewPricingForAdmin(input);
+}
+
+/** DEFAULT preview — fetches Hostup's real TLD price, then computes the customer
+ *  price + margin. Provider + margin visible to admin (this page only). */
+export async function adminPreviewPricingWithHostup(
+  input: Parameters<typeof previewPricingWithHostupForAdmin>[0]
+) {
+  return previewPricingWithHostupForAdmin(input);
 }

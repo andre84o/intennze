@@ -129,6 +129,8 @@ export type DomainProduct = {
   providerTransfer: ProviderMoney | null;
   providerRenew: ProviderMoney | null;
   providerBillingCycle: string | null;
+  /** Whether Hostup flags this TLD/product as premium, when reported (else null). */
+  premium: boolean | null;
   domainPricing: { years: number; register: ProviderMoney | null; renew: ProviderMoney | null }[];
   registryRequirements: RegistryRequirements | null;
   raw: Record<string, unknown>;
@@ -295,6 +297,7 @@ export function parseDomainProduct(v: unknown): DomainProduct | null {
     providerTransfer: parseMoney(inner.transfer),
     providerRenew: parseMoney(inner.renew),
     providerBillingCycle: billing ? firstString(billing, ["billingCycle", "billing_cycle"]) : null,
+    premium: bool(inner.premium) ?? bool((inner as Record<string, unknown>).isPremium),
     domainPricing: pricing
       .filter(isObject)
       .map((p) => ({

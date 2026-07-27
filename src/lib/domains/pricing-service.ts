@@ -11,8 +11,14 @@ import {
   type DomainOperation,
   type DomainPricingRuleConfig,
 } from "@/lib/domains/pricing-engine";
-import { computeVatSplit, type VatSplit } from "@/lib/domains/money";
+import { computeVatSplit, providerMajorToMinor, type VatSplit } from "@/lib/domains/money";
 import { bumpPricingRulesVersion, cachedPricingRules } from "@/lib/domains/pricing-cache";
+import { getDomainProduct, isHostupConfigured, listDomainProducts } from "@/lib/hostup/client";
+import { HostupError } from "@/lib/hostup/types";
+import {
+  parseTldSelection,
+  type TldSelection,
+} from "@/lib/domains/pricing-rules-selection";
 
 /**
  * Server-side domain pricing service. Loads admin rule CONFIG (never provider
@@ -385,17 +391,12 @@ export type AdminPricePreview = {
   years: number;
 };
 
-/**
- * Admin live preview: hypothetical provider price → customer price + margin +
- * VAT, using the SAME engine as production. Uses the rule params entered in the
- * form (not necessarily persisted). Audited as DOMAIN_PRICE_PREVIEWED.
- */
-export async function previewPricingForAdmin(input: {
+/** Rule params shared by the manual and Hostup-backed admin previews. */
+type AdminPreviewParams = {
   operation: DomainOperation;
   calculationType: CalculationType;
   tld?: string | null;
   years?: number;
-  providerAmountMinor: number;
   currencyCode?: string | null;
   premium?: boolean;
   appliesToPremium?: boolean;
@@ -404,14 +405,19 @@ export async function previewPricingForAdmin(input: {
   markupFixedMinor?: number | null;
   markupPercentageBasisPoints?: number | null;
   minimumCustomerPriceMinor?: number | null;
-}): Promise<ServiceResult<AdminPricePreview>> {
-  const g = await requireAdmin();
-  if (!g.ok) return fail(g.error, g.status);
-  if (!isDomainOperation(input.operation)) return fail("Invalid operation.", 400);
-  if (!isCalculationType(input.calculationType)) return fail("Invalid calculation type.", 400);
-  if (typeof input.providerAmountMinor !== "number" || !Number.isInteger(input.providerAmountMinor) || input.providerAmountMinor < 0) {
-    return fail("Provider amount must be a non-negative integer (minor units).", 400);
-  }
+};
+
+/**
+ * Core admin preview: run the SAME production engine on a KNOWN provider amount
+ * and the entered rule params, mapping to the admin DTO (provider + margin).
+ * Pure w.r.t. I/O — no auth, no audit. Callers gate + audit.
+ */
+function computeAdminPreview(
+  providerAmountMinor: number,
+  input: AdminPreviewParams
+): { ok: true; data: AdminPricePreview } | { ok: false; error: string } {
+  if (!isDomainOperation(input.operation)) return { ok: false, error: "Invalid operation." };
+  if (!isCalculationType(input.calculationType)) return { ok: false, error: "Invalid calculation type." };
   const currency = (input.currencyCode ?? "SEK").toUpperCase();
   const years = Number.isInteger(input.years) && (input.years as number) >= 1 ? (input.years as number) : 1;
   const premium = !!input.premium;
@@ -434,30 +440,13 @@ export async function previewPricingForAdmin(input: {
     tld: input.tld ?? "",
     operation: input.operation,
     years,
-    providerAmountMinor: input.providerAmountMinor,
-    premiumProviderAmountMinor: input.providerAmountMinor,
+    providerAmountMinor,
+    premiumProviderAmountMinor: providerAmountMinor,
     currencyCode: currency,
     premium,
     rule,
   });
-  if (!res.ok) return fail(res.error, 400);
-
-  try {
-    await g.actor.supabase.rpc("log_hostup_event", {
-      p_action: "DOMAIN_PRICE_PREVIEWED",
-      p_domain_id: null,
-      p_provider_domain_id: null,
-      p_effective_user_id: g.actor.effectiveUserId,
-      p_outcome: "success",
-      p_metadata: {
-        operation: input.operation,
-        calculation_type: input.calculationType,
-        tld: input.tld ?? null,
-      },
-    });
-  } catch (e) {
-    console.error("[pricing.preview.audit]", e instanceof Error ? e.message : "unknown");
-  }
+  if (!res.ok) return { ok: false, error: res.error };
 
   const v = res.value;
   return {
@@ -465,7 +454,7 @@ export async function previewPricingForAdmin(input: {
     data: {
       priceConfigured: v.priceConfigured,
       premiumRequiresManualPrice: v.premiumRequiresManualPrice,
-      providerAmountMinor: input.providerAmountMinor,
+      providerAmountMinor,
       customerNet: v.customerAmountMinor == null ? null : computeVatSplit(v.customerAmountMinor),
       marginAmountMinor: v.marginAmountMinor,
       marginBasisPoints: v.marginBasisPoints,
@@ -474,4 +463,200 @@ export async function previewPricingForAdmin(input: {
       years: v.years,
     },
   };
+}
+
+async function auditPricePreview(
+  actor: EffectiveActor,
+  input: AdminPreviewParams,
+  source: "manual" | "hostup"
+): Promise<void> {
+  try {
+    await actor.supabase.rpc("log_hostup_event", {
+      p_action: "DOMAIN_PRICE_PREVIEWED",
+      p_domain_id: null,
+      p_provider_domain_id: null,
+      p_effective_user_id: actor.effectiveUserId,
+      p_outcome: "success",
+      p_metadata: {
+        operation: input.operation,
+        calculation_type: input.calculationType,
+        tld: input.tld ?? null,
+        source,
+      },
+    });
+  } catch (e) {
+    console.error("[pricing.preview.audit]", e instanceof Error ? e.message : "unknown");
+  }
+}
+
+/**
+ * Admin live preview from a MANUAL, hypothetical provider price. Kept for the
+ * "advanced / test" section — the Hostup-backed preview is the default.
+ * Audited as DOMAIN_PRICE_PREVIEWED (source: manual).
+ */
+export async function previewPricingForAdmin(
+  input: AdminPreviewParams & { providerAmountMinor: number }
+): Promise<ServiceResult<AdminPricePreview>> {
+  const g = await requireAdmin();
+  if (!g.ok) return fail(g.error, g.status);
+  if (typeof input.providerAmountMinor !== "number" || !Number.isInteger(input.providerAmountMinor) || input.providerAmountMinor < 0) {
+    return fail("Provider amount must be a non-negative integer (minor units).", 400);
+  }
+  const computed = computeAdminPreview(input.providerAmountMinor, input);
+  if (!computed.ok) return fail(computed.error, 400);
+  await auditPricePreview(g.actor, input, "manual");
+  return { ok: true, data: computed.data };
+}
+
+// ── admin: LIVE Hostup pricing for a TLD (provider prices — admin page only) ───
+export type HostupTldPricing = {
+  tld: string;
+  currencyCode: string | null;
+  premium: boolean | null;
+  registerMinor: number | null;
+  renewMinor: number | null;
+  transferMinor: number | null;
+  transferAvailable: boolean;
+};
+
+export type AdminHostupPricePreview = {
+  hostup: HostupTldPricing;
+  /** Preview for the SELECTED operation. null when that operation has no Hostup price. */
+  preview: AdminPricePreview | null;
+  /** True when the selected operation's provider price is missing at the provider. */
+  operationPriceUnavailable: boolean;
+};
+
+function moneyToMinor(m: { amount: number | null } | null): number | null {
+  return m ? providerMajorToMinor(m.amount) : null;
+}
+
+/**
+ * Fetch Hostup's CURRENT provider prices for a TLD (register / renew / transfer,
+ * currency, premium) and compute the customer preview for the SELECTED operation
+ * with the entered rule. Provider price + margin are returned — this is exposed
+ * ONLY on /admin/domaner/priser (admin-gated). Audited as DOMAIN_PRICE_PREVIEWED.
+ */
+export async function previewPricingWithHostupForAdmin(
+  input: AdminPreviewParams & { tld: string }
+): Promise<ServiceResult<AdminHostupPricePreview>> {
+  const g = await requireAdmin();
+  if (!g.ok) return fail(g.error, g.status);
+  if (!isDomainOperation(input.operation)) return fail("Invalid operation.", 400);
+  if (!isCalculationType(input.calculationType)) return fail("Invalid calculation type.", 400);
+  const tld = (input.tld ?? "").trim().toLowerCase().replace(/^\.+/, "");
+  if (!/^[a-z0-9.-]{2,}$/.test(tld)) return fail("Ange en giltig TLD.", 400);
+  if (!isHostupConfigured()) return fail("Hostup är inte konfigurerad.", 503);
+
+  let product;
+  try {
+    product = await getDomainProduct(tld);
+  } catch (err) {
+    if (err instanceof HostupError && err.code === "NOT_FOUND") {
+      return fail("TLD:n finns inte hos Hostup.", 404);
+    }
+    if (
+      err instanceof HostupError &&
+      (err.code === "TIMEOUT" || err.code === "NETWORK" || err.code === "SERVER_ERROR")
+    ) {
+      return fail("Hostup är tillfälligt otillgänglig.", 502);
+    }
+    return fail("Kunde inte hämta pris från Hostup.", 502);
+  }
+
+  const registerMinor = moneyToMinor(product.providerRegister);
+  const renewMinor = moneyToMinor(product.providerRenew);
+  const transferMinor = moneyToMinor(product.providerTransfer);
+  const currencyCode =
+    product.providerRegister?.currencyCode ??
+    product.providerRenew?.currencyCode ??
+    product.providerTransfer?.currencyCode ??
+    (input.currencyCode ?? "SEK").toUpperCase();
+
+  const hostup: HostupTldPricing = {
+    tld: product.tld.replace(/^\.+/, ""),
+    currencyCode,
+    premium: product.premium,
+    registerMinor,
+    renewMinor,
+    transferMinor,
+    transferAvailable: transferMinor != null,
+  };
+
+  const opAmount =
+    input.operation === "register" ? registerMinor : input.operation === "renew" ? renewMinor : transferMinor;
+
+  await auditPricePreview(g.actor, input, "hostup");
+
+  if (opAmount == null) {
+    // The provider does not price this operation for this TLD (e.g. no transfer).
+    return { ok: true, data: { hostup, preview: null, operationPriceUnavailable: true } };
+  }
+
+  const computed = computeAdminPreview(opAmount, { ...input, currencyCode });
+  if (!computed.ok) return fail(computed.error, 400);
+  return { ok: true, data: { hostup, preview: computed.data, operationPriceUnavailable: false } };
+}
+
+// ── admin: list Hostup TLDs for the selector ─────────────────────────────────
+/** TLD options for the pricing-rule selector (bare, lowercase). Empty if Hostup
+ *  is unconfigured or unreachable — the UI still offers Alla + the pinned TLDs. */
+export async function getTldOptionsForAdmin(): Promise<ServiceResult<string[]>> {
+  const g = await requireAdmin();
+  if (!g.ok) return fail(g.error, g.status);
+  if (!isHostupConfigured()) return { ok: true, data: [] };
+  try {
+    const tlds = await listDomainProducts();
+    const cleaned = Array.from(
+      new Set(tlds.map((t) => t.trim().toLowerCase().replace(/^\.+/, "")).filter((t) => /^[a-z0-9.-]{2,}$/.test(t)))
+    ).sort();
+    return { ok: true, data: cleaned };
+  } catch {
+    return { ok: true, data: [] };
+  }
+}
+
+// ── admin: create the SAME rule for many TLDs (or the Alla/null default) ───────
+export type BulkCreateResult = {
+  created: { tld: string | null; id: string }[];
+  skipped: { tld: string | null; error: string }[];
+};
+
+/**
+ * Create the same pricing rule for a validated TLD selection. "Alla" creates ONE
+ * default rule (tld=null); specific TLDs create one rule EACH. Selection is
+ * validated server-side (Alla-xor-specific, de-duped) — the frontend guard is not
+ * trusted. The DB still enforces the one-active-rule-per-key + overlap
+ * constraints, so a conflicting TLD/Alla is reported per row and skipped, never
+ * duplicated.
+ */
+export async function createPricingRulesForTlds(
+  input: Omit<PricingRuleInput, "tld"> & { selection: { all: boolean; tlds: string[] } }
+): Promise<ServiceResult<BulkCreateResult>> {
+  const g = await requireAdmin();
+  if (!g.ok) return fail(g.error, g.status);
+
+  const shape = validateRuleShape({ ...input, tld: null });
+  if (!shape.ok) return fail(shape.error, 400);
+
+  const parsed = parseTldSelection(input.selection ?? { all: false, tlds: [] });
+  if (!parsed.ok) return fail(parsed.error, 400);
+  const selection: TldSelection = parsed.selection;
+
+  const targets: (string | null)[] = selection.scope === "all" ? [null] : selection.tlds;
+
+  const created: { tld: string | null; id: string }[] = [];
+  const skipped: { tld: string | null; error: string }[] = [];
+
+  for (const tld of targets) {
+    const res = await createPricingRule({ ...input, tld });
+    if (res.ok) created.push({ tld, id: res.data.id });
+    else skipped.push({ tld, error: res.error });
+  }
+
+  if (created.length === 0) {
+    // Nothing created — surface the first reason (e.g. Alla already exists).
+    return fail(skipped[0]?.error ?? "Ingen regel kunde skapas.", 409);
+  }
+  return { ok: true, data: { created, skipped } };
 }
