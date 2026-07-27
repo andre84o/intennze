@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   adminCreatePricingRulesForTlds,
@@ -74,7 +74,7 @@ function ruleValueSummary(r: AdminPricingRule): string {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10";
+  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10";
 const labelCls = "block text-xs font-medium text-gray-500 mb-1";
 const sectionLabel = "text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-3";
 const btnPrimary =
@@ -170,8 +170,20 @@ export default function PricingRulesClient({
   const [selectedTlds, setSelectedTlds] = useState<string[]>([]);
   const [tldPickerOpen, setTldPickerOpen] = useState(false);
   const [tldFilter, setTldFilter] = useState("");
-  const [customTld, setCustomTld] = useState("");
   const [selectionError, setSelectionError] = useState<string | null>(null);
+  const tldPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close picker on click outside.
+  useEffect(() => {
+    if (!tldPickerOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (tldPickerRef.current && !tldPickerRef.current.contains(e.target as Node)) {
+        setTldPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [tldPickerOpen]);
 
   // Live Hostup pricing (default) + manual (advanced).
   const [previewTld, setPreviewTld] = useState("");
@@ -247,16 +259,6 @@ export default function PricingRulesClient({
     setSelectAll(false);
     setSelectedTlds((prev) => (prev.includes(tld) ? prev.filter((t) => t !== tld) : [...prev, tld]));
   };
-  const addCustomTld = () => {
-    const t = normalizeTld(customTld);
-    if (!t) {
-      setSelectionError("Ogiltig TLD.");
-      return;
-    }
-    setCustomTld("");
-    toggleTld(t);
-  };
-
   const save = () => {
     startTransition(async () => {
       setError(null);
@@ -423,7 +425,7 @@ export default function PricingRulesClient({
                 {isEditing ? (
                   <input className={`${inputCls} bg-gray-50`} value={form.editingTld ? `.${form.editingTld}` : "Alla (standard)"} disabled readOnly />
                 ) : (
-                  <div className="relative">
+                  <div className="relative" ref={tldPickerRef}>
                     <button
                       type="button"
                       className={`${inputCls} flex items-center justify-between text-left`}
@@ -431,7 +433,7 @@ export default function PricingRulesClient({
                       aria-haspopup="listbox"
                       aria-expanded={tldPickerOpen}
                     >
-                      <span className="truncate">
+                      <span className={`truncate ${selectAll || selectedTlds.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
                         {selectAll
                           ? "Alla (standardregel)"
                           : selectedTlds.length === 0
@@ -449,7 +451,7 @@ export default function PricingRulesClient({
                           }`}
                         >
                           <input type="checkbox" checked={selectAll} disabled={allConflict} onChange={toggleAll} />
-                          <span className="font-medium">Alla (standardregel, tld = null)</span>
+                          <span className="font-medium">Alla</span>
                         </label>
                         <div className="my-1 border-t border-gray-100" />
                         <input
@@ -474,49 +476,22 @@ export default function PricingRulesClient({
                           })}
                           {tldMenu.length === 0 && <p className="px-2 py-2 text-xs text-gray-400">Inga träffar.</p>}
                         </div>
-                        <div className="mt-2 flex items-center gap-2 border-t border-gray-100 pt-2">
-                          <input
-                            className={inputCls}
-                            placeholder="Egen TLD, t.ex. io"
-                            value={customTld}
-                            onChange={(e) => setCustomTld(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                addCustomTld();
-                              }
-                            }}
-                            aria-label="Lägg till egen TLD"
-                          />
-                          <button type="button" className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={addCustomTld}>
-                            Lägg till
-                          </button>
-                        </div>
-                        <div className="mt-2 flex justify-end">
-                          <button type="button" className="text-xs text-blue-600 hover:underline" onClick={() => setTldPickerOpen(false)}>
-                            Stäng
-                          </button>
-                        </div>
                       </div>
                     )}
 
-                    {allConflict && <p className="mt-1 text-xs text-red-600">En regel för alla TLD:er finns redan för denna operation.</p>}
-                    {specificConflicts.length > 0 && !selectAll && (
+{specificConflicts.length > 0 && !selectAll && (
                       <p className="mt-1 text-xs text-amber-600">
                         Finns redan för: {specificConflicts.map((t) => `.${t}`).join(", ")} — dessa hoppas över.
                       </p>
                     )}
                     {selectionError && <p className="mt-1 text-xs text-red-600">{selectionError}</p>}
-                    <p className="mt-1 text-xs text-gray-400">
-                      Välj flera TLD:er för samma regel. Alla = standardregel med lägst prioritet.
-                    </p>
                   </div>
                 )}
               </div>
 
               <div>
                 <label className={labelCls}>Valuta</label>
-                <input className={inputCls} value={form.currencyCode} disabled={isEditing} onChange={(e) => set({ currencyCode: e.target.value })} />
+                <input className={`${inputCls} bg-gray-50`} value={form.currencyCode} disabled readOnly />
               </div>
             </div>
             <div className="mt-4">
@@ -576,7 +551,7 @@ export default function PricingRulesClient({
                 </div>
               )}
               <div>
-                <label className={labelCls}>Minimipris (kr, valfritt)</label>
+                <label className={labelCls}>Minimipris</label>
                 <input className={inputCls} inputMode="decimal" placeholder="—" value={form.minKr} onChange={(e) => set({ minKr: e.target.value })} />
               </div>
             </div>
@@ -585,7 +560,7 @@ export default function PricingRulesClient({
           {/* Section 3 — Period */}
           <div className="border-t border-gray-100 pt-5">
             <p className={sectionLabel}>
-              Period <span className="normal-case font-normal tracking-normal">(valfritt)</span>
+              Period
             </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <DateField label="Startdatum" value={form.startsAt} onChange={(v) => set({ startsAt: v })} />
