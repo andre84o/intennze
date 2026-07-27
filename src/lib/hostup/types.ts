@@ -33,22 +33,32 @@ export type HostupProblem = {
   timestamp?: string;
 };
 
+/** Rate-limit snapshot from response headers (source of truth — never assumed). */
+export type HostupRateLimit = {
+  limit: number | null; // X-RateLimit-Limit
+  remaining: number | null; // X-RateLimit-Remaining
+  reset: string | null; // X-RateLimit-Reset (raw; epoch or seconds-to-reset per Hostup)
+};
+
 /**
  * A Hostup API error. The message NEVER contains the API key. `problem` holds the
- * parsed RFC 7807 body when present; `retryAfter` is seconds (429).
+ * parsed RFC 7807 body when present; `retryAfter` is seconds (429); `rateLimit`
+ * carries the response's X-RateLimit-* headers when present.
  */
 export class HostupError extends Error {
   readonly code: HostupErrorCode;
   readonly status?: number;
   readonly problem?: HostupProblem;
   readonly retryAfter?: number;
+  readonly rateLimit?: HostupRateLimit;
 
   constructor(
     message: string,
     code: HostupErrorCode,
     status?: number,
     problem?: HostupProblem,
-    retryAfter?: number
+    retryAfter?: number,
+    rateLimit?: HostupRateLimit
   ) {
     super(message);
     this.name = "HostupError";
@@ -56,7 +66,22 @@ export class HostupError extends Error {
     this.status = status;
     this.problem = problem;
     this.retryAfter = retryAfter;
+    this.rateLimit = rateLimit;
   }
+}
+
+/** Parse X-RateLimit-* headers into a snapshot (all fields tolerate absence). */
+export function parseRateLimit(headers: Headers): HostupRateLimit {
+  const num = (v: string | null): number | null => {
+    if (v == null || v.trim() === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  return {
+    limit: num(headers.get("x-ratelimit-limit")),
+    remaining: num(headers.get("x-ratelimit-remaining")),
+    reset: headers.get("x-ratelimit-reset"),
+  };
 }
 
 /** A Hostup domain (defensive projection; `raw` keeps the untouched object). */

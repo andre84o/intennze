@@ -7,10 +7,12 @@ import {
   parseHostupNameserversResponse,
   parseHostupProblem,
   parseNextCursor,
+  parseRateLimit,
   type HostupDomain,
   type HostupErrorCode,
   type HostupNameservers,
   type HostupPage,
+  type HostupRateLimit,
 } from "./types.ts";
 import { normalizeDomainName } from "../domains/normalize.ts";
 
@@ -46,6 +48,16 @@ function getConfig(): HostupConfig {
 /** True iff the Hostup env is configured (lets callers degrade gracefully). */
 export function isHostupConfigured(): boolean {
   return !!process.env.HOSTUP_API_KEY && process.env.HOSTUP_API_KEY.trim() !== "";
+}
+
+// Last rate-limit snapshot seen from any Hostup response (headers are the source
+// of truth — the client assumes NO fixed limit). Informational; read via
+// getHostupRateLimit() for logging/backoff decisions.
+let lastRateLimit: HostupRateLimit | null = null;
+
+/** The X-RateLimit-* values from the most recent Hostup response, if any. */
+export function getHostupRateLimit(): HostupRateLimit | null {
+  return lastRateLimit;
 }
 
 function statusToCode(status: number): HostupErrorCode {
@@ -118,6 +130,11 @@ async function request<T>(path: string, opts: RequestOpts<T>): Promise<T> {
     clearTimeout(timeout);
   }
 
+  // Rate-limit headers are the source of truth — capture on EVERY response
+  // (success or error). We never assume a fixed limit.
+  const rateLimit = parseRateLimit(response.headers);
+  lastRateLimit = rateLimit;
+
   const bodyText = await response.text();
 
   if (!response.ok) {
@@ -134,7 +151,8 @@ async function request<T>(path: string, opts: RequestOpts<T>): Promise<T> {
       statusToCode(response.status),
       response.status,
       problem,
-      retryAfter
+      retryAfter,
+      rateLimit
     );
   }
 

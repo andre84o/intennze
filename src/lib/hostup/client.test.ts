@@ -8,6 +8,7 @@ import {
   findHostupDomainByName,
   getHostupDomain,
   getHostupDomainNameservers,
+  getHostupRateLimit,
 } from "./client.ts";
 import { HostupError } from "./types.ts";
 
@@ -186,6 +187,44 @@ test("nameservers endpoint returns the array", async () => {
   const ns = await getHostupDomainNameservers("dom_1");
   assert.deepEqual(ns.nameservers, ["ns1.hostup.se", "ns2.hostup.se"]);
   assert.ok(calls[0].url.endsWith("/domains/dom_1/nameservers"));
+});
+
+test("captures X-RateLimit-* headers on success (source of truth, not assumed)", async () => {
+  stubFetch(() =>
+    json({ data: [] }, 200, {
+      "x-ratelimit-limit": "250",
+      "x-ratelimit-remaining": "249",
+      "x-ratelimit-reset": "1730000000",
+    })
+  );
+  await listHostupDomains();
+  const rl = getHostupRateLimit();
+  assert.equal(rl?.limit, 250);
+  assert.equal(rl?.remaining, 249);
+  assert.equal(rl?.reset, "1730000000");
+});
+
+test("429 error also carries the rate-limit snapshot", async () => {
+  stubFetch(
+    () =>
+      new Response("{}", {
+        status: 429,
+        headers: {
+          "retry-after": "7",
+          "x-ratelimit-limit": "250",
+          "x-ratelimit-remaining": "0",
+        },
+      })
+  );
+  await assert.rejects(
+    () => listHostupDomains(),
+    (e: unknown) =>
+      e instanceof HostupError &&
+      e.code === "RATE_LIMITED" &&
+      e.retryAfter === 7 &&
+      e.rateLimit?.remaining === 0 &&
+      e.rateLimit?.limit === 250
+  );
 });
 
 test("missing HOSTUP_API_KEY -> INVALID_CONFIG (no network)", async () => {
