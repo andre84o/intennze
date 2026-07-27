@@ -23,6 +23,7 @@ import { providerMajorToMinor } from "@/lib/domains/money";
 import type { DomainPricingRuleConfig } from "@/lib/domains/pricing-engine";
 import { cached, searchCacheKey } from "@/lib/hostup/search-cache";
 import { domainSearchIpLimiter, domainSearchUserLimiter, tryLimit, getClientIp } from "@/lib/ratelimit";
+import { logCustomerEvent } from "@/lib/domains/customer-audit";
 
 /**
  * Domain-search service (server-only). The Hostup API key never leaves the
@@ -236,14 +237,22 @@ export async function searchDomainsForCustomer(
       )
     );
     const bulk = built.names.length > 1;
-    await audit(gate.actor, bulk ? "DOMAIN_BULK_AVAILABILITY_CHECKED" : "DOMAIN_AVAILABILITY_CHECKED", "success", {
-      domain_count: built.names.length,
-      result_count: results.length,
-      truncated: built.truncated,
+    // Customer-callable audit (works for a real customer AND admin-in-view);
+    // log_hostup_event silently no-ops for a real customer session.
+    await logCustomerEvent(gate.actor, "CUSTOMER_DOMAIN_SEARCH_VIEWED", {
+      metadata: {
+        domain_count: built.names.length,
+        result_count: results.length,
+        bulk,
+        truncated: built.truncated,
+      },
     });
     return { ok: true, data: { results, truncated: built.truncated } };
   } catch (err) {
-    await audit(gate.actor, "HOSTUP_AVAILABILITY_FAILED", "error", { domain_count: built.names.length });
+    await logCustomerEvent(gate.actor, "CUSTOMER_DOMAIN_SEARCH_VIEWED", {
+      outcome: "error",
+      metadata: { domain_count: built.names.length },
+    });
     if (err instanceof HostupError && err.code === "RATE_LIMITED") {
       return fail("The registry is busy. Please try again shortly.", 429);
     }

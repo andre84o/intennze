@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getEffectiveActor } from "@/lib/auth/customerView";
 import { getDomainsForCurrentCustomer } from "@/lib/domains/service";
 
@@ -46,7 +47,10 @@ export default async function PortalPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+        <Link
+          href="/portal/domains"
+          className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 transition-colors hover:border-slate-700"
+        >
           <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
             Domains
           </h2>
@@ -55,7 +59,8 @@ export default async function PortalPage() {
               ? "No domains yet"
               : `${domainCount} ${domainCount === 1 ? "domain" : "domains"}`}
           </p>
-        </div>
+          <p className="mt-1 text-sm text-indigo-300">Visa dina domäner →</p>
+        </Link>
       </section>
     </div>
   );

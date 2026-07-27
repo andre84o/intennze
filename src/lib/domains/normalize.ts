@@ -84,3 +84,15 @@ export function normalizeDomainName(input: string | null | undefined): Normalize
 export function validateDomainName(input: string | null | undefined): NormalizeResult {
   return normalizeDomainName(input);
 }
+
+/**
+ * The registrable suffix (everything after the first label): `foo.se` → `se`,
+ * `foo.co.uk` → `co.uk`. Pure; returns null when there is no dot. Used for
+ * pricing-rule lookup on an already-normalized name.
+ */
+export function tldOf(name: string | null | undefined): string | null {
+  if (typeof name !== "string") return null;
+  const dot = name.indexOf(".");
+  if (dot < 0 || dot === name.length - 1) return null;
+  return name.slice(dot + 1).toLowerCase();
+}

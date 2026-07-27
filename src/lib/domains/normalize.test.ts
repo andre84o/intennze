@@ -3,7 +3,16 @@ import assert from "node:assert/strict";
 // NOTE: run with `node --test --experimental-strip-types`. Under strip-types the
 // import MUST carry the explicit `.ts` extension and use a relative path (the
 // `@/*` alias is a compiler-only concept and is not resolvable by Node).
-import { normalizeDomainName, isValidDomain } from "./normalize.ts";
+import { normalizeDomainName, isValidDomain, tldOf } from "./normalize.ts";
+
+test("tldOf returns the registrable suffix", () => {
+  assert.equal(tldOf("foo.se"), "se");
+  assert.equal(tldOf("foo.co.uk"), "co.uk");
+  assert.equal(tldOf("FOO.SE"), "se");
+  assert.equal(tldOf("nodot"), null);
+  assert.equal(tldOf("trailing."), null);
+  assert.equal(tldOf(null), null);
+});
 
 function normalized(input: string): string | null {
   const r = normalizeDomainName(input);

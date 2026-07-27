@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getEffectiveActor } from "@/lib/auth/customerView";
 import { exitCustomerView } from "@/app/admin/kunder/actions";
+import PortalNav from "./PortalNav";
 
 /**
  * Protected customer portal shell.
@@ -72,6 +73,7 @@ export default async function PortalLayout({
           </form>
         </div>
       )}
+      <PortalNav />
       <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
     </div>
   );
