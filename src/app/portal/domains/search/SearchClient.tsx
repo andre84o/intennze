@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { ShoppingCart } from "lucide-react";
 import { searchDomains, prepareQuote } from "../actions";
 import { formatMinor } from "@/lib/domains/money";
 import type { CustomerDomainResult } from "@/lib/domains/search-service";
@@ -17,16 +18,21 @@ const STATE_LABEL: Record<CustomerDomainResult["state"], string> = {
 };
 
 const STATE_BADGE: Record<CustomerDomainResult["state"], string> = {
-  available: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  unavailable: "bg-slate-100 text-slate-600 border-slate-200",
-  already_owned: "bg-amber-50 text-amber-700 border-amber-200",
-  checking: "bg-blue-50 text-blue-700 border-blue-200",
-  invalid: "bg-red-50 text-red-700 border-red-200",
-  unknown: "bg-slate-100 text-slate-600 border-slate-200",
+  available: "bg-emerald-500 text-white ring-emerald-700/30",
+  unavailable: "bg-slate-400 text-white ring-slate-600/30",
+  already_owned: "bg-amber-600 text-white ring-amber-700/30",
+  checking: "bg-blue-600 text-white ring-blue-700/30",
+  invalid: "bg-rose-600 text-white ring-rose-700/30",
+  unknown: "bg-slate-500 text-white ring-slate-600/30",
 };
 
 function formatQuoteTime(ms: number): string {
   return new Intl.DateTimeFormat("sv-SE", { hour: "2-digit", minute: "2-digit" }).format(new Date(ms));
+}
+
+/** Format a minor amount and drop the space before "kr" (matches the admin cards). */
+function fmtTight(minor: number | null | undefined, currency: string): string {
+  return formatMinor(minor, currency).replace(/[\s  ]+kr$/iu, "kr");
 }
 
 export default function SearchClient() {
@@ -36,8 +42,8 @@ export default function SearchClient() {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  // Per-domain selected registration period (years) and prepared quote / error.
-  const [years, setYears] = useState<Record<string, number>>({});
+  // Per-domain prepared quote / error. Domains register for the standard period
+  // and renew automatically — no period picker.
   const [quotes, setQuotes] = useState<Record<string, DomainQuoteSnapshot>>({});
   const [quoteErrors, setQuoteErrors] = useState<Record<string, string>>({});
   const [preparing, setPreparing] = useState<string | null>(null);
@@ -65,7 +71,7 @@ export default function SearchClient() {
   };
 
   const prepare = (r: CustomerDomainResult) => {
-    const chosen = years[r.name] ?? r.supportedRegisterYears[0] ?? 1;
+    const chosen = r.supportedRegisterYears[0] ?? 1;
     setPreparing(r.name);
     startQuote(async () => {
       setQuoteErrors((p) => ({ ...p, [r.name]: "" }));
@@ -83,10 +89,6 @@ export default function SearchClient() {
     "w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10";
   const btnPrimary =
     "rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed";
-  const btnDisabled =
-    "rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-400 cursor-not-allowed";
-  const btnSecondary =
-    "rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
     <div className="space-y-6">
@@ -147,104 +149,78 @@ export default function SearchClient() {
             {results.map((r) => {
               const quote = quotes[r.name];
               const qErr = quoteErrors[r.name];
-              const chosenYears = years[r.name] ?? r.supportedRegisterYears[0] ?? 1;
+              const dotIdx = r.name.lastIndexOf(".");
+              const label = dotIdx > 0 ? r.name.slice(0, dotIdx) : r.name;
+              const tld = dotIdx > 0 ? r.name.slice(dotIdx) : "";
+              const reg = r.pricing.registration;
+              const priceText =
+                reg.priceConfigured && reg.net ? fmtTight(reg.net.netAmountMinor, r.pricing.currencyCode) : null;
               return (
-                <div key={r.name} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-slate-900">{r.name}</span>
-                      <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATE_BADGE[r.state]}`}>
+                <div
+                  key={r.name}
+                  className="group rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm motion-safe:transition hover:border-gray-300 hover:shadow-md"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    {/* Left — domain name + status/badges */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <span className="text-lg text-gray-800">
+                        {label}
+                        <span className="font-bold text-gray-950">{tld}</span>
+                      </span>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium leading-4 ring-1 ring-inset sm:text-[11px] ${STATE_BADGE[r.state]}`}>
                         {STATE_LABEL[r.state]}
                       </span>
                       {r.premium && (
-                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                        <span className="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-600/20">
                           Premium
                         </span>
                       )}
+                      {r.pricing.requiresRegistrarFeeAcceptance && (
+                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                          Registraravgift
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button type="button" disabled title="Detaljer öppnar när domänen är din" className={btnDisabled}>
-                        Se detaljer
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => prepare(r)}
-                        disabled={!r.canRegister || preparing === r.name}
-                        title={
-                          r.canRegister
-                            ? "Förbered en beställning (ingen beställning skapas)"
-                            : "Domänen kan inte registreras"
-                        }
-                        className={r.canRegister ? btnSecondary : btnDisabled}
-                      >
-                        {preparing === r.name ? "Förbereder…" : "Förbered beställning"}
-                      </button>
-                    </div>
-                  </div>
 
-                  {/* Price (customer sale price only — never the provider price). */}
-                  <div className="mt-3 space-y-0.5 text-sm">
-                    <div>
-                      {r.pricing.registration.premiumRequiresManualPrice ? (
-                        <span className="text-amber-700">Premiumdomän – pris bekräftas manuellt</span>
-                      ) : r.pricing.registration.priceConfigured && r.pricing.registration.net ? (
-                        <span className="text-slate-700">
-                          Registrering: {formatMinor(r.pricing.registration.net.netAmountMinor, r.pricing.currencyCode)}{" "}
-                          <span className="text-slate-500">exkl. moms</span>
-                          <span className="text-slate-400">
-                            {" "}
-                            ({formatMinor(r.pricing.registration.net.grossAmountMinor, r.pricing.currencyCode)} inkl. moms)
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-slate-500">Registreringspris ej konfigurerat</span>
-                      )}
-                    </div>
-                    <div className="text-slate-500">
-                      {r.pricing.renewal.premiumRequiresManualPrice ? (
-                        <span>Förnyelse: bekräftas manuellt (premium)</span>
-                      ) : r.pricing.renewal.priceConfigured && r.pricing.renewal.net ? (
-                        <span>
-                          Förnyelse: {formatMinor(r.pricing.renewal.net.netAmountMinor, r.pricing.currencyCode)} exkl. moms
-                        </span>
-                      ) : (
-                        <span>Förnyelse: Pris ej konfigurerat</span>
-                      )}
-                    </div>
-                    {r.pricing.requiresRegistrarFeeAcceptance && (
-                      <div className="text-xs text-amber-700">
-                        Kräver godkännande av registraravgift vid beställning.
+                    {/* Right — price + primary action */}
+                    <div className="flex items-center justify-between gap-4 sm:justify-end">
+                      <div className="text-right">
+                        {reg.premiumRequiresManualPrice ? (
+                          <span className="text-sm font-semibold text-amber-600">Manuellt pris</span>
+                        ) : priceText ? (
+                          <span className="text-lg font-bold text-gray-900">{priceText}</span>
+                        ) : (
+                          <span className="text-sm font-medium text-gray-400">Pris ej satt</span>
+                        )}
                       </div>
-                    )}
+                      {r.canRegister ? (
+                        <button
+                          type="button"
+                          onClick={() => prepare(r)}
+                          disabled={preparing === r.name}
+                          className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-amber-400/70 px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm outline-none motion-safe:transition hover:bg-amber-500 focus-visible:ring-4 focus-visible:ring-amber-400/30 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+                          {preparing === r.name ? "Förbereder…" : "Lägg till domän"}
+                        </button>
+                      ) : (
+                        <span
+                          title={r.registerReason ?? undefined}
+                          className="shrink-0 text-sm font-medium text-gray-400"
+                        >
+                          Ej tillgänglig
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* unknown → retry hint */}
                   {r.state === "unknown" && (
-                    <button type="button" onClick={runSearch} className="mt-2 text-xs text-blue-600 hover:text-blue-700 hover:underline">
+                    <button type="button" onClick={runSearch} className="mt-3 text-xs text-blue-600 hover:text-blue-700 hover:underline">
                       Kunde inte avgöras{r.unknownReason ? ` (${r.unknownReason})` : ""} — försök igen
                     </button>
                   )}
 
-                  {/* Period selector (registration years) */}
-                  {r.canRegister && r.supportedRegisterYears.length > 0 && (
-                    <div className="mt-3 flex items-center gap-2">
-                      <label htmlFor={`years-${r.name}`} className="text-xs text-slate-500">
-                        Registreringsperiod
-                      </label>
-                      <select
-                        id={`years-${r.name}`}
-                        value={chosenYears}
-                        onChange={(e) => setYears((p) => ({ ...p, [r.name]: Number(e.target.value) }))}
-                        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                      >
-                        {r.supportedRegisterYears.map((y) => (
-                          <option key={y} value={y}>
-                            {y} år
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
 
                   {/* Prepared-quote confirmation */}
                   {qErr && (
@@ -272,17 +248,6 @@ export default function SearchClient() {
                           Gå till kassan
                         </Link>
                       )}
-                    </div>
-                  )}
-
-                  {/* Requirements to display (dynamic; nothing collected in this phase) */}
-                  {r.requirements.length > 0 && (
-                    <div className="mt-2 text-xs text-slate-500">
-                      Kräver vid beställning:{" "}
-                      {r.requirements
-                        .filter((req) => req.required)
-                        .map((req) => req.label)
-                        .join(", ")}
                     </div>
                   )}
                 </div>

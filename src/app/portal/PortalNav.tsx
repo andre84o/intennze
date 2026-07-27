@@ -44,11 +44,11 @@ export default function PortalNav() {
               alt="Intenzze"
               width={260}
               height={65}
-              className="h-25 w-auto object-contain object-left mt-10"
+              className="md:h-25 h-20 w-auto object-contain object-left md:mt-10 -ml-5"
               priority
             />
           </Link>
-          <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Kundportal</span>
+          <span className="text-xs font-medium uppercase tracking-wider text-slate-400 md:mt-10">Kundportal</span>
         </div>
         <nav aria-label="Portalnavigering">
           <ul className="-mb-px flex justify-center gap-1 overflow-x-auto">

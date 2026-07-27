@@ -1,48 +1,14 @@
 import Link from "next/link";
-import { ArrowRight, Globe, Search, ReceiptText, ShieldCheck } from "lucide-react";
+import { Search, ShieldCheck } from "lucide-react";
 import { getEffectiveActor } from "@/lib/auth/customerView";
-import { getDomainsForCurrentCustomer } from "@/lib/domains/service";
 
 export const metadata = {
   title: "Portal",
 };
 
-/**
- * Portal overview. Reads the customer's domain count through the server-side
- * ownership rules and presents quick-access cards. Light, flat design.
- */
+/** Portal overview. Light, flat design. */
 export default async function PortalPage() {
   const actor = await getEffectiveActor();
-
-  const domainsResult = await getDomainsForCurrentCustomer();
-  const domainCount = domainsResult.ok ? domainsResult.data.length : 0;
-
-  const actions = [
-    {
-      href: "/portal/domains",
-      icon: Globe,
-      title: "Domäner",
-      body:
-        domainCount === 0
-          ? "Du har inga domäner ännu."
-          : `${domainCount} ${domainCount === 1 ? "domän" : "domäner"} i ditt konto.`,
-      cta: "Visa dina domäner",
-    },
-    {
-      href: "/portal/domains/search",
-      icon: Search,
-      title: "Sök domän",
-      body: "Hitta och säkra ett nytt domännamn för ditt varumärke.",
-      cta: "Sök domän",
-    },
-    {
-      href: "/portal/domains/orders",
-      icon: ReceiptText,
-      title: "Beställningar",
-      body: "Följ dina beställningar och deras status.",
-      cta: "Visa beställningar",
-    },
-  ];
 
   return (
     <div className="space-y-8">
@@ -72,27 +38,6 @@ export default async function PortalPage() {
           </Link>
         </div>
       </header>
-
-      {/* Quick actions */}
-      <section aria-label="Snabbåtgärder" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {actions.map(({ href, icon: Icon, title, body, cta }) => (
-          <Link
-            key={href}
-            href={href}
-            className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all motion-safe:hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20"
-          >
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100">
-              <Icon className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <h2 className="mt-4 text-base font-semibold text-slate-900">{title}</h2>
-            <p className="mt-1 flex-1 text-sm text-slate-600">{body}</p>
-            <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-600">
-              {cta}
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-            </span>
-          </Link>
-        ))}
-      </section>
 
       {/* Account status */}
       <section
