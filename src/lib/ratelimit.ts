@@ -38,6 +38,10 @@ export const callSessionLimiter = makeLimiter("call-session", 60, "1 m");
 // Login attempts, keyed by client IP. Tight budget to throttle credential
 // stuffing and username-enumeration probing. Fails open if Upstash is missing.
 export const loginLimiter = makeLimiter("login", 10, "1 m");
+// Domain search fans out to the Hostup API (+ polling for bulk). Guard per-IP
+// (anonymous abuse) and per-user (signed-in). Fail-open if Upstash is missing.
+export const domainSearchIpLimiter = makeLimiter("domain-search-ip", 20, "1 m");
+export const domainSearchUserLimiter = makeLimiter("domain-search-user", 40, "1 m");
 
 // Extract the originating client IP from the request. On Vercel the platform
 // sets `x-forwarded-for` to the real client; the first entry is canonical.

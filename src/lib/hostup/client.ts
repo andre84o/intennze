@@ -15,6 +15,20 @@ import {
   type HostupRateLimit,
 } from "./types.ts";
 import { normalizeDomainName } from "../domains/normalize.ts";
+import {
+  isDcheckJobId,
+  parseAvailabilityJob,
+  parseBulkAvailabilityResponse,
+  parseDomainAvailability,
+  parseDomainProduct,
+  parseOrderPreview,
+  parseTldList,
+  type AvailabilityJob,
+  type BulkAvailabilityResponse,
+  type DomainAvailability,
+  type DomainProduct,
+  type OrderPreviewResult,
+} from "./search-types.ts";
 
 /**
  * Hostup API v2 client — SERVER-ONLY, READ-ONLY.
@@ -90,14 +104,20 @@ function parseRetryAfter(header: string | null): number | undefined {
 }
 
 type RequestOpts<T> = {
+  // GET (default) plus a NARROW POST used only for read-style endpoints that
+  // require a POST body (bulk availability, order preview). No mutating endpoint
+  // (register/transfer/renew/order/dns) is ever called — see the exported fns.
+  method?: "GET" | "POST";
+  body?: unknown;
   query?: Record<string, string | number | undefined>;
   timeoutMs?: number;
-  parse: (json: unknown) => T;
+  parse: (json: unknown, status: number) => T;
 };
 
 /**
- * Low-level GET request. Handles auth, timeout, RFC 7807 errors, Retry-After.
- * Never logs or embeds the API key.
+ * Low-level request. Handles auth, timeout, RFC 7807 errors, Retry-After, and
+ * X-RateLimit-* capture. Never logs or embeds the API key. GET by default; POST
+ * is used only for the read-style availability/preview endpoints.
  */
 async function request<T>(path: string, opts: RequestOpts<T>): Promise<T> {
   const { apiKey, baseUrl } = getConfig();
@@ -109,14 +129,20 @@ async function request<T>(path: string, opts: RequestOpts<T>): Promise<T> {
     }
   }
 
+  const method = opts.method ?? "GET";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
   let response: Response;
   try {
     response = await fetch(url.toString(), {
-      method: "GET",
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+      method,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+        ...(opts.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      },
+      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
       signal: controller.signal,
     });
   } catch (err) {
@@ -162,7 +188,7 @@ async function request<T>(path: string, opts: RequestOpts<T>): Promise<T> {
   } catch {
     throw new HostupError("Hostup returned a non-JSON response", "PARSE_ERROR", response.status);
   }
-  return opts.parse(json);
+  return opts.parse(json, response.status);
 }
 
 // ── read-only functions ──────────────────────────────────────────────────────
@@ -234,5 +260,108 @@ export async function getHostupDomainNameservers(
   }
   return request(`/domains/${encodeURIComponent(providerDomainId)}/nameservers`, {
     parse: (json) => parseHostupNameserversResponse(json),
+  });
+}
+
+// ── Phase 3A: read-only domain search / products / order preview ──────────────
+
+function syntheticInvalid(name: string): DomainAvailability {
+  return {
+    name,
+    tld: null,
+    state: "invalid",
+    unknownReason: null,
+    actions: { canRegister: { allowed: false, reason: null }, canTransfer: { allowed: false, reason: null } },
+    premium: null,
+    requiresRegistrarFeeAcceptance: null,
+    eppRequired: null,
+    supportedRegisterYears: [],
+    supportedTransferYears: [],
+    existingDomainId: null,
+    providerBilling: null,
+    providerRenewalAmount: null,
+    currencyCode: null,
+    registryRequirements: null,
+    raw: {},
+  };
+}
+
+/** Single availability check (GET). Normalizes the name; invalid input → `invalid`. */
+export function checkDomainAvailability(name: string, locale?: string): Promise<DomainAvailability> {
+  const normalized = normalizeDomainName(name);
+  if (!normalized.ok) return Promise.resolve(syntheticInvalid(name));
+  return request(`/domains/availability`, {
+    query: { name: normalized.name, locale },
+    parse: (json) => parseDomainAvailability(json) ?? syntheticInvalid(normalized.name),
+  });
+}
+
+/** Bulk availability (POST). Returns inline results (200) or a queued job (202). */
+export function checkBulkDomainAvailability(
+  names: string[],
+  locale?: string
+): Promise<BulkAvailabilityResponse> {
+  const normalized = names
+    .map((n) => normalizeDomainName(n))
+    .filter((r): r is { ok: true; name: string } => r.ok)
+    .map((r) => r.name);
+  return request(`/domains/availability`, {
+    method: "POST",
+    body: { names: normalized, locale },
+    parse: (json, status) => parseBulkAvailabilityResponse(json, status),
+  });
+}
+
+/** Poll a bulk-availability job by its `dcheck_...` id (GET). */
+export async function getDomainAvailabilityJob(jobId: string, locale?: string): Promise<AvailabilityJob> {
+  if (!isDcheckJobId(jobId)) throw new HostupError("Invalid availability job id", "VALIDATION");
+  return request(`/domains/availability/${encodeURIComponent(jobId)}`, {
+    query: { locale },
+    parse: (json) => parseAvailabilityJob(json),
+  });
+}
+
+/** TLD product details incl. pricing, periods, registry requirements (GET). */
+export async function getDomainProduct(tld: string, locale?: string): Promise<DomainProduct> {
+  const clean = tld.trim().toLowerCase().replace(/^\.+/, "");
+  if (!/^[a-z0-9.-]{2,}$/.test(clean)) throw new HostupError("Invalid TLD", "VALIDATION");
+  return request(`/products/domains/${encodeURIComponent(clean)}`, {
+    query: { locale },
+    parse: (json) => {
+      const p = parseDomainProduct(json);
+      if (!p) throw new HostupError("Malformed Hostup product response", "PARSE_ERROR");
+      return p;
+    },
+  });
+}
+
+/** List available domain TLDs (GET). */
+export function listDomainProducts(locale?: string): Promise<string[]> {
+  return request(`/products/domains`, { query: { locale }, parse: (json) => parseTldList(json) });
+}
+
+export type OrderPreviewItemInput = {
+  action: "register" | "transfer";
+  domainName: string;
+  years: number;
+};
+export type OrderPreviewInput = { items: OrderPreviewItemInput[]; locale?: string };
+
+/**
+ * Dry-run order preview (POST /orders/preview). Prices an order draft; creates NO
+ * order/invoice/registration. This is the ONLY POST beyond bulk availability and
+ * is semantically read-only — no `write:orders` scope, no mutating endpoint.
+ */
+export function previewDomainOrder(input: OrderPreviewInput): Promise<OrderPreviewResult> {
+  const items = input.items.map((it) => ({
+    type: "domain" as const,
+    action: it.action,
+    domainName: it.domainName,
+    years: it.years,
+  }));
+  return request(`/orders/preview`, {
+    method: "POST",
+    body: { items, locale: input.locale },
+    parse: (json) => parseOrderPreview(json),
   });
 }
