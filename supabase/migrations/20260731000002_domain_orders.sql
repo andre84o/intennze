@@ -109,11 +109,6 @@ create table if not exists public.domain_orders (
   -- MUST NOT contain a provider price. Redacted on any audit write.
   quote_snapshot jsonb not null default '{}'::jsonb,
 
-  -- Registrant contact captured at checkout (pre-filled from the customer's
-  -- existing details, missing fields completed by the customer). Customer PII —
-  -- RLS-protected, NEVER sent to Hostup in this phase.
-  registrant_details jsonb not null default '{}'::jsonb,
-
   status text not null default 'DRAFT'
     check (status in ('DRAFT','CHECKOUT_CREATED','PAID_AWAITING_REGISTRATION',
                       'PAYMENT_FAILED','EXPIRED','CANCELLED')),
@@ -162,8 +157,7 @@ create or replace function public.create_domain_order(
     p_vat_rate_basis_points integer default null,
     p_quote_snapshot jsonb default '{}'::jsonb,
     p_currency_code text default 'SEK',
-    p_customer_id uuid default null,   -- ONLY consulted for admin-in-customer-view
-    p_registrant_details jsonb default '{}'::jsonb)
+    p_customer_id uuid default null)   -- ONLY consulted for admin-in-customer-view
   returns uuid
   language plpgsql security definer set search_path = ''
 as $$
@@ -201,47 +195,16 @@ begin
 
   insert into public.domain_orders(customer_id, domain_name, operation, years,
       currency_code, net_amount_minor, vat_amount_minor, gross_amount_minor,
-      vat_rate_basis_points, quote_snapshot, registrant_details, status, created_by)
+      vat_rate_basis_points, quote_snapshot, status, created_by)
     values (v_customer_id, lower(btrim(p_domain_name)), p_operation, p_years,
       upper(p_currency_code), p_net_amount_minor, p_vat_amount_minor, p_gross_amount_minor,
-      p_vat_rate_basis_points, coalesce(p_quote_snapshot,'{}'::jsonb),
-      coalesce(p_registrant_details,'{}'::jsonb), 'DRAFT', (select auth.uid()))
+      p_vat_rate_basis_points, coalesce(p_quote_snapshot,'{}'::jsonb), 'DRAFT', (select auth.uid()))
     returning id into v_id;
 
   return v_id;
 end $$;
-revoke execute on function public.create_domain_order(text,text,integer,integer,integer,integer,integer,jsonb,text,uuid,jsonb) from public;
-grant  execute on function public.create_domain_order(text,text,integer,integer,integer,integer,integer,jsonb,text,uuid,jsonb) to authenticated;
-
--- ── read the caller's OWN portal-customer contact (for checkout prefill) ─────
--- A portal customer is not covered by customers_select RLS (that policy is for
--- CRM owners), so this SECURITY DEFINER function returns ONLY the caller's own
--- contact fields. An admin-in-view passes the viewed customer id.
-create or replace function public.get_portal_customer_contact(p_customer_id uuid default null)
-  returns table (
-    first_name text, last_name text, email text, phone text,
-    address text, postal_code text, city text, company_name text,
-    org_number text, country text)
-  language plpgsql stable security definer set search_path = ''
-as $$
-begin
-  if public.is_admin() then
-    if p_customer_id is null then raise exception 'customer_id required for admin.'; end if;
-    return query
-      select c.first_name, c.last_name, c.email, c.phone, c.address, c.postal_code,
-             c.city, c.company_name, c.org_number, c.country
-      from public.customers c
-      where c.id = p_customer_id and c.archived_at is null;
-  else
-    return query
-      select c.first_name, c.last_name, c.email, c.phone, c.address, c.postal_code,
-             c.city, c.company_name, c.org_number, c.country
-      from public.customers c
-      where c.portal_user_id = (select auth.uid()) and c.archived_at is null;
-  end if;
-end $$;
-revoke execute on function public.get_portal_customer_contact(uuid) from public;
-grant  execute on function public.get_portal_customer_contact(uuid) to authenticated;
+revoke execute on function public.create_domain_order(text,text,integer,integer,integer,integer,integer,jsonb,text,uuid) from public;
+grant  execute on function public.create_domain_order(text,text,integer,integer,integer,integer,integer,jsonb,text,uuid) to authenticated;
 
 -- ── attach a Stripe session (customer-callable; own order; DRAFT→CHECKOUT) ───
 create or replace function public.attach_domain_order_checkout(
@@ -326,7 +289,6 @@ commit;
 -- drop function if exists public.mark_domain_order_terminal(text,text);
 -- drop function if exists public.mark_domain_order_paid(text,text);
 -- drop function if exists public.attach_domain_order_checkout(uuid,text);
--- drop function if exists public.get_portal_customer_contact(uuid);
--- drop function if exists public.create_domain_order(text,text,integer,integer,integer,integer,integer,jsonb,text,uuid,jsonb);
+-- drop function if exists public.create_domain_order(text,text,integer,integer,integer,integer,integer,jsonb,text,uuid);
 -- drop table if exists public.domain_orders;
 -- -- re-apply 20260731000000 log_customer_event to drop the checkout actions.
