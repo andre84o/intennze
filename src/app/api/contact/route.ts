@@ -55,6 +55,11 @@ const transporter = nodemailer.createTransport({
 
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
+// Server-side length limits. Kept in sync with the DB CHECK constraints added in
+// migration 20260801000000_contact_messages_lockdown.sql so the API rejects
+// oversized input with a clear 400 before it ever reaches the mailer/DB.
+const MAX_LEN = { name: 200, email: 320, phone: 40, message: 5000 } as const;
+
 const escapeHtml = (s: string) =>
   s
     .replace(/&/g, "&amp;")
@@ -156,6 +161,20 @@ export async function POST(req: Request) {
       );
     }
 
+    // Length limits — reject oversized input (prevents huge emails / DB rows and
+    // matches the DB CHECK constraints). Uses spread code-point length to avoid
+    // surrogate-pair miscounts.
+    const tooLong = ([...name].length > MAX_LEN.name && "name") ||
+      ([...email].length > MAX_LEN.email && "email") ||
+      ([...phone].length > MAX_LEN.phone && "phone") ||
+      ([...message].length > MAX_LEN.message && "message");
+    if (tooLong) {
+      return NextResponse.json(
+        { ok: false, field: tooLong, error: "För långt värde" },
+        { status: 400 }
+      );
+    }
+
     const to = process.env.CONTACT_TO;
     const emailConfig = process.env.FROM_EMAIL || process.env.ZOHO_USER || "";
     if (!to || !emailConfig) {
@@ -204,13 +223,15 @@ export async function POST(req: Request) {
       `,
     });
 
-    // Skicka Telegram-notifiering
+    // Skicka Telegram-notifiering. parse_mode är "HTML", så all användarinput
+    // MÅSTE HTML-escapas — annars kan inskickad markup bryta/injicera notisen
+    // (eller få Telegram att avvisa meddelandet så notisen tappas).
     await sendTelegramNotification(
       `📬 <b>Nytt kontaktmeddelande!</b>\n\n` +
-      `👤 <b>Namn:</b> ${name}\n` +
-      `📞 <b>Telefon:</b> ${phone}\n` +
-      `📧 <b>E-post:</b> ${email}\n\n` +
-      `💬 <b>Meddelande:</b>\n${message}\n\n` +
+      `👤 <b>Namn:</b> ${escapeHtml(name)}\n` +
+      `📞 <b>Telefon:</b> ${escapeHtml(phone)}\n` +
+      `📧 <b>E-post:</b> ${escapeHtml(email)}\n\n` +
+      `💬 <b>Meddelande:</b>\n${escapeHtml(message)}\n\n` +
       `🔗 <a href="https://www.intenzze.com/admin/crm">Öppna CRM</a>`
     );
 
