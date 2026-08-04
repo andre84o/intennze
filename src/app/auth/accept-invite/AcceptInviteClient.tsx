@@ -102,8 +102,14 @@ export default function AcceptInviteClient() {
       return;
     }
 
+    // The password is now saved. Rather than entering the app on this invite
+    // session (which has no idle-activity cookie and would be bounced by the
+    // fail-closed guards), sign out and funnel through the normal login. That
+    // keeps the LOGIN flow the single place the activity cookie is minted — no
+    // separate "revive my session" endpoint that could resurrect an idle one.
     setPhase("done");
-    router.push("/admin");
+    await supabase.auth.signOut();
+    router.push("/login");
     router.refresh();
   };
 
