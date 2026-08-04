@@ -1,5 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import {
@@ -10,6 +11,11 @@ import {
   type GuardProfile,
   type ProfileRole,
 } from "@/lib/auth/activeProfile";
+import {
+  ACTIVITY_COOKIE,
+  isIdleExpired,
+  verifyActivity,
+} from "@/lib/auth/idleSession";
 
 /**
  * Server-side authorization guards for API ROUTES (route handlers under
@@ -51,18 +57,28 @@ export type ApiAuthFail = {
 
 export type ApiAuthResult = ApiAuthOk | ApiAuthFail;
 
-function unauthorized(): ApiAuthFail {
+// All guard responses are marked private/no-store so an auth decision (401/403)
+// can never be served from a shared cache to a different or later request.
+function failJson(body: Record<string, unknown>, status: number): ApiAuthFail {
   return {
     ok: false,
-    response: NextResponse.json({ error: "Ej autentiserad" }, { status: 401 }),
+    response: NextResponse.json(body, {
+      status,
+      headers: { "Cache-Control": "private, no-store" },
+    }),
   };
 }
 
+function unauthorized(): ApiAuthFail {
+  return failJson({ error: "Ej autentiserad" }, 401);
+}
+
 function forbidden(): ApiAuthFail {
-  return {
-    ok: false,
-    response: NextResponse.json({ error: "Ej behörig" }, { status: 403 }),
-  };
+  return failJson({ error: "Ej behörig" }, 403);
+}
+
+function idleExpired(): ApiAuthFail {
+  return failJson({ error: "Sessionen har gått ut", reason: "idle" }, 401);
 }
 
 /**
@@ -96,6 +112,19 @@ async function resolveActiveCaller(): Promise<ApiAuthResult> {
   // Authenticated but no profile OR inactive/suspended/ended/outside window.
   if (!isActiveProfile(profile, today)) {
     return forbidden();
+  }
+
+  // Server-authoritative idle timeout — FAIL CLOSED. A protected API caller must
+  // present a valid, unexpired activity cookie. `verifyActivity` returns null for
+  // a missing OR tampered/invalid-signature cookie, and we also reject expired
+  // ones. The ONLY place the first cookie is minted is the login flow
+  // (`src/app/login/actions.ts`); we never bootstrap it here, so a session that
+  // did not log in through that flow can never acquire one. We do NOT refresh
+  // here — refresh happens on genuine page navigation (middleware) and the
+  // throttled client heartbeat, so background polling can't keep a session alive.
+  const ts = await verifyActivity((await cookies()).get(ACTIVITY_COOKIE)?.value);
+  if (ts === null || isIdleExpired(ts, Date.now())) {
+    return idleExpired();
   }
 
   return {
@@ -145,4 +174,14 @@ export async function requireActiveProfileApi(): Promise<ApiAuthResult> {
   }
 
   return result;
+}
+
+/**
+ * Allow ANY active profile — admin, staff, OR customer. Use only for endpoints
+ * that every logged-in user legitimately hits regardless of role, e.g. the idle
+ * heartbeat that keeps both /admin and /portal sessions alive. Still enforces
+ * the active-profile rule and the idle-timeout via {@link resolveActiveCaller}.
+ */
+export async function requireActiveUserApi(): Promise<ApiAuthResult> {
+  return resolveActiveCaller();
 }

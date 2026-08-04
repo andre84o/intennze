@@ -1,9 +1,14 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { createClient as createServerSupabaseClient } from "@/utils/supabase/server";
 import { tryLimit, loginLimiter } from "@/lib/ratelimit";
+import {
+  ACTIVITY_COOKIE,
+  activityCookieOptions,
+  signActivity,
+} from "@/lib/auth/idleSession";
 
 // Private, server-only helper. Maps a username -> the account's login email
 // using the service-role key. NEVER exported / NEVER returned to the client —
@@ -130,6 +135,17 @@ export async function signIn(identifier: string, password: string): Promise<Sign
     await supabase.auth.signOut();
     return { ok: false };
   }
+
+  // Bootstrap the idle-session activity cookie. THIS login flow is the single,
+  // clearly-defined place the first activity stamp is minted — the middleware,
+  // API guards and heartbeat all FAIL CLOSED on a missing/invalid cookie, so a
+  // session that never authenticated here can never acquire one. Signed +
+  // httpOnly so the client can never forge or extend it.
+  (await cookies()).set(
+    ACTIVITY_COOKIE,
+    await signActivity(Date.now()),
+    activityCookieOptions()
+  );
 
   const role =
     profile?.role === "admin"

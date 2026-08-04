@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getEffectiveActor } from "@/lib/auth/customerView";
 import { exitCustomerView } from "@/app/admin/kunder/actions";
+import IdleLogout from "@/components/auth/IdleLogout";
 import PortalNav from "./PortalNav";
 import PortalBottomNav from "./PortalBottomNav";
 import PortalCartButton from "./PortalCartButton";
@@ -75,6 +76,7 @@ export default async function PortalLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
+      <IdleLogout />
       {actor.isCustomerView && (
         <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 border-b border-amber-300 bg-amber-50 px-4 py-3">
           <p className="text-sm font-medium text-amber-800">

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import AdminLayoutClient from "./AdminLayoutClient";
-import AdminIdleLogout from "./AdminIdleLogout";
+import IdleLogout from "@/components/auth/IdleLogout";
 
 export default async function AdminLayout({
   children,
@@ -61,7 +61,7 @@ export default async function AdminLayout({
       role={role}
       commissionEligible={commissionEligible}
     >
-      <AdminIdleLogout />
+      <IdleLogout />
       {children}
     </AdminLayoutClient>
   );

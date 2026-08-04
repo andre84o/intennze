@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = "https://www.intenzze.com";
   const now = new Date();
   return [
-    { url: `${base}/`, lastModified: now },
-    { url: `${base}/om-oss`, lastModified: now },
-    { url: `${base}/priser`, lastModified: now },
-    { url: `${base}/kontakt`, lastModified: now },
-    { url: `${base}/integritetspolicy`, lastModified: now },
+    { url: `${SITE_URL}/`, lastModified: now },
+    { url: `${SITE_URL}/om-oss`, lastModified: now },
+    { url: `${SITE_URL}/tjanster`, lastModified: now },
+    { url: `${SITE_URL}/kontakt`, lastModified: now },
+    { url: `${SITE_URL}/integritetspolicy`, lastModified: now },
   ];
 }
