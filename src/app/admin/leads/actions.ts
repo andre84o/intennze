@@ -2,6 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
+import {
+  PROFILE_COLUMNS,
+  isActiveProfile,
+  normalizeRole,
+  todayStockholm,
+  type GuardProfile,
+} from "@/lib/auth/activeProfile";
 
 /**
  * All server actions in this file are Admin-only.
@@ -32,11 +39,11 @@ async function requireAdmin(): Promise<AdminOk | AdminFail> {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("role, is_active")
+    .select(PROFILE_COLUMNS)
     .eq("user_id", user.id)
-    .maybeSingle();
+    .maybeSingle<GuardProfile>();
 
-  if (error || !profile || profile.role !== "admin" || profile.is_active !== true) {
+  if (error || !isActiveProfile(profile, todayStockholm()) || normalizeRole(profile) !== "admin") {
     return { error: "Åtkomst nekad" };
   }
 

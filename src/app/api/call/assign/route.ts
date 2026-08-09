@@ -2,19 +2,16 @@ export const runtime = "nodejs";
 
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { callSessionLimiter, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 import { isUuid, minimalLead, nextVersion } from "@/lib/callSession";
+import { requireActiveProfileApi } from "@/lib/auth/apiAuth";
 
 // POST /api/call/assign — manually push a specific customer to the mobile.
 // Bypasses the Next Lead predicate (explicit agent choice). No Meta.
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Ej autentiserad" }, { status: 401 });
-  }
+  const auth = await requireActiveProfileApi();
+  if (!auth.ok) return auth.response;
+  const { user, supabase } = auth;
 
   const limit = await tryLimit(callSessionLimiter, user.id);
   if (limit && !limit.success) {

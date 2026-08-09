@@ -2,21 +2,18 @@ export const runtime = "nodejs";
 
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { callSessionLimiter, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 import { isUuid, minimalLead, nextVersion, pickFirstCallable } from "@/lib/callSession";
+import { requireActiveProfileApi } from "@/lib/auth/apiAuth";
 
 const MAX_LEAD_ORDER = 1000;
 
 // POST /api/call/start — seed a point-in-time snapshot of the desktop's visible
 // lead order and activate the first callable lead. No auto-dialing, no Meta.
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Ej autentiserad" }, { status: 401 });
-  }
+  const auth = await requireActiveProfileApi();
+  if (!auth.ok) return auth.response;
+  const { user, supabase } = auth;
 
   const limit = await tryLimit(callSessionLimiter, user.id);
   if (limit && !limit.success) {

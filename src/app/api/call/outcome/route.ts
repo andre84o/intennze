@@ -1,8 +1,8 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { callOutcomeLimiter, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
+import { requireActiveProfileApi } from "@/lib/auth/apiAuth";
 
 const ALLOWED_OUTCOMES = ["interested", "call_back", "no_answer", "not_interested"] as const;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -38,13 +38,10 @@ function normalizeReminderTime(v: unknown): string | null | undefined {
 // POST /api/call/outcome — records a single call outcome via the atomic
 // record_call_outcome RPC. Never triggers Meta Conversions.
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
-
-  // 1. Auth
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Ej autentiserad" }, { status: 401 });
-  }
+  // 1. Auth + role check (blocks unauthenticated users and portal customers)
+  const auth = await requireActiveProfileApi();
+  if (!auth.ok) return auth.response;
+  const { user, supabase } = auth;
 
   // 2. Rate limit — FAIL-CLOSED in production if the limiter is not configured.
   if (callOutcomeLimiter === null) {

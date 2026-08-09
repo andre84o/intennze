@@ -3,6 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { quoteRespondLimiter, getClientIp, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 // Telegram notification
 async function sendTelegramNotification(message: string) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -115,9 +123,11 @@ export async function POST(request: NextRequest) {
       .eq("id", quote.customer_id)
       .single();
 
-    const customerName = customerData
-      ? `${customerData.first_name || ""} ${customerData.last_name || ""}`.trim() || "Okänd"
-      : "Okänd";
+    const customerName = escapeHtml(
+      customerData
+        ? `${customerData.first_name || ""} ${customerData.last_name || ""}`.trim() || "Okänd"
+        : "Okänd"
+    );
 
     const emoji = accept ? "✅" : "❌";
     const status = accept ? "ACCEPTERAD" : "AVBÖJD";
@@ -125,7 +135,7 @@ export async function POST(request: NextRequest) {
     await sendTelegramNotification(
       `${emoji} <b>Offert ${status}!</b>\n\n` +
       `👤 <b>Kund:</b> ${customerName}\n` +
-      (note ? `💬 <b>Kommentar:</b> ${note}\n\n` : "\n") +
+      (note ? `💬 <b>Kommentar:</b> ${escapeHtml(note)}\n\n` : "\n") +
       `🔗 <a href="https://www.intenzze.com/admin/crm">Öppna CRM</a>`
     );
 

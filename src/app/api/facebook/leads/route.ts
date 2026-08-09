@@ -4,6 +4,14 @@ import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { webhookGetLimiter, getClientIp, tryLimit, rateLimitHeaders } from "@/lib/ratelimit";
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 // Telegram notification
 async function sendTelegramNotification(message: string) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -164,9 +172,9 @@ export async function POST(request: NextRequest) {
             fieldMap[f.name?.toLowerCase()] = f.values?.[0] || "";
           }
 
-          const name = fieldMap.first_name || fieldMap.förnamn || fieldMap.full_name || "Okänt namn";
-          const phone = fieldMap.phone_number || fieldMap.phone || fieldMap.telefon || "Ingen telefon";
-          const email = fieldMap.email || fieldMap['e-post'] || "Ingen e-post";
+          const name = escapeHtml(fieldMap.first_name || fieldMap.förnamn || fieldMap.full_name || "Okänt namn");
+          const phone = escapeHtml(fieldMap.phone_number || fieldMap.phone || fieldMap.telefon || "Ingen telefon");
+          const email = escapeHtml(fieldMap.email || fieldMap['e-post'] || "Ingen e-post");
 
           await sendTelegramNotification(
             `🔔 <b>Ny lead från Facebook!</b>\n\n` +
