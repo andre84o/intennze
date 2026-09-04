@@ -65,7 +65,7 @@ export default function HomeContent() {
   const demos = [
     {
       url: "https://demo-bygg.vercel.app/",
-      screenshotUrl: "https://demo-bygg.vercel.app/",
+      screenshot: "/demos/byggforetag.jpg",
       title: sv ? "Byggföretag" : "Construction",
       desc: sv ? "Modern sida för byggbranschen" : "Modern site for construction industry",
       gradient: "from-cyan-500/50 to-cyan-500/20",
@@ -73,8 +73,8 @@ export default function HomeContent() {
       hideOnMobile: true
     },
     {
-      url: "https://demo-barber-seven.vercel.app/",
-      screenshotUrl: "https://demo-barber-seven.vercel.app/",
+      url: "https://www.raffisbarbershop.se/",
+      screenshot: "/demos/barber.jpg",
       title: sv ? "Barber" : "Barber",
       desc: sv ? "Stilren design för salong" : "Sleek design for salons",
       gradient: "from-purple-500/50 to-purple-500/20",
@@ -83,7 +83,7 @@ export default function HomeContent() {
     },
     {
       url: "https://demo-redovisning.vercel.app/",
-      screenshotUrl: "https://demo-redovisning.vercel.app/",
+      screenshot: "/demos/redovisning.jpg",
       title: sv ? "Redovisning" : "Accounting",
       desc: sv ? "Professionell och trovärdig" : "Professional and trustworthy",
       gradient: "from-fuchsia-500/50 to-fuchsia-500/20",
@@ -91,31 +91,21 @@ export default function HomeContent() {
       hideOnMobile: true
     },
     {
-      url: "https://demo-restaurang.vercel.app/",
-      screenshotUrl: "https://demo-restaurang.vercel.app/",
+      url: "https://www.lerustiquebistro.se",
+      screenshot: "/demos/restaurang.jpg",
       title: sv ? "Restaurang" : "Restaurant",
       desc: sv ? "Aptitretande webbupplevelse" : "Appetizing web experience",
       gradient: "from-amber-500/50 to-amber-500/20",
       border: "hover:border-amber-500/50",
-      hideOnMobile: true
     },
     {
       url: "https://demo-health-red.vercel.app/",
-      screenshotUrl: "https://demo-health-red.vercel.app/",
+      screenshot: "/demos/halsa.jpg",
       title: sv ? "Hälsa" : "Health",
       desc: sv ? "Fräsch design för hälsobranschen" : "Fresh design for health industry",
       gradient: "from-emerald-500/50 to-emerald-500/20",
       border: "hover:border-emerald-500/50",
       tag: sv ? "Upp till 5 sidor" : "Up to 5 pages"
-    },
-    {
-      url: "https://clinic-two-omega.vercel.app/",
-      screenshotUrl: "https://clinic-two-omega.vercel.app/",
-      title: sv ? "Klinik" : "Clinic",
-      desc: sv ? "Modern design för vårdmottagning" : "Modern design for healthcare",
-      gradient: "from-rose-500/50 to-rose-500/20",
-      border: "hover:border-rose-500/50",
-      tag: sv ? "Landningssida (One-page)" : "Landing page (One-page)"
     },
   ];
 
@@ -417,7 +407,7 @@ export default function HomeContent() {
                 <div className="relative aspect-[16/10] overflow-hidden">
                   <div className={`absolute inset-0 bg-gradient-to-t ${demo.gradient} opacity-20 group-hover:opacity-40 transition-opacity duration-500 z-10`} />
                   <img
-                    src={`https://api.microlink.io/?url=${encodeURIComponent((demo as any).screenshotUrl ?? demo.url)}&screenshot=true&meta=false&embed=screenshot.url`}
+                    src={(demo as any).screenshot}
                     alt={demo.title}
                     className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
