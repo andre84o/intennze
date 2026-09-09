@@ -128,26 +128,28 @@ export default function HomeContent() {
             <div className="lg:col-span-7">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping" />
-                <span className="text-cyan-400 text-sm font-mono">intenzze.studio</span>
+                <span className="text-cyan-400 text-sm font-mono">
+                  {sv ? "Webbyrå i Stockholm" : "Web agency in Stockholm"}
+                </span>
               </div>
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
                 <span className="block text-white">
-                  {sv ? "Din nya hemsida." : "Your new website."}
+                  {sv ? "Webbyrå som bygger moderna" : "A web agency building modern"}
                 </span>
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-fuchsia-400">
-                  {sv ? "Enkelt. Tryggt. Färdigt." : "Simple. Secure. Done."}
+                  {sv ? "hemsidor för företag." : "websites for businesses."}
                 </span>
               </h1>
               <p className="mt-6 text-xl sm:text-2xl text-slate-300 max-w-xl leading-relaxed">
                 {sv
-                  ? "Vi tar hand om allt – du fokuserar på ditt företag."
-                  : "We take care of everything – you focus on your business."}
+                  ? "Webbdesign och webbutveckling för företag i Stockholm och hela Sverige. Vi tar hand om design, utveckling, teknisk SEO, lansering och drift."
+                  : "Web design and development for businesses in Stockholm and across Sweden. We handle design, development, technical SEO, launch and ongoing operations."}
               </p>
 
               <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
                 {(sv
-                  ? ["Du behöver inte kunna teknik", "Vi hjälper dig hela vägen", "Från idé till lansering"]
-                  : ["No tech skills needed", "We help you all the way", "From idea to launch"]
+                  ? ["Fast pris & tydlig process", "SEO från start", "Personlig kontakt"]
+                  : ["Fixed pricing & clear process", "SEO from day one", "Personal contact"]
                 ).map((point, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30">
@@ -165,7 +167,7 @@ export default function HomeContent() {
                   onClick={() => openContactModal()}
                   className="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-medium overflow-hidden"
                 >
-                  <span className="relative">{sv ? "Kom igång" : "Get started"}</span>
+                  <span className="relative">{sv ? "Få en kostnadsfri offert" : "Get a free quote"}</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
                 <a
