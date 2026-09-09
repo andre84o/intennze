@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Intennze Supabase keepalive every 3 days
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=3d
+RandomizedDelaySec=30min
+Unit=intennze-supabase-keepalive.service
+
+[Install]
+WantedBy=timers.target

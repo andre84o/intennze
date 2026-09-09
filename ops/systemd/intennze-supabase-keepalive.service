@@ -1,0 +1,15 @@
+[Unit]
+Description=Intennze Supabase keepalive
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/intennze/app
+EnvironmentFile=/etc/intennze/.env
+ExecStart=/usr/bin/python3 /opt/intennze/app/scripts/supabase-keepalive.py
+User=andre
+Group=andre
+
+[Install]
+WantedBy=multi-user.target
