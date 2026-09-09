@@ -73,6 +73,16 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "intenzze.com" }],
+        destination: "https://www.intenzze.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
