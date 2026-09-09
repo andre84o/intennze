@@ -7,14 +7,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const lang = c.get("lang")?.value === "en" ? "en" : "sv";
   if (lang === "en") {
     return {
-      title: "Home",
-      description: "Intenzze builds fast, accessible and tailored websites that drive business value.",
+      title: "Web Agency Stockholm | Business Websites | Intenzze",
+      description:
+        "Intenzze is a web agency in Stockholm building modern, fast and SEO-ready websites for businesses across Sweden. Web design, development and support.",
       alternates: { canonical: "/" },
     };
   }
   return {
-    title: "Start",
-    description: "Intenzze bygger snabba, tillgängliga och skräddarsydda webbplatser som driver affärsvärde.",
+    title: "Webbyrå Stockholm | Hemsidor för företag | Intenzze",
+    description:
+      "Intenzze är en webbyrå i Stockholm som bygger moderna, snabba och SEO-optimerade hemsidor för företag i hela Sverige. Webbdesign, utveckling och drift.",
     alternates: { canonical: "/" },
   };
 }
