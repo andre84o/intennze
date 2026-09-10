@@ -167,7 +167,7 @@ export default function HomeContent() {
                   onClick={() => openContactModal()}
                   className="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-medium overflow-hidden"
                 >
-                  <span className="relative">{sv ? "Få en kostnadsfri offert" : "Get a free quote"}</span>
+                  <span className="relative z-10">{sv ? "Få en kostnadsfri offert" : "Get a free quote"}</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
                 <a
