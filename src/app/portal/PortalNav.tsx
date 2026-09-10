@@ -57,7 +57,7 @@ export default function PortalNav({ userName, userEmail }: { userName: string; u
         <div className="flex h-9 items-center justify-between">
           <Link href="/portal" className="flex items-center" aria-label="Intenzze – till portalen">
             <Image
-              src="/logony22.png"
+              src="/logo.png"
               alt="Intenzze"
               width={260}
               height={65}

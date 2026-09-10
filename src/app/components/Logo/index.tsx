@@ -7,7 +7,7 @@ const Logo = () => {
       <div className="relative h-10 w-[160px]">
         <Link href="/" className="block">
           <Image
-            src="/logony22.png"
+            src="/logo.png"
             alt="Intenzze logo"
             width={220}
             height={220}

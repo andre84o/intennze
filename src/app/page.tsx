@@ -30,11 +30,6 @@ export default async function Home() {
     "@type": "WebSite",
     name: "intenzze",
     url: base,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${base}/?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
   };
   const breadcrumbs = {
     "@context": "https://schema.org",
