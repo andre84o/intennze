@@ -135,6 +135,7 @@ export async function POST(req: Request) {
     const email = String(form.get("email") || "").trim();
     const phone = String(form.get("phone") || "").trim();
     const message = String(form.get("message") || "").trim();
+    const policyAccepted = form.get("policy") === "on";
 
     if (!email || !isEmail(email)) {
       return NextResponse.json(
@@ -194,7 +195,7 @@ export async function POST(req: Request) {
       to,
       replyTo: email,
       subject: `Nytt kontaktmeddelande från ${name}`,
-      text: `Namn: ${name}\nE-post: ${email}\nTelefon: ${phone}\n\nMeddelande:\n${message}`,
+      text: `Namn: ${name}\nE-post: ${email}\nTelefon: ${phone}\n\nMeddelande:\n${message}\n\nIntegritetspolicy: ${policyAccepted ? "Godkänd ✓" : "EJ godkänd ✗"}`,
       headers: {
         "Content-Language": "sv",
       },
@@ -217,6 +218,9 @@ export async function POST(req: Request) {
             <p><strong>Telefon:</strong> ${escapeHtml(phone)}</p>
             <p><strong>Meddelande:</strong></p>
             <p style="white-space:pre-line">${escapeHtml(message)}</p>
+            <p style="margin-top:16px; padding:10px 14px; border-radius:6px; background:${policyAccepted ? "#d1fae5" : "#fee2e2"}; color:${policyAccepted ? "#065f46" : "#991b1b"}; font-size:13px;">
+              <strong>Integritetspolicy:</strong> ${policyAccepted ? "✓ Godkänd – kunden har samtyckt till att uppgifter behandlas" : "✗ EJ godkänd"}
+            </p>
           </div>
         </body>
         </html>
@@ -232,6 +236,7 @@ export async function POST(req: Request) {
       `📞 <b>Telefon:</b> ${escapeHtml(phone)}\n` +
       `📧 <b>E-post:</b> ${escapeHtml(email)}\n\n` +
       `💬 <b>Meddelande:</b>\n${escapeHtml(message)}\n\n` +
+      `${policyAccepted ? "✅" : "❌"} <b>Integritetspolicy:</b> ${policyAccepted ? "Godkänd" : "EJ godkänd"}\n\n` +
       `🔗 <a href="https://www.intenzze.com/admin/crm">Öppna CRM</a>`
     );
 
