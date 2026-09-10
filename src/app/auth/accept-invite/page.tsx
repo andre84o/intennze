@@ -3,6 +3,7 @@ import AcceptInviteClient from "./AcceptInviteClient";
 
 export const metadata = {
   title: "Accept invite | Intenzze",
+  robots: { index: false, follow: false },
 };
 
 // PUBLIC page — no admin guard. It completes a Supabase invite in the browser

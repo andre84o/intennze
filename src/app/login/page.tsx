@@ -2,6 +2,7 @@ import LoginForm from "./LoginForm";
 
 export const metadata = {
   title: "Login | Admin",
+  robots: { index: false, follow: false },
 };
 
 export default function LoginPage() {

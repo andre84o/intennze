@@ -6,6 +6,10 @@ import PortalNav from "./PortalNav";
 import PortalBottomNav from "./PortalBottomNav";
 import PortalCartButton from "./PortalCartButton";
 
+export const metadata = {
+  robots: { index: false, follow: false },
+};
+
 /**
  * Protected customer portal shell.
  *

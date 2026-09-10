@@ -3,6 +3,10 @@ import { createClient } from "@/utils/supabase/server";
 import AdminLayoutClient from "./AdminLayoutClient";
 import IdleLogout from "@/components/auth/IdleLogout";
 
+export const metadata = {
+  robots: { index: false, follow: false },
+};
+
 export default async function AdminLayout({
   children,
 }: {
